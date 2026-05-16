@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="pink">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#d6cfc2" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>电子宠物</title>
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/pet.css" />
@@ -13,20 +12,20 @@
 </head>
 <body>
 
-<!-- ============================================================
-     App Shell — Retro Mac
-     ============================================================ -->
 <div id="app-shell">
 
   <!-- Top Bar -->
   <div id="top-bar">
-    <div class="mac-dots">
-      <div class="mac-dot red"></div>
-      <div class="mac-dot yellow"></div>
-      <div class="mac-dot green"></div>
+    <div class="app-logo">
+      <div class="app-logo-icon">🐾</div>
+      <span class="app-logo-text">PetOS</span>
     </div>
-    <span class="app-title">PetOS v1.0</span>
-    <span class="top-time" id="top-time">00:00</span>
+
+    <!-- 主题切换 -->
+    <div id="theme-switcher">
+      <button class="theme-btn active" data-theme="pink">粉白</button>
+      <button class="theme-btn" data-theme="mono">黑白</button>
+    </div>
   </div>
 
   <!-- Offline Banner -->
@@ -36,91 +35,103 @@
   <div id="screen">
     <div id="screen-inner">
 
-      <!-- Toast Container -->
+      <!-- Toast -->
       <div id="toast-container"></div>
-
-      <!-- Modal Overlay -->
+      <!-- Modal -->
       <div id="modal-overlay"></div>
 
-      <!-- ======================================================
-           PAGE: 宠物主界面 #pet
-           ====================================================== -->
+      <!-- ====================================================
+           PAGE: 宠物 #pet
+           ==================================================== -->
       <section id="page-pet" class="page-section active">
 
-        <!-- 场景区 + 宠物 -->
+        <!-- 场景区 -->
         <div id="pet-scene" class="scene-home">
-          <!-- 情绪气泡 -->
+          <div class="scene-deco scene-deco-1"></div>
+          <div class="scene-deco scene-deco-2"></div>
+          <div class="scene-deco scene-deco-3"></div>
+
           <div id="emotion-bubble"></div>
 
-          <!-- 宠物主体 -->
           <div id="pet-avatar-wrap">
-            <div class="pet-default-art" id="pet-avatar">🐱</div>
+            <!-- CSS 宠物（无头像时显示） -->
+            <div class="pet-css-body" id="pet-css-body"></div>
+            <!-- 用户头像（有头像时显示） -->
+            <img id="pet-avatar-img" src="" alt="" style="display:none;" />
             <div id="pet-name-tag">小幽</div>
           </div>
         </div>
 
+        <!-- 心情卡片 -->
+        <div id="mood-card">
+          <div id="mood-card-label">Current Mood</div>
+          <div id="mood-card-text">Ready to play! ✨</div>
+        </div>
+
         <!-- 状态条 -->
         <div id="status-bars">
-          <div class="status-row">
-            <span class="status-icon">🍖</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill hunger" style="width:80%"></div>
+          <div class="status-card">
+            <div class="status-row">
+              <span class="status-label">Hunger</span>
+              <div class="status-bar-track">
+                <div class="status-bar-fill hunger" style="width:80%"></div>
+              </div>
+              <span class="status-value" data-key="hunger">80</span>
             </div>
-            <span class="status-value" data-key="hunger">80</span>
-          </div>
-          <div class="status-row">
-            <span class="status-icon">😊</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill mood" style="width:80%"></div>
+            <div class="status-row">
+              <span class="status-label">Mood</span>
+              <div class="status-bar-track">
+                <div class="status-bar-fill mood" style="width:80%"></div>
+              </div>
+              <span class="status-value" data-key="mood">80</span>
             </div>
-            <span class="status-value" data-key="mood">80</span>
-          </div>
-          <div class="status-row">
-            <span class="status-icon">❤️</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill health" style="width:80%"></div>
+            <div class="status-row">
+              <span class="status-label">Health</span>
+              <div class="status-bar-track">
+                <div class="status-bar-fill health" style="width:80%"></div>
+              </div>
+              <span class="status-value" data-key="health">80</span>
             </div>
-            <span class="status-value" data-key="health">80</span>
-          </div>
-          <div class="status-row">
-            <span class="status-icon">🚿</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill clean" style="width:80%"></div>
+            <div class="status-row">
+              <span class="status-label">Clean</span>
+              <div class="status-bar-track">
+                <div class="status-bar-fill clean" style="width:80%"></div>
+              </div>
+              <span class="status-value" data-key="clean">80</span>
             </div>
-            <span class="status-value" data-key="clean">80</span>
-          </div>
-          <div class="status-row">
-            <span class="status-icon">💕</span>
-            <div class="status-bar-track">
-              <div class="status-bar-fill bond" style="width:50%"></div>
+            <div class="status-row">
+              <span class="status-label">Bond</span>
+              <div class="status-bar-track">
+                <div class="status-bar-fill bond" style="width:50%"></div>
+              </div>
+              <span class="status-value" data-key="bond">50</span>
             </div>
-            <span class="status-value" data-key="bond">50</span>
           </div>
         </div>
 
-        <!-- 操作按钮 -->
+        <!-- 操作按钮 2×2 -->
         <div id="pet-actions">
-          <button class="action-btn" id="btn-feed">
-            <span class="btn-icon">🍖</span>
-            <span class="btn-label">喂食</span>
+          <button class="action-btn feed" id="btn-feed">
+            <div class="btn-icon-wrap">🍖</div>
+            <span class="btn-label">Feed</span>
           </button>
-          <button class="action-btn" id="btn-play">
-            <span class="btn-icon">🎮</span>
-            <span class="btn-label">玩耍</span>
+          <button class="action-btn play" id="btn-play">
+            <div class="btn-icon-wrap">🎮</div>
+            <span class="btn-label">Play</span>
           </button>
-          <button class="action-btn" id="btn-clean">
-            <span class="btn-icon">🚿</span>
-            <span class="btn-label">洗澡</span>
+          <button class="action-btn clean" id="btn-clean">
+            <div class="btn-icon-wrap">🚿</div>
+            <span class="btn-label">Clean</span>
           </button>
-          <button class="action-btn" id="btn-heal">
-            <span class="btn-icon">💊</span>
-            <span class="btn-label">治疗</span>
+          <button class="action-btn heal" id="btn-heal">
+            <div class="btn-icon-wrap">💊</div>
+            <span class="btn-label">Heal</span>
           </button>
         </div>
 
         <!-- 对话区 -->
         <div id="pet-chat-area">
-          <div class="chat-line system">— 和你的宠物说说话吧 —</div>
+                    <div class="chat-line system">— 点击宠物或发送消息开始互动 —</div>
         </div>
 
         <!-- 输入行 -->
@@ -128,7 +139,7 @@
           <input
             type="text"
             id="pet-input"
-            placeholder="说点什么..."
+            placeholder="和宠物说说话..."
             maxlength="200"
             autocomplete="off"
           />
@@ -137,96 +148,100 @@
 
       </section>
 
-      <!-- ======================================================
+      <!-- ====================================================
            PAGE: 好友 #friends
-           ====================================================== -->
+           ==================================================== -->
       <section id="page-friends" class="page-section">
+
         <div class="page-header">
-          <h2>🐾 宠物好友</h2>
-          <p>FRIENDS SYSTEM</p>
+          <div class="page-title">好友</div>
+          <div class="page-subtitle">你的宠物朋友们</div>
         </div>
 
-        <div style="padding: 0 12px 8px; display:flex; gap:8px;">
-          <button class="btn btn-primary" id="btn-add-friend" style="flex:1">
-            + 添加好友
-          </button>
-          <button class="btn btn-ghost" id="btn-random-friend">
-            🎲 随机生成
-          </button>
+        <div style="padding: 0 16px 14px; display:flex; gap:8px;">
+          <button class="btn btn-primary" id="btn-add-friend">+ 添加好友</button>
+          <button class="btn btn-ghost" id="btn-random-friend" style="flex:0 0 auto; padding:12px 16px;">🎲</button>
         </div>
 
-        <div id="friends-list" class="scroll-list" style="flex:1">
+        <div id="friends-list" class="scroll-list" style="flex:1; padding-bottom:12px;">
           <div class="empty-state">
             <div class="empty-state-icon">🐾</div>
-            <div class="empty-state-text">还没有宠物好友<br>添加一个吧！</div>
+            <div class="empty-state-text">还没有宠物好友<br>添加一个或随机生成吧</div>
           </div>
         </div>
+
       </section>
 
-      <!-- ======================================================
+      <!-- ====================================================
            PAGE: 冒险 #adventure
-           ====================================================== -->
+           ==================================================== -->
       <section id="page-adventure" class="page-section">
+
         <div class="page-header">
-          <h2>🗺 场景冒险</h2>
-          <p>ADVENTURE MODE</p>
+          <div class="page-title">冒险</div>
+          <div class="page-subtitle">探索不同的场景</div>
         </div>
 
-        <div id="scene-list" style="padding: 8px 12px; flex:1; overflow-y:auto;">
-          <!-- 场景卡片由 scene.js 渲染 -->
+        <div id="scene-list" style="flex:1; overflow-y:auto; padding-bottom:12px;">
           <div class="empty-state">
             <div class="empty-state-icon">🗺</div>
             <div class="empty-state-text">前往设置添加场景<br>开始冒险！</div>
           </div>
         </div>
 
-        <!-- 冒险日志 -->
-        <div style="padding: 0 12px 8px;">
-          <div class="retro-card-title" style="padding: 4px 0 6px; font-family:var(--font-mono); font-size:10px; color:var(--phosphor-dim); text-transform:uppercase; letter-spacing:1px;">
-            最近冒险
+        <!-- 最近冒险记录 -->
+        <div style="padding: 0 16px 16px; flex-shrink:0;">
+          <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
+                      text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
+            最近记录
           </div>
-          <div id="adventure-log" style="font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.5); max-height:80px; overflow-y:auto;">
-            <div style="color:rgba(255,255,255,0.2); font-size:10px;">暂无记录</div>
+          <div id="adventure-log"
+               style="background:var(--bg-card); border-radius:var(--radius-lg);
+                      overflow:hidden; box-shadow:var(--shadow-card);">
+            <div class="empty-state" style="padding:24px;">
+              <div class="empty-state-text">暂无冒险记录</div>
+            </div>
           </div>
         </div>
+
       </section>
 
-      <!-- ======================================================
+      <!-- ====================================================
            PAGE: 设置 #settings
-           ====================================================== -->
+           ==================================================== -->
       <section id="page-settings" class="page-section">
+
         <div class="page-header">
-          <h2>⚙ 系统设置</h2>
-          <p>SETTINGS</p>
+          <div class="page-title">设置</div>
+          <div class="page-subtitle">个性化你的宠物世界</div>
         </div>
 
-        <div class="page-content" style="overflow-y:auto; flex:1;">
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <button class="tab-item active" data-tab="tab-pet">宠物</button>
+          <button class="tab-item" data-tab="tab-api">API</button>
+          <button class="tab-item" data-tab="tab-parent">家长</button>
+          <button class="tab-item" data-tab="tab-notify">通知</button>
+          <button class="tab-item" data-tab="tab-data">数据</button>
+          <button class="tab-item" data-tab="tab-logs">日志</button>
+        </div>
 
-          <!-- Tab Bar -->
-          <div class="tab-bar">
-            <div class="tab-item active" data-tab="tab-pet">宠物</div>
-            <div class="tab-item" data-tab="tab-api">API</div>
-                        <div class="tab-item" data-tab="tab-parent">家长</div>
-            <div class="tab-item" data-tab="tab-notify">通知</div>
-            <div class="tab-item" data-tab="tab-data">数据</div>
-            <div class="tab-item" data-tab="tab-logs">日志</div>
-          </div>
+        <div class="page-content" style="flex:1; overflow-y:auto;">
 
           <!-- ── Tab: 宠物设置 ── -->
           <div id="tab-pet" class="tab-content active">
             <div class="settings-section">
-              <div class="settings-section-title">🐾 宠物基本信息</div>
-
+              <div class="settings-section-title">基本信息</div>
               <div class="form-group">
                 <label class="form-label">宠物名字</label>
-                <input type="text" class="form-input" id="set-pet-name" placeholder="给你的宠物起个名字" maxlength="20" />
+                <input type="text" class="form-input" id="set-pet-name"
+                  placeholder="给你的宠物起个名字" maxlength="20" />
               </div>
-
               <div class="form-group">
                 <label class="form-label">头像 URL（留空使用默认）</label>
-                <input type="url" class="form-input" id="set-pet-avatar" placeholder="https://..." />
+                <input type="url" class="form-input" id="set-pet-avatar"
+                  placeholder="https://..." />
               </div>
-
               <div class="form-group">
                 <label class="form-label">预设性格</label>
                 <select class="form-select" id="set-pet-personality">
@@ -238,77 +253,83 @@
                   <option value="calm">冷静</option>
                 </select>
               </div>
-
               <div class="form-group">
-                <label class="form-label">自定义性格提示词（覆盖预设）</label>
-                <textarea class="form-textarea" id="set-pet-custom-prompt" placeholder="描述宠物的性格、说话方式..."></textarea>
+                <label class="form-label">自定义性格提示词</label>
+                <textarea class="form-textarea" id="set-pet-custom-prompt"
+                  placeholder="描述宠物的性格、说话方式..."></textarea>
               </div>
+            </div>
 
-              <div class="settings-section-title" style="margin-top:16px;">⏱ 属性衰减速率（每小时）</div>
-
+            <div class="settings-section">
+              <div class="settings-section-title">属性衰减速率（每小时）</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
-                  <label class="form-label">🍖 饥饿衰减</label>
-                  <input type="number" class="form-input" id="set-decay-hunger" min="0" max="20" step="0.5" value="2" />
+                  <label class="form-label">🍖 饥饿</label>
+                  <input type="number" class="form-input" id="set-decay-hunger"
+                    min="0" max="20" step="0.5" value="2" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">😊 心情衰减</label>
-                  <input type="number" class="form-input" id="set-decay-mood" min="0" max="20" step="0.5" value="1.5" />
+                  <label class="form-label">😊 心情</label>
+                  <input type="number" class="form-input" id="set-decay-mood"
+                    min="0" max="20" step="0.5" value="1.5" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">❤️ 健康衰减</label>
-                  <input type="number" class="form-input" id="set-decay-health" min="0" max="20" step="0.5" value="0.5" />
+                  <label class="form-label">❤️ 健康</label>
+                  <input type="number" class="form-input" id="set-decay-health"
+                    min="0" max="20" step="0.5" value="0.5" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">🚿 清洁衰减</label>
-                  <input type="number" class="form-input" id="set-decay-clean" min="0" max="20" step="0.5" value="1" />
+                  <label class="form-label">🚿 清洁</label>
+                  <input type="number" class="form-input" id="set-decay-clean"
+                    min="0" max="20" step="0.5" value="1" />
                 </div>
               </div>
-
-              <button class="btn btn-primary" id="btn-save-pet-settings" style="width:100%; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-save-pet-settings"
+                style="width:100%; margin-top:4px;">
                 保存宠物设置
               </button>
             </div>
           </div>
 
-          <!-- ── Tab: API 设置 ── -->
+          <!-- ── Tab: API ── -->
           <div id="tab-api" class="tab-content">
             <div class="settings-section">
-              <div class="settings-section-title">🤖 API 配置</div>
-
+              <div class="settings-section-title">API 配置</div>
               <div class="form-group">
                 <label class="form-label">Base URL</label>
                 <input type="url" class="form-input" id="set-api-base"
                   placeholder="https://api.openai.com" />
               </div>
-
               <div class="form-group">
                 <label class="form-label">API Key</label>
                 <input type="password" class="form-input" id="set-api-key"
                   placeholder="sk-..." autocomplete="off" />
               </div>
-
               <div class="form-group">
-                <label class="form-label">选择模型</label>
+                <label class="form-label">模型选择</label>
                 <div style="display:flex; gap:8px;">
-                  <select class="form-select" id="set-model-select" style="flex:1">
+                  <select class="form-select" id="set-model-select" style="flex:1;">
                     <option value="">— 先获取模型列表 —</option>
                   </select>
-                  <button class="btn btn-ghost" id="btn-fetch-models" style="white-space:nowrap; flex-shrink:0;">
+                  <button class="btn btn-ghost" id="btn-fetch-models"
+                    style="flex:0 0 auto; padding:11px 16px; border-radius:var(--radius-sm);">
                     获取
                   </button>
                 </div>
                 <div class="form-error-text" id="model-fetch-error"></div>
               </div>
+            </div>
 
-              <div class="settings-section-title" style="margin-top:16px;">🌍 全局提示词</div>
+            <div class="settings-section">
+              <div class="settings-section-title">全局提示词</div>
               <div class="form-group">
                 <label class="form-label">控制所有 AI 的基础言行</label>
                 <textarea class="form-textarea" id="set-global-prompt"
-                  placeholder="你是一只可爱的电子宠物..." style="min-height:90px;"></textarea>
+                  placeholder="你是一只可爱的电子宠物..."
+                  style="min-height:100px;"></textarea>
               </div>
-
-              <button class="btn btn-primary" id="btn-save-api-settings" style="width:100%; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-save-api-settings"
+                style="width:100%; margin-top:4px;">
                 保存 API 设置
               </button>
             </div>
@@ -317,64 +338,61 @@
           <!-- ── Tab: AI 家长 ── -->
           <div id="tab-parent" class="tab-content">
             <div class="settings-section">
-              <div class="settings-section-title">👩 AI 家长设置</div>
-
+              <div class="settings-section-title">AI 家长</div>
               <div class="form-group">
                 <label class="form-label">家长名字</label>
-                <input type="text" class="form-input" id="set-parent-name" placeholder="妈妈" maxlength="20" />
+                <input type="text" class="form-input" id="set-parent-name"
+                  placeholder="妈妈" maxlength="20" />
               </div>
-
               <div class="form-group">
-                <label class="form-label">头像 URL（留空使用默认）</label>
-                <input type="url" class="form-input" id="set-parent-avatar" placeholder="https://..." />
+                <label class="form-label">头像 URL</label>
+                <input type="url" class="form-input" id="set-parent-avatar"
+                  placeholder="https://..." />
               </div>
-
               <div class="form-group">
                 <label class="form-label">性格关键词</label>
                 <input type="text" class="form-input" id="set-parent-personality"
                   placeholder="温柔体贴，偶尔严格" maxlength="50" />
               </div>
-
               <div class="form-group">
                 <label class="form-label">专属提示词</label>
                 <textarea class="form-textarea" id="set-parent-prompt"
                   placeholder="描述 AI 家长的行为方式..."></textarea>
               </div>
-
               <div class="form-group">
                 <label class="form-label">触发模式</label>
-                <div style="display:flex; gap:16px; padding:4px 0;">
-                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.7);">
+                <div style="display:flex; gap:10px; padding:4px 0;">
+                  <label style="display:flex; align-items:center; gap:8px;
+                                cursor:pointer; font-size:14px; color:var(--text-primary);">
                     <input type="radio" name="parent-mode" value="timer" checked
-                      style="accent-color:var(--phosphor-green);" />
+                      style="accent-color:var(--text-primary); width:16px; height:16px;" />
                     定时触发
                   </label>
-                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.7);">
+                  <label style="display:flex; align-items:center; gap:8px;
+                                cursor:pointer; font-size:14px; color:var(--text-primary);">
                     <input type="radio" name="parent-mode" value="status"
-                      style="accent-color:var(--phosphor-green);" />
+                      style="accent-color:var(--text-primary); width:16px; height:16px;" />
                     状态触发
                   </label>
                 </div>
               </div>
-
               <div class="form-group">
                 <label class="form-label">触发间隔（小时）</label>
                 <input type="number" class="form-input" id="set-parent-interval"
                   min="1" max="72" step="1" value="4" />
               </div>
-
-              <button class="btn btn-primary" id="btn-save-parent-settings" style="width:100%; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-save-parent-settings"
+                style="width:100%; margin-top:4px;">
                 保存家长设置
               </button>
             </div>
           </div>
 
-          <!-- ── Tab: 通知设置 ── -->
+          <!-- ── Tab: 通知 ── -->
           <div id="tab-notify" class="tab-content">
             <div class="settings-section">
-              <div class="settings-section-title">🔔 推送通知</div>
-
-              <div class="retro-card" style="margin: 0 0 14px;">
+              <div class="settings-section-title">推送通知</div>
+              <div class="card card-sm" style="margin-bottom:16px; padding:4px 16px;">
                 <div class="toggle-row">
                   <span class="toggle-label">启用推送通知</span>
                   <label class="toggle-switch">
@@ -384,32 +402,31 @@
                 </div>
               </div>
 
-              <div class="settings-section-title">⚠ 告警阈值（低于此值触发通知）</div>
-
+              <div class="settings-section-title">告警阈值</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
-                  <label class="form-label">🍖 饥饿告警</label>
+                  <label class="form-label">🍖 饥饿</label>
                   <input type="number" class="form-input" id="set-thresh-hunger"
                     min="0" max="100" step="5" value="20" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">😊 心情告警</label>
+                  <label class="form-label">😊 心情</label>
                   <input type="number" class="form-input" id="set-thresh-mood"
                     min="0" max="100" step="5" value="20" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">❤️ 健康告警</label>
+                  <label class="form-label">❤️ 健康</label>
                   <input type="number" class="form-input" id="set-thresh-health"
                     min="0" max="100" step="5" value="20" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">🚿 清洁告警</label>
+                  <label class="form-label">🚿 清洁</label>
                   <input type="number" class="form-input" id="set-thresh-clean"
                     min="0" max="100" step="5" value="20" />
                 </div>
               </div>
-
-              <button class="btn btn-primary" id="btn-save-notify-settings" style="width:100%; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-save-notify-settings"
+                style="width:100%; margin-top:4px;">
                 保存通知设置
               </button>
             </div>
@@ -418,74 +435,67 @@
           <!-- ── Tab: 数据管理 ── -->
           <div id="tab-data" class="tab-content">
             <div class="settings-section">
-              <div class="settings-section-title">🗑 数据管理</div>
-
-              <div style="display:flex; flex-direction:column; gap:10px;">
-
-                <div class="retro-card" style="margin:0;">
-                  <div style="font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:10px; line-height:1.5;">
-                    删除操作不可恢复，请谨慎操作。
-                  </div>
-
-                  <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button class="btn btn-ghost" id="btn-clear-chat" style="text-align:left; justify-content:flex-start;">
-                      🗨 删除所有聊天记录
-                    </button>
-                    <button class="btn btn-ghost" id="btn-clear-action-log" style="text-align:left; justify-content:flex-start;">
-                      📋 删除所有行为日志
-                    </button>
-                    <button class="btn btn-ghost" id="btn-clear-error-log" style="text-align:left; justify-content:flex-start;">
-                      🐛 删除所有报错日志
-                    </button>
-                    <button class="btn btn-ghost" id="btn-clear-scene-history" style="text-align:left; justify-content:flex-start;">
-                      🗺 删除所有冒险记录
-                    </button>
-                    <button class="btn btn-ghost" id="btn-delete-parent" style="text-align:left; justify-content:flex-start;">
-                      👩 删除 AI 家长数据
-                    </button>
-                    <button class="btn btn-ghost" id="btn-clear-friends" style="text-align:left; justify-content:flex-start;">
-                      🐾 删除所有宠物好友
-                    </button>
-                    <button class="btn btn-danger" id="btn-reset-pet" style="text-align:left; justify-content:flex-start; margin-top:4px;">
-                      ☢ 重置宠物（不可恢复）
-                    </button>
-                    <button class="btn btn-danger" id="btn-clear-all" style="text-align:left; justify-content:flex-start;">
-                      💣 清除全部数据
-                    </button>
-                  </div>
-                </div>
-
+              <div class="settings-section-title">数据管理</div>
+            </div>
+            <div class="card" style="margin:0 16px 16px; overflow:hidden;">
+              <div class="data-btn-row">
+                <span class="data-btn-label">聊天记录</span>
+                <button class="data-btn-action" id="btn-clear-chat">清除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label">行为日志</span>
+                <button class="data-btn-action" id="btn-clear-action-log">清除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label">报错日志</span>
+                <button class="data-btn-action" id="btn-clear-error-log">清除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label">冒险记录</span>
+                <button class="data-btn-action" id="btn-clear-scene-history">清除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label">AI 家长数据</span>
+                <button class="data-btn-action" id="btn-delete-parent">删除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label">所有好友</span>
+                <button class="data-btn-action" id="btn-clear-friends">清除</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label danger">重置宠物</span>
+                <button class="data-btn-action danger" id="btn-reset-pet">重置</button>
+              </div>
+              <div class="data-btn-row">
+                <span class="data-btn-label danger">清除全部数据</span>
+                <button class="data-btn-action danger" id="btn-clear-all">清除</button>
               </div>
             </div>
           </div>
 
           <!-- ── Tab: 日志 ── -->
           <div id="tab-logs" class="tab-content">
-            <div style="padding: 10px 12px 6px; display:flex; gap:8px; align-items:center; flex-shrink:0;">
-              <div style="display:flex; gap:4px; flex:1;">
-                <button class="tab-item active" data-log-tab="log-action" style="padding:6px 10px;">行为日志</button>
-                <button class="tab-item" data-log-tab="log-error" style="padding:6px 10px;">报错日志</button>
+            <div style="padding:14px 16px 8px; display:flex;
+                        align-items:center; justify-content:space-between;">
+              <div style="display:flex; gap:6px;">
+                <button class="chip active" data-log-tab="log-action">行为日志</button>
+                <button class="chip" data-log-tab="log-error">报错日志</button>
               </div>
-              <button class="btn btn-ghost" id="btn-export-logs" style="font-size:10px; padding:5px 10px;">
-                导出
-              </button>
+              <button class="btn btn-ghost btn-sm" id="btn-export-logs">导出</button>
             </div>
 
-            <!-- 行为日志 -->
             <div id="log-action" class="tab-content active scroll-list"
-              style="flex:1; max-height:380px; overflow-y:auto;">
+              style="max-height:420px; overflow-y:auto;">
               <div class="empty-state">
                 <div class="empty-state-icon">📋</div>
                 <div class="empty-state-text">暂无行为日志</div>
               </div>
             </div>
 
-            <!-- 报错日志 -->
             <div id="log-error" class="tab-content scroll-list"
-              style="flex:1; max-height:380px; overflow-y:auto;">
-              <div style="padding:8px 12px; display:flex; gap:6px; justify-content:flex-end;">
-                <button class="btn btn-danger" id="btn-clear-error-log-inline"
-                  style="font-size:10px; padding:5px 10px;">
+              style="max-height:420px; overflow-y:auto;">
+              <div style="padding:10px 16px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-danger btn-sm" id="btn-clear-error-log-inline">
                   全部清空
                 </button>
               </div>
@@ -496,8 +506,7 @@
                 </div>
               </div>
             </div>
-
-          </div><!-- /tab-logs -->
+          </div>
 
         </div><!-- /page-content -->
       </section><!-- /page-settings -->
@@ -527,9 +536,6 @@
 
 </div><!-- /app-shell -->
 
-<!-- ============================================================
-     Scripts — ES Modules
-     ============================================================ -->
 <script type="module">
 import { initGlobalErrorCapture, logInfo, logError, logWarn } from './js/logger.js';
 import { dbGet, dbSet, dbList, dbDelete, dbClear, dbAppend } from './js/db.js';
@@ -547,23 +553,60 @@ import {
 } from './js/pet.js';
 import { fetchModels } from './js/ai.js';
 
+// ── 主题切换 ─────────────────────────────────────────────────
+function initTheme() {
+  // 读取本地存储的主题
+  const saved = localStorage.getItem('petos-theme') || 'pink';
+  applyTheme(saved);
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyTheme(btn.dataset.theme);
+    });
+  });
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('petos-theme', theme);
+
+  // 更新按钮高亮
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
+  });
+
+  // 更新 meta theme-color
+  const colors = { pink: '#ffffff', mono: '#1a1a1a' };
+  document.querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', colors[theme] || '#ffffff');
+}
+
+// ── 心情文字映射 ─────────────────────────────────────────────
+function getMoodText(pet) {
+  if (!pet) return 'Loading...';
+  const mood = pet.mood;
+  if (mood >= 80) return 'Ready to play! ✨';
+  if (mood >= 60) return 'Feeling good 😊';
+  if (mood >= 40) return 'Just okay... 😐';
+  if (mood >= 20) return 'A bit sad 😢';
+  return 'Very unhappy 😭';
+}
+
 // ── 初始化 ───────────────────────────────────────────────────
 async function init() {
-  // 全局错误捕获
   initGlobalErrorCapture();
-
-  // 时钟
-  startClock();
-
-  // 路由
+  initTheme();
   initRouter();
 
   // 离线检测
-  window.addEventListener('online',  () => document.getElementById('offline-banner').classList.remove('show'));
-  window.addEventListener('offline', () => document.getElementById('offline-banner').classList.add('show'));
-  if (!navigator.onLine) document.getElementById('offline-banner').classList.add('show');
+  window.addEventListener('online',  () =>
+    document.getElementById('offline-banner').classList.remove('show'));
+  window.addEventListener('offline', () =>
+    document.getElementById('offline-banner').classList.add('show'));
+  if (!navigator.onLine)
+    document.getElementById('offline-banner').classList.add('show');
 
-  // 加载设置
+  // 加载数据
   let settings = await dbGet('settings', 'singleton');
   if (!settings) {
     settings = { ...DEFAULT_SETTINGS };
@@ -571,7 +614,6 @@ async function init() {
   }
   runtime.settings = settings;
 
-  // 加载 AI 家长
   let parent = await dbGet('aiParent', 'singleton');
   if (!parent) {
     parent = { ...DEFAULT_AI_PARENT };
@@ -579,37 +621,32 @@ async function init() {
   }
   runtime.aiParent = parent;
 
-  // 加载宠物 + 衰减结算
   await loadPet();
   await applyDecay();
 
-  // 渲染宠物 UI
   renderPetUI();
-
-  // 填充设置表单
   fillSettingsForms();
 
-  // 绑定所有事件
   bindPetActions();
   bindNavigation();
   bindSettingsTabs();
   bindLogTabs();
   bindSettingsSave();
   bindDataManagement();
+  bindFriendsPage();
 
-  // 监听宠物更新事件
+  // 监听宠物更新
   bus.on(EVENTS.PET_UPDATED, (pet) => {
     updateAllStatusBars(pet);
     renderPetAvatar(pet);
+    updateMoodCard(pet);
   });
 
-  // 定时衰减（每5分钟）
-  setInterval(async () => {
-    await applyDecay();
-  }, 5 * 60 * 1000);
+  // 定时衰减
+  setInterval(async () => { await applyDecay(); }, 5 * 60 * 1000);
 
   logInfo('app', 'PetOS initialized');
-  showToast('PetOS 已启动 ヾ(≧▽≦*)o', 'success', 2000);
+  showToast('PetOS 已启动 ✨', 'success', 2000);
 }
 
 // ── 渲染宠物 UI ──────────────────────────────────────────────
@@ -618,52 +655,46 @@ function renderPetUI() {
   if (!pet) return;
   renderPetAvatar(pet);
   updateAllStatusBars(pet);
-
+  updateMoodCard(pet);
   const nameTag = document.getElementById('pet-name-tag');
   if (nameTag) nameTag.textContent = pet.name || '小幽';
+}
+
+function updateMoodCard(pet) {
+  const el = document.getElementById('mood-card-text');
+  if (el) el.textContent = getMoodText(pet);
 }
 
 function renderPetAvatar(pet) {
-  const wrap = document.getElementById('pet-avatar');
-  if (!wrap) return;
+  const cssBody = document.getElementById('pet-css-body');
+  const imgEl   = document.getElementById('pet-avatar-img');
+  const nameTag = document.getElementById('pet-name-tag');
+
+  if (nameTag) nameTag.textContent = pet.name || '小幽';
 
   if (pet.avatarUrl) {
-    // 用户设置了头像 URL
-    if (wrap.tagName === 'IMG') {
-      wrap.src = pet.avatarUrl;
-    } else {
-      const img = document.createElement('img');
-      img.id  = 'pet-avatar';
-      img.src = pet.avatarUrl;
-      img.alt = pet.name;
-      img.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;animation:breathe 3s ease-in-out infinite;cursor:pointer;border:3px solid rgba(255,255,255,0.2);box-shadow:0 0 20px rgba(168,255,120,0.15),0 4px 12px rgba(0,0,0,0.4);';
-      wrap.replaceWith(img);
-      // 重新绑定点击
-      img.addEventListener('click', onPetAvatarClick);
+    if (cssBody) cssBody.style.display = 'none';
+    if (imgEl) {
+      imgEl.src = pet.avatarUrl;
+      imgEl.alt = pet.name || '宠物';
+      imgEl.style.display = 'block';
+      imgEl.onerror = () => {
+        imgEl.style.display = 'none';
+        if (cssBody) cssBody.style.display = 'block';
+      };
     }
   } else {
-    // 默认 emoji 宠物
-    if (wrap.tagName !== 'DIV') {
-      const div = document.createElement('div');
-      div.id        = 'pet-avatar';
-      div.className = 'pet-default-art';
-      div.textContent = '🐱';
-      wrap.replaceWith(div);
-      div.addEventListener('click', onPetAvatarClick);
-    }
+    if (imgEl)   imgEl.style.display   = 'none';
+    if (cssBody) cssBody.style.display = 'block';
   }
-
-  const nameTag = document.getElementById('pet-name-tag');
-  if (nameTag) nameTag.textContent = pet.name || '小幽';
 }
 
-// ── 宠物头像点击 → 情绪气泡 ─────────────────────────────────
-async function onPetAvatarClick() {
+// ── 宠物点击 → 情绪气泡 ─────────────────────────────────────
+async function onPetClick() {
   const bubble = document.getElementById('emotion-bubble');
-  if (!bubble) return;
+  if (!bubble || runtime.isAIBusy) return;
 
-  // 显示 loading
-  bubble.textContent = '';
+  bubble.innerHTML = '';
   bubble.appendChild(createTypingIndicator());
   bubble.classList.add('show');
 
@@ -679,97 +710,50 @@ async function onPetAvatarClick() {
   }
 }
 
-// ── 绑定宠物操作按钮 ─────────────────────────────────────────
+// ── 绑定宠物操作 ─────────────────────────────────────────────
 function bindPetActions() {
-  // 头像点击
-  const avatar = document.getElementById('pet-avatar');
-  if (avatar) avatar.addEventListener('click', onPetAvatarClick);
+  document.getElementById('pet-css-body')?.addEventListener('click', onPetClick);
+  document.getElementById('pet-avatar-img')?.addEventListener('click', onPetClick);
 
-  // 喂食
-  document.getElementById('btn-feed')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      await feedPet();
-      showToast('喂食成功！🍖 饥饿度 +25', 'success');
-      appendChatLine('system', '你喂了宠物一些食物 🍖');
-    } catch (err) {
-      showToast('喂食失败：' + err.message, 'error');
-      logError('app', 'feedPet failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '🍖');
-    }
-  });
+  const actions = [
+    { id: 'btn-feed',  fn: feedPet,      msg: '喂食成功 🍖 +25',  log: '你喂了宠物食物 🍖' },
+    { id: 'btn-play',  fn: playWithPet,  msg: '玩耍成功 🎮 +20',  log: '你和宠物玩耍了 🎮' },
+    { id: 'btn-clean', fn: cleanPet,     msg: '洗澡完成 🚿 +30',  log: '你帮宠物洗澡了 🚿' },
+    { id: 'btn-heal',  fn: healPet,      msg: '治疗完成 💊 +20',  log: '你给宠物治疗了 💊' },
+  ];
 
-  // 玩耍
-  document.getElementById('btn-play')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      await playWithPet();
-      showToast('玩耍成功！🎮 心情 +20', 'success');
-      appendChatLine('system', '你和宠物玩了一会儿 🎮');
-    } catch (err) {
-      showToast('玩耍失败：' + err.message, 'error');
-      logError('app', 'playWithPet failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '🎮');
-    }
-  });
-
-  // 洗澡
-  document.getElementById('btn-clean')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      await cleanPet();
-      showToast('洗澡完成！🚿 清洁度 +30', 'success');
-      appendChatLine('system', '你帮宠物洗了个澡 🚿');
-    } catch (err) {
-      showToast('洗澡失败：' + err.message, 'error');
-      logError('app', 'cleanPet failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '🚿');
-    }
-  });
-
-  // 治疗
-  document.getElementById('btn-heal')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      await healPet();
-      showToast('治疗完成！💊 健康 +20', 'success');
-      appendChatLine('system', '你给宠物吃了药 💊');
-    } catch (err) {
-      showToast('治疗失败：' + err.message, 'error');
-      logError('app', 'healPet failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '💊');
-    }
+  actions.forEach(({ id, fn, msg, log }) => {
+    document.getElementById(id)?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await fn();
+        showToast(msg, 'success');
+        appendChatLine('system', log);
+      } catch (err) {
+        showToast('操作失败：' + err.message, 'error');
+        logError('app', `${id} failed`, { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+      }
+    });
   });
 
   // 发送对话
-  const sendBtn   = document.getElementById('pet-send-btn');
-  const inputEl   = document.getElementById('pet-input');
-  let   abortCtrl = null;
+  const sendBtn = document.getElementById('pet-send-btn');
+  const inputEl = document.getElementById('pet-input');
+  let abortCtrl = null;
 
   const doSend = async () => {
     const text = inputEl?.value?.trim();
     if (!text) return;
-    if (runtime.isAIBusy) {
-      showToast('宠物正在思考中...', 'warn');
-      return;
-    }
+    if (runtime.isAIBusy) { showToast('宠物正在思考...', 'warn'); return; }
 
     inputEl.value = '';
     runtime.isAIBusy = true;
-    setButtonLoading(sendBtn, true);
+    if (sendBtn) sendBtn.disabled = true;
 
-    // 显示用户消息
     appendChatLine('user', text);
-
-    // 显示打字动效
     const typingLine = appendChatLine('pet', null, true);
 
     abortCtrl = new AbortController();
@@ -781,43 +765,37 @@ function bindPetActions() {
         signal:   abortCtrl.signal,
         onChunk: (delta) => {
           replyText += delta;
-          // 流式更新
-          if (typingLine) typingLine.textContent = replyText;
+          if (typingLine) typingLine.textContent =
+            `${runtime.pet?.name || '宠物'}：${replyText}`;
         },
       });
+      if (typingLine && !replyText)
+        typingLine.textContent = `${runtime.pet?.name || '宠物'}：(´-ω-`)`;
 
-      // 最终文本
-      if (typingLine) typingLine.textContent = replyText || '(´-ω-`)';
-
-      // 写入聊天历史
       await dbAppend('chatHistory', {
-        id:        Date.now() + Math.random(),
-        role:      'assistant',
-        content:   replyText,
-        petName:   runtime.pet?.name,
+        id: Date.now() + Math.random(),
+        role: 'assistant',
+        content: replyText,
+        petName: runtime.pet?.name,
         createdAt: Date.now(),
       });
-
     } catch (err) {
       if (typingLine) typingLine.remove();
       if (err.message !== 'AI 请求已取消') {
-        showToast('AI 回复失败：' + err.message, 'error');
+        showToast('回复失败：' + err.message, 'error');
         logError('app', 'petChat failed', { stack: err.stack });
         appendChatLine('system', '⚠ 回复失败，请检查 API 设置');
       }
     } finally {
       runtime.isAIBusy = false;
-      setButtonLoading(sendBtn, false, '发送');
+      if (sendBtn) sendBtn.disabled = false;
       abortCtrl = null;
     }
   };
 
   sendBtn?.addEventListener('click', doSend);
   inputEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      doSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
   });
 }
 
@@ -832,24 +810,29 @@ function appendChatLine(role, text, isTyping = false) {
   if (isTyping) {
     line.appendChild(createTypingIndicator());
   } else {
-    line.textContent = role === 'pet'
-      ? `${runtime.pet?.name || '宠物'}：${text}`
-      : role === 'user'
-        ? `你：${text}`
-        : text;
+    switch (role) {
+      case 'pet':
+        line.textContent = `${runtime.pet?.name || '宠物'}：${text}`;
+        break;
+      case 'user':
+        line.textContent = `你：${text}`;
+        break;
+      default:
+        line.textContent = text;
+    }
   }
 
   area.appendChild(line);
 
-  // 限制显示条数，防止内存膨胀
+  // 最多保留 60 条，防止内存膨胀
   const lines = area.querySelectorAll('.chat-line');
-  if (lines.length > 50) lines[0].remove();
+  if (lines.length > 60) lines[0].remove();
 
   area.scrollTop = area.scrollHeight;
   return line;
 }
 
-// ── 底部导航绑定 ─────────────────────────────────────────────
+// ── 底部导航 ─────────────────────────────────────────────────
 function bindNavigation() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -861,23 +844,24 @@ function bindNavigation() {
 
 // ── 设置页 Tab 切换 ──────────────────────────────────────────
 function bindSettingsTabs() {
-  document.querySelectorAll('.tab-bar .tab-item').forEach(tab => {
+  const tabBar     = document.querySelector('#page-settings .tab-bar');
+  const pageContent = document.querySelector('#page-settings .page-content');
+  if (!tabBar || !pageContent) return;
+
+  tabBar.querySelectorAll('.tab-item').forEach(tab => {
     tab.addEventListener('click', () => {
       const targetId = tab.dataset.tab;
       if (!targetId) return;
 
       // 更新 tab 高亮
-      tab.closest('.tab-bar').querySelectorAll('.tab-item').forEach(t => {
+      tabBar.querySelectorAll('.tab-item').forEach(t => {
         t.classList.toggle('active', t === tab);
       });
 
-            // 切换内容
-      const pageContent = document.getElementById('tab-pet')?.closest('.page-content');
-      if (pageContent) {
-        pageContent.querySelectorAll('.tab-content').forEach(c => {
-          c.classList.toggle('active', c.id === targetId);
-        });
-      }
+      // 切换内容面板
+      pageContent.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === targetId);
+      });
     });
   });
 }
@@ -888,41 +872,42 @@ function bindLogTabs() {
     btn.addEventListener('click', () => {
       const targetId = btn.dataset.logTab;
 
-      // 高亮
+      // chip 高亮
       document.querySelectorAll('[data-log-tab]').forEach(b => {
         b.classList.toggle('active', b === btn);
       });
 
-      // 切换
+      // 面板切换
       ['log-action', 'log-error'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('active', id === targetId);
       });
 
-      // 切换到报错日志时刷新
-      if (targetId === 'log-error') renderErrorLogs();
+      if (targetId === 'log-error')  renderErrorLogs();
       if (targetId === 'log-action') renderActionLogs();
     });
   });
 
-  // 导出日志
-  document.getElementById('btn-export-logs')?.addEventListener('click', exportLogs);
+  // 导出
+  document.getElementById('btn-export-logs')
+    ?.addEventListener('click', exportLogs);
 
-  // 清空报错日志（内联按钮）
-  document.getElementById('btn-clear-error-log-inline')?.addEventListener('click', async () => {
-    const ok = await showModal({
-      title:       '清空报错日志',
-      body:        '确定要清空所有报错日志吗？此操作不可恢复。',
-      confirmText: '清空',
-      danger:      true,
+  // 清空报错日志（内联）
+  document.getElementById('btn-clear-error-log-inline')
+    ?.addEventListener('click', async () => {
+      const ok = await showModal({
+        title: '清空报错日志',
+        body:  '确定要清空所有报错日志吗？此操作不可恢复。',
+        confirmText: '清空',
+        danger: true,
+      });
+      if (!ok) return;
+      await dbClear('errorLog');
+      showToast('报错日志已清空', 'success');
+      renderErrorLogs();
     });
-    if (!ok) return;
-    await dbClear('errorLog');
-    showToast('报错日志已清空', 'success');
-    renderErrorLogs();
-  });
 
-  // 页面切换到设置时自动刷新日志
+  // 切换到设置页时自动刷新日志
   bus.on(EVENTS.PAGE_CHANGED, ({ page }) => {
     if (page === 'settings') {
       renderActionLogs();
@@ -942,7 +927,8 @@ async function renderErrorLogs() {
   try {
     logs = await dbList('errorLog', { limit: 200 });
   } catch (err) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+    container.innerHTML =
+      '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
     return;
   }
 
@@ -955,6 +941,8 @@ async function renderErrorLogs() {
     return;
   }
 
+  const frag = document.createDocumentFragment();
+
   logs.forEach(entry => {
     const el = document.createElement('div');
     el.className = 'log-entry';
@@ -964,6 +952,7 @@ async function renderErrorLogs() {
       hour:  '2-digit', minute: '2-digit', second: '2-digit',
     });
 
+    // header
     const header = document.createElement('div');
     header.className = 'log-entry-header';
 
@@ -983,44 +972,59 @@ async function renderErrorLogs() {
     header.appendChild(sourceEl);
     header.appendChild(timeEl);
 
+    // message
     const msgEl = document.createElement('div');
     msgEl.className = 'log-message';
     msgEl.textContent = entry.message || '';
 
-    el.appendChild(header);
-    el.appendChild(msgEl);
-
     // stack 展开
     if (entry.stack) {
+      const toggleBtn = document.createElement('span');
+      toggleBtn.style.cssText =
+        'cursor:pointer; color:var(--text-tertiary); font-size:11px;' +
+        'margin-left:6px; font-weight:600;';
+      toggleBtn.textContent = '展开';
+
       const stackEl = document.createElement('div');
       stackEl.className = 'log-stack';
       stackEl.textContent = entry.stack;
 
-      const toggleBtn = document.createElement('span');
-      toggleBtn.style.cssText = 'cursor:pointer; color:rgba(255,255,255,0.3); font-size:9px; margin-left:4px;';
-      toggleBtn.textContent = '[展开]';
       toggleBtn.addEventListener('click', () => {
-        const isOpen = stackEl.classList.toggle('show');
-        toggleBtn.textContent = isOpen ? '[收起]' : '[展开]';
+        const open = stackEl.classList.toggle('show');
+        toggleBtn.textContent = open ? '收起' : '展开';
       });
+
       msgEl.appendChild(toggleBtn);
+      el.appendChild(header);
+      el.appendChild(msgEl);
       el.appendChild(stackEl);
+    } else {
+      el.appendChild(header);
+      el.appendChild(msgEl);
     }
 
-    // 单条删除按钮
+    // 单条删除
+    const footer = document.createElement('div');
+    footer.style.cssText = 'margin-top:6px;';
+
     const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn danger';
-    delBtn.style.cssText = 'margin-top:4px; width:auto; padding:2px 8px; font-size:9px; height:auto;';
+    delBtn.className = 'btn btn-ghost btn-sm';
+    delBtn.style.cssText =
+      'padding:4px 10px; font-size:11px; border-radius:var(--radius-full);' +
+      'color:var(--text-tertiary);';
     delBtn.textContent = '删除';
     delBtn.addEventListener('click', async () => {
       await dbDelete('errorLog', entry.id);
       el.remove();
       showToast('已删除', 'info', 1500);
     });
-    el.appendChild(delBtn);
 
-    container.appendChild(el);
+    footer.appendChild(delBtn);
+    el.appendChild(footer);
+    frag.appendChild(el);
   });
+
+  container.appendChild(frag);
 }
 
 // ── 渲染行为日志 ─────────────────────────────────────────────
@@ -1028,14 +1032,14 @@ async function renderActionLogs() {
   const container = document.getElementById('log-action');
   if (!container) return;
 
-  // 清空旧内容（保留空状态模板）
   container.innerHTML = '';
 
   let logs = [];
   try {
     logs = await dbList('actionLog', { limit: 200 });
   } catch (err) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
+    container.innerHTML =
+      '<div class="empty-state"><div class="empty-state-text">加载失败</div></div>';
     return;
   }
 
@@ -1048,12 +1052,14 @@ async function renderActionLogs() {
     return;
   }
 
+  const frag = document.createDocumentFragment();
+
   // 顶部清空按钮
-  const clearBar = document.createElement('div');
-  clearBar.style.cssText = 'padding:8px 12px; display:flex; justify-content:flex-end;';
+  const toolbar = document.createElement('div');
+  toolbar.style.cssText =
+    'padding:10px 16px; display:flex; justify-content:flex-end;';
   const clearBtn = document.createElement('button');
-  clearBtn.className = 'btn btn-ghost';
-  clearBtn.style.cssText = 'font-size:10px; padding:5px 10px;';
+  clearBtn.className = 'btn btn-ghost btn-sm';
   clearBtn.textContent = '全部清空';
   clearBtn.addEventListener('click', async () => {
     const ok = await showModal({
@@ -1067,8 +1073,8 @@ async function renderActionLogs() {
     showToast('行为日志已清空', 'success');
     renderActionLogs();
   });
-  clearBar.appendChild(clearBtn);
-  container.appendChild(clearBar);
+  toolbar.appendChild(clearBtn);
+  frag.appendChild(toolbar);
 
   logs.forEach(entry => {
     const el = document.createElement('div');
@@ -1102,10 +1108,14 @@ async function renderActionLogs() {
     msgEl.className = 'log-message';
     msgEl.textContent = entry.message || entry.content || '';
 
-    // 单条删除
+    const footer = document.createElement('div');
+    footer.style.cssText = 'margin-top:6px;';
+
     const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn danger';
-    delBtn.style.cssText = 'margin-top:4px; width:auto; padding:2px 8px; font-size:9px; height:auto;';
+    delBtn.className = 'btn btn-ghost btn-sm';
+    delBtn.style.cssText =
+      'padding:4px 10px; font-size:11px; border-radius:var(--radius-full);' +
+      'color:var(--text-tertiary);';
     delBtn.textContent = '删除';
     delBtn.addEventListener('click', async () => {
       await dbDelete('actionLog', entry.id);
@@ -1113,34 +1123,46 @@ async function renderActionLogs() {
       showToast('已删除', 'info', 1500);
     });
 
+    footer.appendChild(delBtn);
     el.appendChild(header);
     el.appendChild(msgEl);
-    el.appendChild(delBtn);
-    container.appendChild(el);
+    el.appendChild(footer);
+    frag.appendChild(el);
   });
+
+  container.appendChild(frag);
 }
 
 // ── 导出日志 ─────────────────────────────────────────────────
 async function exportLogs() {
+  const btn = document.getElementById('btn-export-logs');
+  if (btn) btn.disabled = true;
+  showToast('正在导出...', 'info', 2000);
+
   try {
     const [errorLogs, actionLogs] = await Promise.all([
       dbList('errorLog',  { limit: 9999 }),
       dbList('actionLog', { limit: 9999 }),
     ]);
 
+    const fmt = (ts) => new Date(ts).toLocaleString('zh-CN');
+
     const lines = [
       '=== PetOS 日志导出 ===',
-      `导出时间：${new Date().toLocaleString('zh-CN')}`,
+      `导出时间：${fmt(Date.now())}`,
+      `行为日志：${actionLogs.length} 条`,
+      `报错日志：${errorLogs.length} 条`,
       '',
-      '=== 行为日志 ===',
+      '─── 行为日志 ───',
       ...actionLogs.map(e =>
-        `[${new Date(e.createdAt).toLocaleString('zh-CN')}] [${e.type || 'EVENT'}] ${e.source || ''} ${e.message || e.content || ''}`
+        `[${fmt(e.createdAt)}] [${e.type || 'EVENT'}] [${e.source || '-'}] ${e.message || e.content || ''}`
       ),
       '',
-      '=== 报错日志 ===',
-      ...errorLogs.map(e =>
-        `[${new Date(e.createdAt).toLocaleString('zh-CN')}] [${(e.level || 'info').toUpperCase()}] [${e.source || ''}] ${e.message || ''}\n${e.stack ? '  Stack: ' + e.stack : ''}`
-      ),
+      '─── 报错日志 ───',
+      ...errorLogs.map(e => [
+        `[${fmt(e.createdAt)}] [${(e.level || 'info').toUpperCase()}] [${e.source || '-'}] ${e.message || ''}`,
+        e.stack ? `  Stack: ${e.stack}` : null,
+      ].filter(Boolean).join('\n')),
     ];
 
     const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
@@ -1148,14 +1170,18 @@ async function exportLogs() {
     const a    = document.createElement('a');
     a.href     = url;
     a.download = `petos-logs-${Date.now()}.txt`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast('日志已导出', 'success');
+    showToast('日志已导出 ✓', 'success');
     logInfo('app', 'Logs exported');
   } catch (err) {
     showToast('导出失败：' + err.message, 'error');
     logError('app', 'Export logs failed', { stack: err.stack });
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -1165,300 +1191,283 @@ function fillSettingsForms() {
   const p = runtime.pet      || {};
   const a = runtime.aiParent || {};
 
-  // 宠物设置
-  _setVal('set-pet-name',         p.name        || '');
-  _setVal('set-pet-avatar',       p.avatarUrl   || '');
-  _setVal('set-pet-personality',  p.personality || 'genki');
-  _setVal('set-pet-custom-prompt',p.customPrompt|| '');
-  _setVal('set-decay-hunger',     s.decayRates?.hunger  ?? 2);
-  _setVal('set-decay-mood',       s.decayRates?.mood    ?? 1.5);
-  _setVal('set-decay-health',     s.decayRates?.health  ?? 0.5);
-  _setVal('set-decay-clean',      s.decayRates?.clean   ?? 1);
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? '';
+  };
 
-  // API 设置
-  _setVal('set-api-base',     s.apiBase       || '');
-  _setVal('set-api-key',      s.apiKey        || '');
-  _setVal('set-global-prompt',s.globalPrompt  || '');
+  // 宠物
+  set('set-pet-name',          p.name         || '');
+  set('set-pet-avatar',        p.avatarUrl    || '');
+  set('set-pet-personality',   p.personality  || 'genki');
+  set('set-pet-custom-prompt', p.customPrompt || '');
+  set('set-decay-hunger',      s.decayRates?.hunger  ?? 2);
+  set('set-decay-mood',        s.decayRates?.mood    ?? 1.5);
+  set('set-decay-health',      s.decayRates?.health  ?? 0.5);
+  set('set-decay-clean',       s.decayRates?.clean   ?? 1);
 
-  // 如果已有 selectedModel，加入 select
+  // API
+  set('set-api-base',      s.apiBase      || '');
+  set('set-api-key',       s.apiKey       || '');
+  set('set-global-prompt', s.globalPrompt || '');
+
   if (s.selectedModel) {
     const sel = document.getElementById('set-model-select');
     if (sel) {
-      // 检查是否已有该 option
       const exists = Array.from(sel.options).some(o => o.value === s.selectedModel);
       if (!exists) {
         const opt = document.createElement('option');
-        opt.value       = s.selectedModel;
-        opt.textContent = s.selectedModel;
+        opt.value = opt.textContent = s.selectedModel;
         sel.appendChild(opt);
       }
       sel.value = s.selectedModel;
     }
   }
 
-  // AI 家长
-  _setVal('set-parent-name',        a.name        || '');
-  _setVal('set-parent-avatar',      a.avatarUrl   || '');
-  _setVal('set-parent-personality', a.personality || '');
-  _setVal('set-parent-prompt',      a.customPrompt|| '');
-  _setVal('set-parent-interval',    s.aiParentInterval ?? 4);
+  // 家长
+  set('set-parent-name',        a.name         || '');
+  set('set-parent-avatar',      a.avatarUrl    || '');
+  set('set-parent-personality', a.personality  || '');
+  set('set-parent-prompt',      a.customPrompt || '');
+  set('set-parent-interval',    s.aiParentInterval ?? 4);
 
-  const modeRadios = document.querySelectorAll('input[name="parent-mode"]');
-  modeRadios.forEach(r => { r.checked = r.value === (s.aiParentMode || 'timer'); });
+  document.querySelectorAll('input[name="parent-mode"]').forEach(r => {
+    r.checked = r.value === (s.aiParentMode || 'timer');
+  });
 
-  // 通知设置
+  // 通知
   const notifyEl = document.getElementById('set-notify-enabled');
   if (notifyEl) notifyEl.checked = !!s.notifyEnabled;
-  _setVal('set-thresh-hunger', s.notifyThresholds?.hunger ?? 20);
-  _setVal('set-thresh-mood',   s.notifyThresholds?.mood   ?? 20);
-  _setVal('set-thresh-health', s.notifyThresholds?.health ?? 20);
-  _setVal('set-thresh-clean',  s.notifyThresholds?.clean  ?? 20);
+  set('set-thresh-hunger', s.notifyThresholds?.hunger ?? 20);
+  set('set-thresh-mood',   s.notifyThresholds?.mood   ?? 20);
+  set('set-thresh-health', s.notifyThresholds?.health ?? 20);
+  set('set-thresh-clean',  s.notifyThresholds?.clean  ?? 20);
 }
 
-function _setVal(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.value = val;
-}
-
-// ── 绑定设置保存 ─────────────────────────────────────────────
+// ── 设置保存 ─────────────────────────────────────────────────
 function bindSettingsSave() {
 
-  // 保存宠物设置
-  document.getElementById('btn-save-pet-settings')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      const patch = {
-        name:         document.getElementById('set-pet-name')?.value.trim()         || runtime.pet?.name || '小幽',
-        avatarUrl:    document.getElementById('set-pet-avatar')?.value.trim()       || '',
-        personality:  document.getElementById('set-pet-personality')?.value         || 'genki',
-        customPrompt: document.getElementById('set-pet-custom-prompt')?.value.trim()|| '',
-      };
-      await savePet(patch);
-
-      const decayPatch = {
-        ...runtime.settings,
-        decayRates: {
-          hunger: parseFloat(document.getElementById('set-decay-hunger')?.value) || 2,
-          mood:   parseFloat(document.getElementById('set-decay-mood')?.value)   || 1.5,
-          health: parseFloat(document.getElementById('set-decay-health')?.value) || 0.5,
-          clean:  parseFloat(document.getElementById('set-decay-clean')?.value)  || 1,
-        },
-      };
-      await dbSet('settings', decayPatch);
-      runtime.settings = decayPatch;
-
-      showToast('宠物设置已保存 ✓', 'success');
-      logInfo('app', 'Pet settings saved');
-      renderPetUI();
-    } catch (err) {
-      showToast('保存失败：' + err.message, 'error');
-      logError('app', 'Save pet settings failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '保存宠物设置');
-    }
-  });
-
-  // 获取模型列表
-  document.getElementById('btn-fetch-models')?.addEventListener('click', async (e) => {
-    const btn      = e.currentTarget;
-    const baseEl   = document.getElementById('set-api-base');
-    const keyEl    = document.getElementById('set-api-key');
-    const selEl    = document.getElementById('set-model-select');
-    const errEl    = document.getElementById('model-fetch-error');
-
-    // 清除旧错误
-    baseEl?.classList.remove('error');
-    keyEl?.classList.remove('error');
-    if (errEl) { errEl.textContent = ''; errEl.classList.remove('show'); }
-
-    const base = baseEl?.value.trim();
-    const key  = keyEl?.value.trim();
-
-    if (!base) {
-      baseEl?.classList.add('error');
-      if (errEl) { errEl.textContent = '请填写 Base URL'; errEl.classList.add('show'); }
-      return;
-    }
-    if (!key) {
-      keyEl?.classList.add('error');
-      if (errEl) { errEl.textContent = '请填写 API Key'; errEl.classList.add('show'); }
-      return;
-    }
-
-    setButtonLoading(btn, true);
-    showToast('正在获取模型列表...', 'info', 2000);
-
-    try {
-      const models = await fetchModels(base, key);
-
-      if (selEl) {
-        selEl.innerHTML = '';
-        models.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value       = m;
-          opt.textContent = m;
-          selEl.appendChild(opt);
+  // 宠物设置
+  document.getElementById('btn-save-pet-settings')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        await savePet({
+          name:         document.getElementById('set-pet-name')?.value.trim()          || runtime.pet?.name || '小幽',
+          avatarUrl:    document.getElementById('set-pet-avatar')?.value.trim()        || '',
+          personality:  document.getElementById('set-pet-personality')?.value          || 'genki',
+          customPrompt: document.getElementById('set-pet-custom-prompt')?.value.trim() || '',
         });
-        // 恢复之前选中的
-        if (runtime.settings?.selectedModel) {
-          selEl.value = runtime.settings.selectedModel;
+
+        const sp = {
+          ...runtime.settings,
+          decayRates: {
+            hunger: parseFloat(document.getElementById('set-decay-hunger')?.value) || 2,
+            mood:   parseFloat(document.getElementById('set-decay-mood')?.value)   || 1.5,
+            health: parseFloat(document.getElementById('set-decay-health')?.value) || 0.5,
+            clean:  parseFloat(document.getElementById('set-decay-clean')?.value)  || 1,
+          },
+        };
+        await dbSet('settings', sp);
+        runtime.settings = sp;
+
+        renderPetUI();
+        showToast('宠物设置已保存 ✓', 'success');
+        logInfo('app', 'Pet settings saved');
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save pet settings failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存宠物设置';
+      }
+    });
+
+  // 获取模型
+  document.getElementById('btn-fetch-models')
+    ?.addEventListener('click', async (e) => {
+      const btn    = e.currentTarget;
+      const baseEl = document.getElementById('set-api-base');
+      const keyEl  = document.getElementById('set-api-key');
+      const selEl  = document.getElementById('set-model-select');
+      const errEl  = document.getElementById('model-fetch-error');
+
+      baseEl?.classList.remove('error');
+      keyEl?.classList.remove('error');
+      if (errEl) { errEl.textContent = ''; errEl.classList.remove('show'); }
+
+      const base = baseEl?.value.trim();
+      const key  = keyEl?.value.trim();
+
+      if (!base) {
+        baseEl?.classList.add('error');
+        if (errEl) { errEl.textContent = '请填写 Base URL'; errEl.classList.add('show'); }
+        return;
+      }
+      if (!key) {
+        keyEl?.classList.add('error');
+        if (errEl) { errEl.textContent = '请填写 API Key'; errEl.classList.add('show'); }
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '···';
+      showToast('正在获取模型列表...', 'info', 3000);
+
+      try {
+        const models = await fetchModels(base, key);
+        if (selEl) {
+          selEl.innerHTML = '';
+          models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = m;
+            selEl.appendChild(opt);
+          });
+          if (runtime.settings?.selectedModel) {
+            selEl.value = runtime.settings.selectedModel;
+          }
         }
-      }
-
-      showToast(`获取成功，共 ${models.length} 个模型 ✓`, 'success');
-    } catch (err) {
-      baseEl?.classList.add('error');
-      if (errEl) {
-        errEl.textContent = '获取失败：' + err.message;
-        errEl.classList.add('show');
-      }
-      showToast('获取模型失败：' + err.message, 'error');
-      logError('app', 'fetchModels failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '获取');
-    }
-  });
-
-  // 保存 API 设置
-  document.getElementById('btn-save-api-settings')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      const patch = {
-        ...runtime.settings,
-        apiBase:       document.getElementById('set-api-base')?.value.trim()      || '',
-        apiKey:        document.getElementById('set-api-key')?.value.trim()       || '',
-        selectedModel: document.getElementById('set-model-select')?.value         || '',
-        globalPrompt:  document.getElementById('set-global-prompt')?.value.trim() || '',
-      };
-      await dbSet('settings', patch);
-      runtime.settings = patch;
-      showToast('API 设置已保存 ✓', 'success');
-      logInfo('app', 'API settings saved');
-    } catch (err) {
-      showToast('保存失败：' + err.message, 'error');
-      logError('app', 'Save API settings failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '保存 API 设置');
-    }
-  });
-
-  // 保存 AI 家长设置
-  document.getElementById('btn-save-parent-settings')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      const parentPatch = {
-        id:           'singleton',
-        name:         document.getElementById('set-parent-name')?.value.trim()        || '妈妈',
-        avatarUrl:    document.getElementById('set-parent-avatar')?.value.trim()      || '',
-        personality:  document.getElementById('set-parent-personality')?.value.trim() || '',
-        customPrompt: document.getElementById('set-parent-prompt')?.value.trim()      || '',
-      };
-      await dbSet('aiParent', parentPatch);
-      runtime.aiParent = parentPatch;
-
-      const modeVal = document.querySelector('input[name="parent-mode"]:checked')?.value || 'timer';
-      const settingsPatch = {
-        ...runtime.settings,
-        aiParentMode:     modeVal,
-        aiParentInterval: parseInt(document.getElementById('set-parent-interval')?.value) || 4,
-      };
-      await dbSet('settings', settingsPatch);
-      runtime.settings = settingsPatch;
-
-      showToast('家长设置已保存 ✓', 'success');
-      logInfo('app', 'Parent settings saved');
-    } catch (err) {
-      showToast('保存失败：' + err.message, 'error');
-      logError('app', 'Save parent settings failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '保存家长设置');
-    }
-  });
-
-  // 保存通知设置
-  document.getElementById('btn-save-notify-settings')?.addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    setButtonLoading(btn, true);
-    try {
-      const notifyEnabled = document.getElementById('set-notify-enabled')?.checked || false;
-
-      // 申请通知权限
-      if (notifyEnabled && 'Notification' in window) {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') {
-          showToast('通知权限被拒绝，请在浏览器设置中允许', 'warn');
+        showToast(`获取成功，共 ${models.length} 个模型 ✓`, 'success');
+      } catch (err) {
+        baseEl?.classList.add('error');
+        if (errEl) {
+          errEl.textContent = '获取失败：' + err.message;
+          errEl.classList.add('show');
         }
+        showToast('获取模型失败：' + err.message, 'error');
+        logError('app', 'fetchModels failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '获取';
       }
+    });
 
-      const patch = {
-        ...runtime.settings,
-        notifyEnabled,
-        notifyThresholds: {
-          hunger: parseInt(document.getElementById('set-thresh-hunger')?.value) || 20,
-          mood:   parseInt(document.getElementById('set-thresh-mood')?.value)   || 20,
-          health: parseInt(document.getElementById('set-thresh-health')?.value) || 20,
-          clean:  parseInt(document.getElementById('set-thresh-clean')?.value)  || 20,
-        },
-      };
-      await dbSet('settings', patch);
-      runtime.settings = patch;
-      showToast('通知设置已保存 ✓', 'success');
-      logInfo('app', 'Notify settings saved');
-    } catch (err) {
-      showToast('保存失败：' + err.message, 'error');
-      logError('app', 'Save notify settings failed', { stack: err.stack });
-    } finally {
-      setButtonLoading(btn, false, '保存通知设置');
-    }
-  });
+  // API 设置
+  document.getElementById('btn-save-api-settings')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        const patch = {
+          ...runtime.settings,
+          apiBase:       document.getElementById('set-api-base')?.value.trim()      || '',
+          apiKey:        document.getElementById('set-api-key')?.value.trim()       || '',
+          selectedModel: document.getElementById('set-model-select')?.value         || '',
+          globalPrompt:  document.getElementById('set-global-prompt')?.value.trim() || '',
+        };
+        await dbSet('settings', patch);
+        runtime.settings = patch;
+        showToast('API 设置已保存 ✓', 'success');
+        logInfo('app', 'API settings saved');
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save API settings failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存 API 设置';
+      }
+    });
+
+  // 家长设置
+  document.getElementById('btn-save-parent-settings')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        const parentPatch = {
+          id:           'singleton',
+          name:         document.getElementById('set-parent-name')?.value.trim()        || '妈妈',
+          avatarUrl:    document.getElementById('set-parent-avatar')?.value.trim()      || '',
+          personality:  document.getElementById('set-parent-personality')?.value.trim() || '',
+          customPrompt: document.getElementById('set-parent-prompt')?.value.trim()      || '',
+        };
+        await dbSet('aiParent', parentPatch);
+        runtime.aiParent = parentPatch;
+
+        const sp = {
+          ...runtime.settings,
+          aiParentMode:     document.querySelector('input[name="parent-mode"]:checked')?.value || 'timer',
+          aiParentInterval: parseInt(document.getElementById('set-parent-interval')?.value) || 4,
+        };
+        await dbSet('settings', sp);
+        runtime.settings = sp;
+
+        showToast('家长设置已保存 ✓', 'success');
+        logInfo('app', 'Parent settings saved');
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save parent settings failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存家长设置';
+      }
+    });
+
+  // 通知设置
+  document.getElementById('btn-save-notify-settings')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        const notifyEnabled = document.getElementById('set-notify-enabled')?.checked || false;
+        if (notifyEnabled && 'Notification' in window) {
+          const perm = await Notification.requestPermission();
+          if (perm !== 'granted') {
+            showToast('通知权限被拒绝，请在浏览器设置中允许', 'warn');
+          }
+        }
+        const patch = {
+          ...runtime.settings,
+          notifyEnabled,
+          notifyThresholds: {
+            hunger: parseInt(document.getElementById('set-thresh-hunger')?.value) || 20,
+            mood:   parseInt(document.getElementById('set-thresh-mood')?.value)   || 20,
+            health: parseInt(document.getElementById('set-thresh-health')?.value) || 20,
+            clean:  parseInt(document.getElementById('set-thresh-clean')?.value)  || 20,
+          },
+        };
+        await dbSet('settings', patch);
+        runtime.settings = patch;
+        showToast('通知设置已保存 ✓', 'success');
+        logInfo('app', 'Notify settings saved');
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save notify settings failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存通知设置';
+      }
+    });
 }
 
-// ── 数据管理按钮 ─────────────────────────────────────────────
+// ── 数据管理 ─────────────────────────────────────────────────
 function bindDataManagement() {
-  const actions = [
-    {
-      id:      'btn-clear-chat',
-      title:   '删除聊天记录',
-      body:    '确定要删除所有聊天记录吗？',
-      store:   'chatHistory',
-      toast:   '聊天记录已删除',
-    },
-    {
-      id:      'btn-clear-action-log',
-      title:   '删除行为日志',
-      body:    '确定要删除所有行为日志吗？',
-      store:   'actionLog',
-      toast:   '行为日志已删除',
-    },
-    {
-      id:      'btn-clear-error-log',
-      title:   '删除报错日志',
-      body:    '确定要删除所有报错日志吗？',
-      store:   'errorLog',
-      toast:   '报错日志已删除',
-    },
-    {
-      id:      'btn-clear-scene-history',
-      title:   '删除冒险记录',
-      body:    '确定要删除所有冒险记录吗？',
-      store:   'sceneHistory',
-      toast:   '冒险记录已删除',
-    },
+  const clearActions = [
+    { id: 'btn-clear-chat',         store: 'chatHistory', label: '聊天记录' },
+    { id: 'btn-clear-action-log',   store: 'actionLog',   label: '行为日志' },
+    { id: 'btn-clear-error-log',    store: 'errorLog',    label: '报错日志' },
+    { id: 'btn-clear-scene-history',store: 'sceneHistory',label: '冒险记录' },
   ];
 
-  actions.forEach(({ id, title, body, store, toast }) => {
+  clearActions.forEach(({ id, store, label }) => {
     document.getElementById(id)?.addEventListener('click', async () => {
-      const ok = await showModal({ title, body, confirmText: '删除', danger: true });
+      const ok = await showModal({
+        title: `清除${label}`,
+        body:  `确定要清除所有${label}吗？此操作不可恢复。`,
+        confirmText: '清除', danger: true,
+      });
       if (!ok) return;
       try {
         await dbClear(store);
-        showToast(toast, 'success');
-        logInfo('app', `Cleared store: ${store}`);
+        showToast(`${label}已清除 ✓`, 'success');
+        logInfo('app', `Cleared: ${store}`);
       } catch (err) {
-        showToast('删除失败：' + err.message, 'error');
+        showToast('清除失败：' + err.message, 'error');
         logError('app', `Clear ${store} failed`, { stack: err.stack });
       }
     });
@@ -1473,33 +1482,33 @@ function bindDataManagement() {
     });
     if (!ok) return;
     try {
-      await dbDelete('aiParent', 'singleton');
-      runtime.aiParent = { ...DEFAULT_AI_PARENT };
-      await dbSet('aiParent', runtime.aiParent);
-      showToast('AI 家长数据已删除', 'success');
+      const fresh = { ...DEFAULT_AI_PARENT };
+      await dbSet('aiParent', fresh);
+      runtime.aiParent = fresh;
       fillSettingsForms();
-      logInfo('app', 'AI parent deleted');
+      showToast('AI 家长数据已删除 ✓', 'success');
+      logInfo('app', 'AI parent reset');
     } catch (err) {
       showToast('删除失败：' + err.message, 'error');
       logError('app', 'Delete parent failed', { stack: err.stack });
     }
   });
 
-  // 删除所有好友
+  // 清除所有好友
   document.getElementById('btn-clear-friends')?.addEventListener('click', async () => {
     const ok = await showModal({
-      title: '删除所有好友',
+      title: '清除所有好友',
       body:  '确定要删除所有宠物好友吗？',
-      confirmText: '删除', danger: true,
+      confirmText: '清除', danger: true,
     });
     if (!ok) return;
     try {
       await dbClear('petFriends');
-      showToast('所有好友已删除', 'success');
+      showToast('所有好友已清除 ✓', 'success');
       renderFriendsList();
       logInfo('app', 'All friends cleared');
     } catch (err) {
-      showToast('删除失败：' + err.message, 'error');
+      showToast('清除失败：' + err.message, 'error');
       logError('app', 'Clear friends failed', { stack: err.stack });
     }
   });
@@ -1507,19 +1516,17 @@ function bindDataManagement() {
   // 重置宠物（二次确认）
   document.getElementById('btn-reset-pet')?.addEventListener('click', async () => {
     const ok1 = await showModal({
-      title: '⚠ 重置宠物',
-      body:  '这将重置宠物的所有属性和数据，此操作不可恢复！确定继续？',
+      title: '重置宠物',
+      body:  '这将重置宠物的所有属性，此操作不可恢复！',
       confirmText: '继续', danger: true,
     });
     if (!ok1) return;
-
     const ok2 = await showModal({
-      title: '☢ 最终确认',
-      body:  '真的要重置吗？宠物的所有成长记录将永久消失。',
+      title: '最终确认',
+      body:  '真的要重置吗？所有成长记录将永久消失。',
       confirmText: '确认重置', danger: true,
     });
     if (!ok2) return;
-
     try {
       const fresh = { ...DEFAULT_PET, createdAt: Date.now(), lastOnlineAt: Date.now() };
       await dbSet('pet', fresh);
@@ -1527,7 +1534,7 @@ function bindDataManagement() {
       bus.emit(EVENTS.PET_UPDATED, fresh);
       renderPetUI();
       showToast('宠物已重置', 'warn');
-      logInfo('app', 'Pet reset to default');
+      logInfo('app', 'Pet reset');
     } catch (err) {
       showToast('重置失败：' + err.message, 'error');
       logError('app', 'Reset pet failed', { stack: err.stack });
@@ -1537,16 +1544,17 @@ function bindDataManagement() {
   // 清除全部数据
   document.getElementById('btn-clear-all')?.addEventListener('click', async () => {
     const ok = await showModal({
-      title: '💣 清除全部数据',
+      title: '清除全部数据',
       body:  '这将删除所有本地数据，包括宠物、设置、日志等，不可恢复！',
       confirmText: '清除全部', danger: true,
     });
     if (!ok) return;
-
     try {
-      const stores = ['settings','pet','aiParent','petFriends','chatHistory','actionLog','sceneHistory','errorLog'];
+            const stores = [
+        'settings','pet','aiParent','petFriends',
+        'chatHistory','actionLog','sceneHistory','errorLog'
+      ];
       for (const s of stores) await dbClear(s);
-
       showToast('所有数据已清除，即将重载...', 'warn', 2500);
       setTimeout(() => location.reload(), 2500);
     } catch (err) {
@@ -1556,14 +1564,13 @@ function bindDataManagement() {
   });
 }
 
-// ── 好友列表渲染（占位，friends.js 完整实现）────────────────
+// ── 好友列表渲染 ─────────────────────────────────────────────
 async function renderFriendsList() {
   const container = document.getElementById('friends-list');
   if (!container) return;
 
   let friends = [];
   try {
-    const { dbList } = await import('./js/db.js');
     friends = await dbList('petFriends', { limit: 100 });
   } catch (_) { friends = []; }
 
@@ -1571,57 +1578,81 @@ async function renderFriendsList() {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">🐾</div>
-        <div class="empty-state-text">还没有宠物好友<br>添加一个吧！</div>
+        <div class="empty-state-text">还没有宠物好友<br>添加一个或随机生成吧</div>
       </div>`;
     return;
   }
 
-  container.innerHTML = '';
-  friends.forEach(f => {
-    const item = document.createElement('div');
-    item.className = 'list-item';
+  const frag = document.createDocumentFragment();
 
+  friends.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'friend-card';
+
+    // 头像
     const avatar = document.createElement('div');
-    avatar.className = 'list-item-avatar';
-    avatar.textContent = f.avatarUrl ? '' : '🐾';
+    avatar.className = 'friend-avatar';
     if (f.avatarUrl) {
       const img = document.createElement('img');
       img.src = f.avatarUrl;
-      img.alt = f.name;
+      img.alt = f.name || '';
+      img.onerror = () => { avatar.textContent = '🐾'; };
       avatar.appendChild(img);
+    } else {
+      avatar.textContent = '🐾';
     }
 
-    const body = document.createElement('div');
-    body.className = 'list-item-body';
+    // 信息
+    const info = document.createElement('div');
+    info.className = 'friend-info';
 
-        const title = document.createElement('div');
-    title.className = 'list-item-title';
-    title.textContent = f.name || '未知好友';
+    const name = document.createElement('div');
+    name.className = 'friend-name';
+    name.textContent = f.name || '未知好友';
 
-    const sub = document.createElement('div');
-    sub.className = 'list-item-sub';
-    sub.textContent = f.personality || '性格未知';
+    const personality = document.createElement('div');
+    personality.className = 'friend-personality';
+    personality.textContent = f.personality || '性格神秘';
 
-    // 亲密度条
-    const intimacyBar = document.createElement('div');
-    intimacyBar.className = 'intimacy-bar';
-    const intimacyFill = document.createElement('div');
-    intimacyFill.className = 'intimacy-fill';
-    intimacyFill.style.width = `${f.intimacy || 0}%`;
-    intimacyBar.appendChild(intimacyFill);
+    // 亲密度
+    const intimacyRow = document.createElement('div');
+    intimacyRow.className = 'friend-intimacy-row';
 
-    body.appendChild(title);
-    body.appendChild(sub);
-    body.appendChild(intimacyBar);
+    const intimacyLabel = document.createElement('span');
+    intimacyLabel.className = 'friend-intimacy-label';
+    intimacyLabel.textContent = '亲密';
 
+    const bar = document.createElement('div');
+    bar.className = 'intimacy-bar';
+    bar.style.flex = '1';
+    const fill = document.createElement('div');
+    fill.className = 'intimacy-fill';
+    fill.style.width = `${f.intimacy || 0}%`;
+    bar.appendChild(fill);
+
+    const intimacyVal = document.createElement('span');
+    intimacyVal.style.cssText =
+      'font-size:11px; font-weight:700; color:var(--text-tertiary); white-space:nowrap;';
+    intimacyVal.textContent = `${f.intimacy || 0}`;
+
+    intimacyRow.appendChild(intimacyLabel);
+    intimacyRow.appendChild(bar);
+    intimacyRow.appendChild(intimacyVal);
+
+    info.appendChild(name);
+    info.appendChild(personality);
+    info.appendChild(intimacyRow);
+
+    // 操作按钮
     const actions = document.createElement('div');
-    actions.className = 'list-item-actions';
+    actions.className = 'friend-actions';
 
     const delBtn = document.createElement('button');
     delBtn.className = 'icon-btn danger';
     delBtn.textContent = '🗑';
     delBtn.title = '删除好友';
-    delBtn.addEventListener('click', async () => {
+    delBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       const ok = await showModal({
         title:       '删除好友',
         body:        `确定要删除好友「${f.name}」吗？`,
@@ -1631,15 +1662,15 @@ async function renderFriendsList() {
       if (!ok) return;
       try {
         await dbDelete('petFriends', f.id);
-        item.remove();
-        showToast(`已删除好友「${f.name}」`, 'success');
+        card.remove();
+        showToast(`已删除「${f.name}」`, 'success');
         logInfo('app', `Friend deleted: ${f.name}`);
-        // 如果删完了，显示空状态
-        if (!container.querySelector('.list-item')) {
+        // 删完后检查是否需要显示空状态
+        if (!container.querySelector('.friend-card')) {
           container.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">🐾</div>
-              <div class="empty-state-text">还没有宠物好友<br>添加一个吧！</div>
+              <div class="empty-state-text">还没有宠物好友<br>添加一个或随机生成吧</div>
             </div>`;
         }
       } catch (err) {
@@ -1649,132 +1680,207 @@ async function renderFriendsList() {
     });
 
     actions.appendChild(delBtn);
-    item.appendChild(avatar);
-    item.appendChild(body);
-    item.appendChild(actions);
-    container.appendChild(item);
+
+    card.appendChild(avatar);
+    card.appendChild(info);
+    card.appendChild(actions);
+    frag.appendChild(card);
   });
+
+  container.innerHTML = '';
+  container.appendChild(frag);
 }
 
-// ── 好友页按钮（占位）────────────────────────────────────────
+// ── 好友页交互绑定 ───────────────────────────────────────────
 function bindFriendsPage() {
-  // 添加好友
-  document.getElementById('btn-add-friend')?.addEventListener('click', async () => {
-    const ok = await showModal({
-      title:       '添加好友',
-      body:        '好友系统完整功能即将上线，敬请期待！',
-      confirmText: '知道了',
-      cancelText:  '',
-    });
-  });
 
-  // 随机生成好友
-  document.getElementById('btn-random-friend')?.addEventListener('click', async () => {
-    if (runtime.isAIBusy) {
-      showToast('AI 正忙，请稍候...', 'warn');
-      return;
-    }
-
-    const btn = document.getElementById('btn-random-friend');
-    setButtonLoading(btn, true);
-    showToast('正在随机生成好友...', 'info', 3000);
-
-    try {
-      runtime.isAIBusy = true;
-      const { callAI, buildSystemPrompt } = await import('./js/ai.js');
-
-      const systemPrompt = await buildSystemPrompt({
-        rolePrompt: '你是一个宠物生成器，请生成一只虚拟宠物的基本信息。',
-      });
-
-      const reply = await callAI({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          {
-            role: 'user',
-            content: '请随机生成一只电子宠物好友的信息，用JSON格式返回，包含字段：name(名字), personality(性格描述，20字以内), customPrompt(角色提示词，50字以内)。只返回JSON，不要其他内容。',
-          },
-        ],
-        stream: false,
-      });
-
-      // 解析 JSON
-      let friendData;
-      try {
-        // 提取 JSON 块（兼容 markdown 代码块）
-        const jsonMatch = reply.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('未找到 JSON 数据');
-        friendData = JSON.parse(jsonMatch[0]);
-      } catch (parseErr) {
-        throw new Error('AI 返回格式错误：' + parseErr.message);
-      }
-
-      const newFriend = {
-        id:           Date.now() + Math.random(),
-        name:         String(friendData.name         || '神秘宠物').slice(0, 20),
-        personality:  String(friendData.personality  || '性格神秘').slice(0, 50),
-        customPrompt: String(friendData.customPrompt || '').slice(0, 200),
-        avatarUrl:    '',
-        intimacy:     0,
-        lastVisitAt:  null,
-        memoryContext:'',
-        createdAt:    Date.now(),
-      };
-
-      await dbSet('petFriends', newFriend);
-      showToast(`新好友「${newFriend.name}」已生成！`, 'success');
-      logInfo('app', `Random friend generated: ${newFriend.name}`);
-      await renderFriendsList();
-
-    } catch (err) {
-      showToast('生成失败：' + err.message, 'error');
-      logError('app', 'Random friend failed', { stack: err.stack });
-    } finally {
-      runtime.isAIBusy = false;
-      setButtonLoading(btn, false, '🎲 随机生成');
-    }
-  });
-
-  // 切换到好友页时刷新列表
+  // 切换到好友页时刷新
   bus.on(EVENTS.PAGE_CHANGED, ({ page }) => {
     if (page === 'friends') renderFriendsList();
   });
+
+  // 添加好友（手动填写）
+  document.getElementById('btn-add-friend')
+    ?.addEventListener('click', async () => {
+      // 用 modal 做简单表单
+      const overlay = document.getElementById('modal-overlay');
+      if (!overlay) return;
+
+      overlay.innerHTML = `
+        <div class="modal-box">
+          <div class="modal-handle"></div>
+          <div class="modal-title">添加好友</div>
+          <div class="form-group">
+            <label class="form-label">名字</label>
+            <input type="text" class="form-input" id="new-friend-name"
+              placeholder="好友的名字" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">性格描述</label>
+            <input type="text" class="form-input" id="new-friend-personality"
+              placeholder="活泼可爱、喜欢玩耍..." maxlength="50" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">头像 URL（可选）</label>
+            <input type="url" class="form-input" id="new-friend-avatar"
+              placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">专属提示词（可选）</label>
+            <textarea class="form-textarea" id="new-friend-prompt"
+              placeholder="描述这只宠物的说话方式..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="modal-cancel-friend">取消</button>
+            <button class="btn btn-primary" id="modal-confirm-friend">添加</button>
+          </div>
+        </div>`;
+
+      overlay.classList.add('show');
+
+      // 自动聚焦
+      setTimeout(() => {
+        document.getElementById('new-friend-name')?.focus();
+      }, 300);
+
+      document.getElementById('modal-cancel-friend')
+        ?.addEventListener('click', () => {
+          overlay.classList.remove('show');
+        });
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('show');
+      }, { once: true });
+
+      document.getElementById('modal-confirm-friend')
+        ?.addEventListener('click', async () => {
+          const nameVal = document.getElementById('new-friend-name')?.value.trim();
+          if (!nameVal) {
+            document.getElementById('new-friend-name')?.classList.add('error');
+            showToast('请填写好友名字', 'warn');
+            return;
+          }
+
+          const newFriend = {
+            id:           Date.now() + Math.random(),
+            name:         nameVal.slice(0, 20),
+            personality:  document.getElementById('new-friend-personality')?.value.trim().slice(0, 50) || '性格神秘',
+            avatarUrl:    document.getElementById('new-friend-avatar')?.value.trim()   || '',
+            customPrompt: document.getElementById('new-friend-prompt')?.value.trim()   || '',
+            intimacy:     0,
+            lastVisitAt:  null,
+            memoryContext:'',
+            createdAt:    Date.now(),
+          };
+
+          try {
+            await dbSet('petFriends', newFriend);
+            overlay.classList.remove('show');
+            showToast(`好友「${newFriend.name}」已添加 ✓`, 'success');
+            logInfo('app', `Friend added: ${newFriend.name}`);
+            await renderFriendsList();
+          } catch (err) {
+            showToast('添加失败：' + err.message, 'error');
+            logError('app', 'Add friend failed', { stack: err.stack });
+          }
+        });
+    });
+
+  // 随机生成好友
+  document.getElementById('btn-random-friend')
+    ?.addEventListener('click', async () => {
+      if (runtime.isAIBusy) {
+        showToast('AI 正忙，请稍候...', 'warn');
+        return;
+      }
+
+      const btn = document.getElementById('btn-random-friend');
+      if (btn) { btn.disabled = true; btn.textContent = '···'; }
+      showToast('正在随机生成好友...', 'info', 4000);
+      runtime.isAIBusy = true;
+
+      try {
+        const { callAI, buildSystemPrompt } = await import('./js/ai.js');
+        const systemPrompt = await buildSystemPrompt({
+          rolePrompt: '你是一个宠物生成器，请生成一只虚拟宠物好友的基本信息。',
+        });
+
+        const reply = await callAI({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            {
+              role: 'user',
+              content: '请随机生成一只电子宠物好友的信息，用JSON格式返回，' +
+                       '包含字段：name(名字,10字以内), personality(性格描述,20字以内), ' +
+                       'customPrompt(角色提示词,50字以内)。只返回JSON，不要其他内容。',
+            },
+          ],
+          stream: false,
+        });
+
+        // 解析 JSON（兼容 markdown 代码块）
+        const jsonMatch = reply.match(/\{[\s\S]*?\}/);
+        if (!jsonMatch) throw new Error('AI 返回格式错误');
+        const data = JSON.parse(jsonMatch[0]);
+
+        const newFriend = {
+          id:           Date.now() + Math.random(),
+          name:         String(data.name         || '神秘宠物').slice(0, 20),
+          personality:  String(data.personality  || '性格神秘').slice(0, 50),
+          customPrompt: String(data.customPrompt || '').slice(0, 200),
+          avatarUrl:    '',
+          intimacy:     0,
+          lastVisitAt:  null,
+          memoryContext:'',
+          createdAt:    Date.now(),
+        };
+
+        await dbSet('petFriends', newFriend);
+        showToast(`新好友「${newFriend.name}」已生成 ✓`, 'success');
+        logInfo('app', `Random friend generated: ${newFriend.name}`);
+        await renderFriendsList();
+
+      } catch (err) {
+        showToast('生成失败：' + err.message, 'error');
+        logError('app', 'Random friend failed', { stack: err.stack });
+      } finally {
+        runtime.isAIBusy = false;
+        if (btn) { btn.disabled = false; btn.textContent = '🎲'; }
+      }
+    });
 }
 
 // ── 启动 ─────────────────────────────────────────────────────
 init().catch(err => {
   console.error('[app] Fatal init error:', err);
-  // 即使初始化失败也显示基础 UI
-  document.getElementById('app-shell')?.insertAdjacentHTML('afterbegin', `
+  document.body.insertAdjacentHTML('beforeend', `
     <div style="
-      position:fixed; inset:0; background:rgba(0,0,0,0.85);
-      display:flex; align-items:center; justify-content:center;
-      z-index:9999; font-family:monospace; color:#e74c3c;
-      padding:20px; text-align:center; font-size:13px; line-height:1.8;
+      position:fixed; inset:0; background:rgba(255,255,255,0.95);
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center; z-index:9999; font-family:system-ui;
+      padding:32px; text-align:center; gap:16px;
     ">
-      ⚠ 初始化失败<br>
-      <span style="color:rgba(255,255,255,0.5); font-size:11px;">${err.message}</span><br><br>
+      <div style="font-size:40px;">⚠️</div>
+      <div style="font-size:17px; font-weight:700; color:#1a1a1a;">
+        初始化失败
+      </div>
+      <div style="font-size:13px; color:#888; line-height:1.6; max-width:280px;">
+        ${err.message}
+      </div>
       <button onclick="location.reload()" style="
-        background:rgba(231,76,60,0.2); border:1px solid rgba(231,76,60,0.5);
-        color:#e74c3c; padding:8px 20px; border-radius:6px;
-        cursor:pointer; font-family:monospace; font-size:12px;
+        background:#1a1a1a; color:#fff; border:none;
+        padding:12px 28px; border-radius:999px;
+        font-size:14px; font-weight:600; cursor:pointer;
+        font-family:system-ui; margin-top:8px;
       ">重新加载</button>
     </div>
   `);
 });
-
-// 在 init() 调用后，补充好友页绑定
-document.addEventListener('DOMContentLoaded', () => {
-  // DOMContentLoaded 时绑定好友页（init 内部已处理大部分，这里补充）
-});
-
-// 实际上好友页绑定在 init 流程里调用
-// 在 init() 函数末尾追加：
-const _origInit = init;
-// bindFriendsPage 在 init 完成后调用
-Promise.resolve().then(() => bindFriendsPage());
 </script>
 
 </body>
 </html>
+
+
+
 
