@@ -1,0 +1,198 @@
+/* ============================================
+   主题系统
+   主题通过 html[data-theme] 切换
+   ============================================ */
+
+/* ============================================
+   主题一：奶油粉白（默认）
+   ============================================ */
+/* [THEME-CREAM] */
+[data-theme="cream"] {
+  --bg-primary:    #fdf6f0;
+  --bg-secondary:  #fff8f4;
+  --bg-card:       #ffffff;
+  --bg-overlay:    rgba(253, 246, 240, 0.92);
+
+  --text-primary:   #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --text-muted:     #aaaaaa;
+  --text-inverse:   #ffffff;
+
+  --accent:       #e8a598;
+  --accent-light: #f5d5cf;
+  --accent-dark:  #c97a6e;
+
+  --border:       #ede8e3;
+  --border-light: #f5f0eb;
+
+  --stat-hunger:  #f4a261;
+  --stat-mood:    #a8dadc;
+  --stat-health:  #90be6d;
+  --stat-clean:   #b5ead7;
+  --stat-intimacy:#ffb7c5;
+
+  --danger:       #e05c5c;
+  --danger-light: #fdeaea;
+  --success:      #6abf69;
+  --warning:      #f4a261;
+
+  color-scheme: light;
+}
+/* [/THEME-CREAM] */
+
+/* ============================================
+   主题二：黑白极简
+   ============================================ */
+/* [THEME-MONO] */
+[data-theme="mono"] {
+  --bg-primary:    #0f0f0f;
+  --bg-secondary:  #1a1a1a;
+  --bg-card:       #222222;
+  --bg-overlay:    rgba(15, 15, 15, 0.92);
+
+  --text-primary:   #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-muted:     #555555;
+  --text-inverse:   #0f0f0f;
+
+  --accent:       #e0e0e0;
+  --accent-light: #2a2a2a;
+  --accent-dark:  #ffffff;
+
+  --border:       #2e2e2e;
+  --border-light: #252525;
+
+  --stat-hunger:  #c8a97e;
+  --stat-mood:    #7ab8ba;
+  --stat-health:  #7aaa5e;
+  --stat-clean:   #7ab89a;
+  --stat-intimacy:#c89aaa;
+
+  --danger:       #cc4444;
+  --danger-light: #2a1a1a;
+  --success:      #5aaa58;
+  --warning:      #c8a060;
+
+  color-scheme: dark;
+}
+
+/* 黑白主题下加载遮罩背景 */
+[data-theme="mono"] .loading-overlay {
+  background: rgba(15, 15, 15, 0.88);
+}
+
+/* 黑白主题下场景渐变 */
+[data-theme="mono"] .scene-overlay {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    #0f0f0f 100%
+  );
+}
+/* [/THEME-MONO] */
+
+/* ============================================
+   主题三：薰衣草紫
+   ============================================ */
+/* [THEME-LAVENDER] */
+[data-theme="lavender"] {
+  --bg-primary:    #f5f0ff;
+  --bg-secondary:  #faf7ff;
+  --bg-card:       #ffffff;
+  --bg-overlay:    rgba(245, 240, 255, 0.92);
+
+  --text-primary:   #1e1a2e;
+  --text-secondary: #6b6080;
+  --text-muted:     #b0a8c0;
+  --text-inverse:   #ffffff;
+
+  --accent:       #b39ddb;
+  --accent-light: #e8e0f8;
+  --accent-dark:  #7c5cbf;
+
+  --border:       #e4ddf0;
+  --border-light: #ede8f8;
+
+  --stat-hunger:  #f4a261;
+  --stat-mood:    #b39ddb;
+  --stat-health:  #90be6d;
+  --stat-clean:   #b5ead7;
+  --stat-intimacy:#ffb7c5;
+
+  --danger:       #e05c5c;
+  --danger-light: #fdeaea;
+  --success:      #6abf69;
+  --warning:      #f4a261;
+
+  color-scheme: light;
+}
+
+[data-theme="lavender"] .scene-overlay {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    #f5f0ff 100%
+  );
+}
+/* [/THEME-LAVENDER] */
+
+/* ============================================
+   主题四：抹茶绿
+   ============================================ */
+/* [THEME-MATCHA] */
+[data-theme="matcha"] {
+  --bg-primary:    #f2f7f2;
+  --bg-secondary:  #f7faf7;
+  --bg-card:       #ffffff;
+  --bg-overlay:    rgba(242, 247, 242, 0.92);
+
+  --text-primary:   #1a2a1a;
+  --text-secondary: #5a7060;
+  --text-muted:     #a0b8a0;
+  --text-inverse:   #ffffff;
+
+  --accent:       #8fbc8f;
+  --accent-light: #d4edda;
+  --accent-dark:  #5a8a5a;
+
+  --border:       #ddeedd;
+  --border-light: #eaf4ea;
+
+  --stat-hunger:  #f4a261;
+  --stat-mood:    #a8dadc;
+  --stat-health:  #8fbc8f;
+  --stat-clean:   #b5ead7;
+  --stat-intimacy:#ffb7c5;
+
+  --danger:       #e05c5c;
+  --danger-light: #fdeaea;
+  --success:      #5a8a5a;
+  --warning:      #f4a261;
+
+  color-scheme: light;
+}
+
+[data-theme="matcha"] .scene-overlay {
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    #f2f7f2 100%
+  );
+}
+/* [/THEME-MATCHA] */
+
+/* ============================================
+   主题切换过渡动画
+   ============================================ */
+/* [THEME-TRANSITION] */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease !important;
+}
+/* [/THEME-TRANSITION] */
