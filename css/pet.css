@@ -1,64 +1,81 @@
-/* css/pet.css */
+/* css/pet.css — Modern Minimal Pet UI */
+
 /* ============================================================
-   Pet Scene Area
+   Pet Scene
    ============================================================ */
 #pet-scene {
   position: relative;
-  height: 220px;
+  height: 240px;
   flex-shrink: 0;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 1s ease;
+  background: var(--bg-scene);
+  margin: 12px 16px 0;
+  border-radius: var(--radius-xl);
+  transition: background 0.5s ease;
 }
 
-/* Scene backgrounds */
-.scene-home {
-  background: linear-gradient(180deg, #1a1a3e 0%, #2d1b4e 50%, #1a2a1a 100%);
-}
-.scene-forest {
-  background: linear-gradient(180deg, #0d2818 0%, #1a4a2a 60%, #0d1a0d 100%);
-}
-.scene-beach {
-  background: linear-gradient(180deg, #1a2a4a 0%, #2a4a6a 50%, #1a3a2a 100%);
-}
-.scene-city {
-  background: linear-gradient(180deg, #1a1a2e 0%, #2e2e4e 50%, #1a1a1a 100%);
-}
-
-/* Stars in background */
-#pet-scene::before {
-  content: '✦ ✧ ✦ ✧ ✦';
+/* 场景装饰色块 — 参考图的柔和圆形 */
+.scene-deco {
   position: absolute;
-  top: 12px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 8px;
-  color: rgba(255,255,255,0.3);
-  letter-spacing: 12px;
-  animation: twinkle 3s ease-in-out infinite;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: background 0.5s ease;
 }
 
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+.scene-deco-1 {
+  width: 80px;
+  height: 80px;
+  top: 20px;
+  left: 28px;
+  background: rgba(168, 230, 207, 0.55);
+  border-radius: 40% 60% 55% 45% / 50% 45% 55% 50%;
+  animation: deco-float-1 6s ease-in-out infinite;
 }
 
-/* Ground */
-#pet-scene::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.3));
+.scene-deco-2 {
+  width: 55px;
+  height: 90px;
+  top: 60px;
+  right: 40px;
+  background: rgba(190, 220, 255, 0.5);
+  border-radius: 50%;
+  animation: deco-float-2 8s ease-in-out infinite;
+}
+
+.scene-deco-3 {
+  width: 70px;
+  height: 70px;
+  bottom: 24px;
+  right: 70px;
+  background: rgba(255, 200, 210, 0.55);
+  border-radius: 50%;
+  animation: deco-float-3 7s ease-in-out infinite;
+}
+
+[data-theme="mono"] .scene-deco-1 { background: rgba(255,255,255,0.05); }
+[data-theme="mono"] .scene-deco-2 { background: rgba(255,255,255,0.04); }
+[data-theme="mono"] .scene-deco-3 { background: rgba(255,255,255,0.06); }
+
+@keyframes deco-float-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33%       { transform: translate(6px, -8px) rotate(5deg); }
+  66%       { transform: translate(-4px, 4px) rotate(-3deg); }
+}
+@keyframes deco-float-2 {
+  0%, 100% { transform: translate(0, 0) scaleX(1); }
+  50%       { transform: translate(-5px, 6px) scaleX(0.92); }
+}
+@keyframes deco-float-3 {
+  0%, 100% { transform: translate(0, 0); }
+  40%       { transform: translate(8px, -6px); }
+  70%       { transform: translate(-3px, 3px); }
 }
 
 /* ============================================================
-   Pet Avatar
+   Pet Avatar — CSS 纯绘制宠物（参考图黑色圆形+眼睛）
    ============================================================ */
 #pet-avatar-wrap {
   position: relative;
@@ -66,72 +83,79 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-#pet-avatar {
-  width: 90px;
-  height: 90px;
+/* CSS 宠物本体 */
+.pet-css-body {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,0.2);
-  box-shadow:
-    0 0 20px rgba(168,255,120,0.15),
-    0 4px 12px rgba(0,0,0,0.4);
-  object-fit: cover;
-  background: #2a2a3e;
-  animation: breathe 3s ease-in-out infinite;
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#pet-avatar:active {
-  transform: scale(0.93) !important;
-}
-
-/* Default CSS pet when no image */
-.pet-default-art {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
+  background: var(--pet-body);
   position: relative;
-  background: linear-gradient(135deg, #3a2a5e, #2a1a4e);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 44px;
-  animation: breathe 3s ease-in-out infinite;
+  animation: pet-breathe 3.5s ease-in-out infinite;
   cursor: pointer;
-  border: 3px solid rgba(255,255,255,0.2);
-  box-shadow:
-    0 0 20px rgba(168,255,120,0.15),
-    0 4px 12px rgba(0,0,0,0.4);
+  transition: background 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
 }
 
-@keyframes breathe {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 20px rgba(168,255,120,0.15), 0 4px 12px rgba(0,0,0,0.4);
-  }
-  50% {
-    transform: scale(1.04);
-    box-shadow: 0 0 30px rgba(168,255,120,0.3), 0 6px 16px rgba(0,0,0,0.4);
-  }
+/* 眼睛 */
+.pet-css-body::before,
+.pet-css-body::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--pet-eye);
+  border-radius: 50%;
+  top: 38px;
+  animation: pet-blink 4s ease-in-out infinite;
 }
 
-/* Pet name tag */
+.pet-css-body::before { left: 28px; }
+.pet-css-body::after  { right: 28px; }
+
+.pet-css-body:active {
+  transform: scale(0.9) !important;
+  animation: none;
+}
+
+/* 用户自定义头像 */
+#pet-avatar-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  animation: pet-breathe 3.5s ease-in-out infinite;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+#pet-avatar-img:active {
+  transform: scale(0.9) !important;
+  animation: none;
+}
+
+@keyframes pet-breathe {
+  0%, 100% { transform: scale(1);    }
+  50%       { transform: scale(1.05); }
+}
+
+@keyframes pet-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95%            { transform: scaleY(0.1); }
+}
+
+/* 宠物名字 */
 #pet-name-tag {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: rgba(255,255,255,0.9);
-  background: rgba(0,0,0,0.4);
-  padding: 3px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.15);
-  letter-spacing: 1px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+  background: var(--bg-card);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-card);
 }
 
 /* ============================================================
@@ -139,22 +163,22 @@
    ============================================================ */
 #emotion-bubble {
   position: absolute;
-  top: 20px;
-  right: 60px;
-  background: rgba(255,255,255,0.95);
-  color: #2c2416;
-  font-size: 11px;
-  font-family: var(--font-sans);
-  padding: 6px 10px;
-  border-radius: 12px 12px 0 12px;
-  max-width: 120px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  top: 16px;
+  right: 20px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-md) var(--radius-md) 0 var(--radius-md);
+  max-width: 130px;
+  box-shadow: var(--shadow-card);
   z-index: 10;
   opacity: 0;
-  transform: scale(0.8) translateY(4px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scale(0.85) translateY(4px);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
   pointer-events: none;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 #emotion-bubble.show {
@@ -165,254 +189,270 @@
 #emotion-bubble::after {
   content: '';
   position: absolute;
-  bottom: -6px;
-  right: 8px;
+  bottom: -7px;
+  right: 10px;
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-top: 6px solid rgba(255,255,255,0.95);
+  border-left: 7px solid transparent;
+  border-top: 7px solid var(--bg-card);
+}
+
+/* ============================================================
+   Mood Card（参考图左下角 Current Mood）
+   ============================================================ */
+#mood-card {
+  margin: 10px 16px 0;
+  background: var(--mood-card-bg);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+#mood-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--mood-card-text);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+#mood-card-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
 }
 
 /* ============================================================
    Status Bars
    ============================================================ */
 #status-bars {
-  padding: 12px 16px 8px;
+  padding: 14px 16px 0;
   flex-shrink: 0;
+}
+
+.status-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-card);
 }
 
 .status-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.status-icon {
-  font-size: 13px;
-  width: 18px;
-  text-align: center;
+.status-row:last-child { margin-bottom: 0; }
+
+.status-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  width: 52px;
   flex-shrink: 0;
 }
 
 .status-bar-track {
   flex: 1;
   height: 6px;
-  background: rgba(255,255,255,0.1);
+  background: var(--border-color);
   border-radius: 3px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .status-bar-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.status-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: rgba(255,255,255,0.2);
-  border-radius: 3px 3px 0 0;
+.status-bar-fill.hunger { background: var(--status-hunger); }
+.status-bar-fill.mood   { background: var(--status-mood); }
+.status-bar-fill.health { background: var(--status-health); }
+.status-bar-fill.clean  { background: var(--status-clean); }
+.status-bar-fill.bond   { background: var(--status-bond); }
+
+.status-bar-fill.low {
+  animation: bar-pulse 1s ease-in-out infinite;
 }
 
-.status-bar-fill.hunger  { background: linear-gradient(90deg, #c0392b, var(--hunger-color)); }
-.status-bar-fill.mood    { background: linear-gradient(90deg, #d4a017, var(--mood-color)); }
-.status-bar-fill.health  { background: linear-gradient(90deg, #27ae60, var(--health-color)); }
-.status-bar-fill.clean   { background: linear-gradient(90deg, #2980b9, var(--clean-color)); }
-.status-bar-fill.bond    { background: linear-gradient(90deg, #c0392b, var(--bond-color)); }
+@keyframes bar-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
 
 .status-value {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: rgba(255,255,255,0.5);
-  width: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 32px;
   text-align: right;
   flex-shrink: 0;
 }
 
-/* Low status warning pulse */
-.status-bar-fill.low {
-  animation: pulse-low 1s ease-in-out infinite;
-}
-
-@keyframes pulse-low {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 /* ============================================================
-   Action Buttons
+   Action Buttons（参考图 2×2 彩色大按钮）
    ============================================================ */
 #pet-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 8px 12px 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 16px 0;
   flex-shrink: 0;
 }
 
 .action-btn {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--radius-md);
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: none;
   cursor: pointer;
-  transition: all 0.15s ease;
-  color: rgba(255,255,255,0.8);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.3px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.action-btn:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: rgba(255,255,255,0.2);
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 80px;
+  position: relative;
+  overflow: hidden;
 }
 
 .action-btn:active {
   transform: scale(0.93);
-  background: rgba(255,255,255,0.05);
 }
 
 .action-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-.action-btn .btn-icon {
-  font-size: 20px;
+.action-btn.feed  { background: var(--btn-feed-bg); }
+.action-btn.play  { background: var(--btn-play-bg); }
+.action-btn.clean { background: var(--btn-clean-bg); }
+.action-btn.heal  { background: var(--btn-heal-bg); }
+
+.btn-icon-wrap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.25);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
 }
 
-.action-btn .btn-label {
-  font-size: 9px;
-  color: rgba(255,255,255,0.6);
+.btn-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+  position: relative;
+  z-index: 1;
 }
+
+/* play 按钮文字深色（黄底） */
+.action-btn.play .btn-label { color: #1a1a1a; }
 
 /* ============================================================
-   Pet Chat Quick Area
+   Chat Area
    ============================================================ */
 #pet-chat-area {
   flex: 1;
-  margin: 0 12px 8px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: var(--radius-md);
-  padding: 10px;
+  margin: 12px 16px 0;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
   overflow-y: auto;
-  min-height: 60px;
-  max-height: 100px;
-  font-family: var(--font-mono);
+  min-height: 56px;
+  max-height: 90px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  scrollbar-width: none;
+  box-shadow: var(--shadow-card);
+}
+
+#pet-chat-area::-webkit-scrollbar { display: none; }
+
+.chat-line {
+  margin-bottom: 5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.chat-line.pet {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.chat-line.user {
+  color: var(--text-secondary);
+}
+
+.chat-line.system {
+  color: var(--text-tertiary);
   font-size: 11px;
-  color: rgba(255,255,255,0.7);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
-}
-
-#pet-chat-area .chat-line {
-  margin-bottom: 4px;
-  line-height: 1.5;
-}
-
-#pet-chat-area .chat-line.pet {
-  color: var(--phosphor-green);
-}
-
-#pet-chat-area .chat-line.system {
-  color: rgba(255,255,255,0.35);
-  font-size: 10px;
-}
-
-/* Typing indicator */
-.typing-dots {
-  display: inline-flex;
-  gap: 3px;
-  align-items: center;
-}
-
-.typing-dots span {
-  width: 5px;
-  height: 5px;
-  background: var(--phosphor-green);
-  border-radius: 50%;
-  animation: typing-bounce 1.2s ease-in-out infinite;
-}
-
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typing-bounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-4px); opacity: 1; }
+  text-align: center;
 }
 
 /* ============================================================
-   Quick Input
+   Input Row
    ============================================================ */
 #pet-input-row {
   display: flex;
   gap: 8px;
-  padding: 0 12px 10px;
+  padding: 10px 16px 14px;
   flex-shrink: 0;
 }
 
 #pet-input {
   flex: 1;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  color: rgba(255,255,255,0.9);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  padding: 10px 16px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
   outline: none;
   transition: border-color 0.2s;
 }
 
-#pet-input::placeholder {
-  color: rgba(255,255,255,0.25);
-}
+#pet-input::placeholder { color: var(--text-tertiary); }
 
 #pet-input:focus {
-  border-color: rgba(168,255,120,0.4);
-  box-shadow: 0 0 0 2px rgba(168,255,120,0.08);
+  border-color: var(--text-primary);
 }
 
 #pet-send-btn {
-  background: rgba(168,255,120,0.15);
-  border: 1px solid rgba(168,255,120,0.3);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  color: var(--phosphor-green);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  background: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+  color: var(--bg-shell);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  font-family: inherit;
 }
 
-#pet-send-btn:hover {
-  background: rgba(168,255,120,0.25);
-}
-
-#pet-send-btn:active {
-  transform: scale(0.93);
-}
-
+#pet-send-btn:hover   { opacity: 0.85; }
+#pet-send-btn:active  { transform: scale(0.93); }
 #pet-send-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
+
