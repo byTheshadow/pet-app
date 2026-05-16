@@ -770,7 +770,7 @@ function bindPetActions() {
         },
       });
       if (typingLine && !replyText)
-        typingLine.textContent = `${runtime.pet?.name || '宠物'}：(´-ω-`)`;
+        typingLine.textContent = `${runtime.pet?.name || '宠物'}：(´-ω-\`)`;
 
       await dbAppend('chatHistory', {
         id: Date.now() + Math.random(),
