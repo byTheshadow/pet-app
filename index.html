@@ -3737,32 +3737,40 @@ function _buildParentSystemPrompt(scene = '') {
 
   const parts = [
     s.globalPrompt || '',
-    `你是「${pet.name || '宠物'}」的家长，名叫「${parent.name || '妈妈'}」。`,
-    parent.personality ? `性格：${parent.personality}` : '',
+    // 明确：家长是宠物的家长，不是 user 的家长
+    `你是电子宠物「${pet.name || '宠物'}」的家长，名叫「${parent.name || '妈妈'}」。`,
+    `「${pet.name || '宠物'}」是你的孩子，你非常疼爱它。`,
+    `主人（user）是负责照顾「${pet.name || '宠物'}」的人，你和主人的关系是宠物家长与铲屎官的关系。`,
+    parent.personality ? `你的性格：${parent.personality}` : '',
     parent.customPrompt || '',
     pc.parentExtra || '',
-    u.realName ? `主人的真实名字是「${u.realName}」。` : '',
+    u.realName ? `主人的名字是「${u.realName}」。` : '',
     scene,
-    '用温暖自然的语气说话，回复简短（40字以内），可以用颜文字。只输出这句话本身。',
+    '用符合你性格的语气说话，回复简短（40字以内），可以用颜文字。只输出这句话本身。',
   ].filter(Boolean);
 
   return parts.join('\n');
 }
 
 function _buildPetSystemPromptForParent(scene = '') {
-  const pet = runtime.pet || {};
-  const s   = runtime.settings || {};
-  const pc  = s.promptConfig  || {};
+  const pet    = runtime.pet     || {};
+  const parent = runtime.aiParent || {};
+  const s      = runtime.settings || {};
+  const pc     = s.promptConfig  || {};
   const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
 
   const parts = [
     s.globalPrompt || '',
     `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    // 明确：家长是你的家长，不是你的孩子，不是主人
+    `「${parent.name || '妈妈'}」是你的家长，你对它撒娇、依赖，像孩子对父母一样。`,
+    `主人（user）是照顾你的人，家长来了你会很开心。`,
     getPersonalityPrompt ? getPersonalityPrompt(pet) : '',
     pc.petExtra || '',
     getPetStatusContext ? getPetStatusContext(pet) : '',
     scene,
-    '回复简短（30字以内），符合你的性格，可以用颜文字。只输出这句话本身。',
+    // 明确禁止说出家长才会说的话
+    '你是宠物，说话要符合宠物孩子的视角，不要说出像家长叮嘱人的话。回复简短（30字以内），可以用颜文字。只输出这句话本身。',
   ].filter(Boolean);
 
   return parts.join('\n');
@@ -3774,17 +3782,19 @@ async function _parentGreet() {
   const pet    = runtime.pet     || {};
   const u      = (runtime.settings || {}).userInfo || {};
 
-  _appendParentLine('parent-user', 'system', `✨ ${parent.name || '妈妈'} 来看你们了`);
-
-  const scene = u.realName
-    ? `你来看望主人「${u.realName}」和宠物「${pet.name || '宠物'}」，说一句温暖的开场白。`
-    : `你来看望宠物「${pet.name || '宠物'}」和主人，说一句温暖的开场白。`;
+  _appendParentLine('parent-user', 'system', `✨ ${parent.name || '妈妈'} 来看 ${pet.name || '宠物'} 了`);
 
   await _parentSpeak('parent-user', 'parent', [
-    { role: 'system', content: _buildParentSystemPrompt(scene) },
-    { role: 'user',   content: '你刚到，说一句开场白。' },
+    {
+      role: 'system',
+      content: _buildParentSystemPrompt(
+        `你来看望你的孩子「${pet.name || '宠物'}」，顺便和主人打个招呼，说一句来看孩子的开场白。`
+      ),
+    },
+    { role: 'user', content: '你来看孩子了，说一句开场白。' },
   ], 'greet');
 }
+
 
 // ── 三方开场白（房间2：家长×你×宠物）───────────────────────
 async function _parentTrioGreet() {
@@ -3798,21 +3808,21 @@ async function _parentTrioGreet() {
     {
       role: 'system',
       content: _buildParentSystemPrompt(
-        `你和宠物「${pet.name || '宠物'}」以及主人在一起，说一句欢快的开场白。`
+        `你来看望你的孩子「${pet.name || '宠物'}」，主人也在场，说一句来看孩子的开场白。`
       ),
     },
-    { role: 'user', content: '三方对话开始，你先说一句。' },
+    { role: 'user', content: '你来看孩子了，说一句开场白。' },
   ], 'greet');
 
-    // 宠物回应
+  // 宠物回应
   await _parentSpeak('parent-trio', 'pet', [
     {
       role: 'system',
       content: _buildPetSystemPromptForParent(
-        `家长「${parent.name || '妈妈'}」来了，你很开心，说一句欢迎的话。`
+        `你的家长「${parent.name || '妈妈'}」来看你了，你很开心，像孩子见到家长一样撒娇或欢迎它。`
       ),
     },
-    { role: 'user', content: '家长来了，你说一句。' },
+    { role: 'user', content: '你的家长来了，你怎么反应？' },
   ], 'greet');
 }
 
@@ -3823,40 +3833,41 @@ async function _parentUserTurn(userText) {
   const pet    = runtime.pet     || {};
 
   if (room === 'parent-user') {
-    // 房间1：只有家长回应
     await _parentSpeak('parent-user', 'parent', [
       {
         role: 'system',
         content: _buildParentSystemPrompt(
-          `主人对你说了话，你温暖地回应。`
+          `主人在和你聊天，你是宠物「${pet.name || '宠物'}」的家长，回应主人说的话。`
         ),
       },
       { role: 'user', content: userText },
     ], 'reply');
 
   } else {
-    // 房间2：家长先回，宠物也回
+    // 家长回应
     await _parentSpeak('parent-trio', 'parent', [
       {
         role: 'system',
         content: _buildParentSystemPrompt(
-          `主人在三方对话中说了话，宠物「${pet.name || '宠物'}」也在场，你温暖地回应主人。`
+          `你和孩子「${pet.name || '宠物'}」以及主人在一起，主人说了话，你作为宠物的家长来回应。`
         ),
       },
       { role: 'user', content: userText },
     ], 'reply');
 
+    // 宠物也回应
     await _parentSpeak('parent-trio', 'pet', [
       {
         role: 'system',
         content: _buildPetSystemPromptForParent(
-          `家长「${parent.name || '妈妈'}」和主人都在，主人刚说了话，你也回应一句。`
+          `家长「${parent.name || '妈妈'}」和主人都在，主人说了话，你作为宠物孩子也回应一句。`
         ),
       },
       { role: 'user', content: userText },
     ], 'reply');
   }
 }
+
 
 // ══════════════════════════════════════════════════════════════
 // AI 家长自动照顾宠物（后台触发，user 不在场）
