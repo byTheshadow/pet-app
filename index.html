@@ -4917,23 +4917,25 @@ function bindAdventurePage() {
   });
 
   // 页面切换到冒险时刷新
-  bus.on(EVENTS.PAGE_CHANGED, (page) => {
-    if (page !== 'adventure') return;
-    renderGrowthBar();
-    renderSceneList();
-    renderAdventureLog();
-    renderActiveAdventure();
-    updateMailboxBadge();
-  });
+bus.on(EVENTS.PAGE_CHANGED, (page) => {
+  if (page !== 'adventure') return;
+  renderGrowthBar();
+  renderSceneList();
+  renderAdventureLog();
+  renderActiveAdventure();
+  updateMailboxBadge();
+});
 
-  // 初始渲染（如果启动时就在冒险页）
-  if (runtime.currentPage === 'adventure') {
-    renderGrowthBar();
-    renderSceneList();
-    renderAdventureLog();
-    renderActiveAdventure();
-    updateMailboxBadge();
-  }
+// 无论当前在哪个页面，init 完成后都渲染一次
+// setTimeout 0 确保 runtime 数据全部就绪后再执行
+setTimeout(() => {
+  renderGrowthBar();
+  renderSceneList();
+  renderAdventureLog();
+  renderActiveAdventure();
+  updateMailboxBadge();
+}, 0);
+
 
   // 页面可见性恢复时重新检查冒险状态（后台回来）
   document.addEventListener('visibilitychange', () => {
