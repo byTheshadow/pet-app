@@ -1376,6 +1376,245 @@
   background: var(--bg-card-alt);
   color: var(--text-secondary);
 }
+/* ============================================================
+   宠物名片
+   ============================================================ */
+
+/* 预览容器 */
+#pet-card-preview-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 16px;
+}
+
+/* 名片本体 — 固定 360×520，导出时截这个 */
+#pet-card {
+  width: 360px;
+  height: 520px;
+  border-radius: 24px;
+  padding: 32px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  flex-shrink: 0;
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+/* 背景装饰圆 */
+#pet-card::before {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  top: -80px;
+  right: -60px;
+  background: rgba(255,255,255,0.12);
+  pointer-events: none;
+}
+
+#pet-card::after {
+  content: '';
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  bottom: -40px;
+  left: -40px;
+  background: rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+
+/* 头像区 */
+.card-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-avatar-ring {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 3px solid rgba(255,255,255,0.5);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-avatar-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-avatar-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.card-pet-name {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.card-owner-name {
+  font-size: 12px;
+  opacity: 0.75;
+  letter-spacing: 0.3px;
+}
+
+/* 阶段 + 等级 */
+.card-stage-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-stage-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.25);
+  letter-spacing: 0.3px;
+}
+
+.card-level-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.15);
+  letter-spacing: 0.3px;
+}
+
+/* 性格标签 */
+.card-personality {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.5px;
+}
+
+/* 自我介绍 */
+.card-intro {
+  background: rgba(255,255,255,0.18);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+  min-height: 60px;
+  flex: 1;
+}
+
+.card-intro-quote {
+  font-size: 20px;
+  opacity: 0.5;
+  line-height: 1;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* 状态格子 */
+.card-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 10px;
+  padding: 8px 4px;
+}
+
+.card-stat-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.card-stat-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.card-stat-label {
+  font-size: 9px;
+  opacity: 0.7;
+  letter-spacing: 0.2px;
+}
+
+/* 水印 */
+.card-watermark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.card-watermark-brand {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.5;
+  letter-spacing: 1px;
+}
+
+.card-watermark-date {
+  font-size: 10px;
+  opacity: 0.4;
+}
+
+/* 主题色切换按钮行 */
+#card-theme-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px 0;
+  flex-wrap: wrap;
+}
+
+.card-theme-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.card-theme-dot:active { transform: scale(0.9); }
+.card-theme-dot.active { border-color: var(--text-primary); transform: scale(1.15); }
 
 
 

@@ -16,6 +16,7 @@
   import { registerSW, startNotifyScheduler } from './js/sw-register.js';
   registerSW().then(() => startNotifyScheduler());
 </script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -577,6 +578,11 @@
                 <span class="data-btn-label danger">清除全部数据</span>
                 <button class="data-btn-action danger" id="btn-clear-all">清除</button>
               </div>
+              <!-- 导出宠物名片 -->
+<div class="data-btn-row" style="border-top: 1px solid var(--border-color); margin-top: 4px; padding-top: 4px;">
+  <span class="data-btn-label">宠物名片</span>
+  <button class="data-btn-action" id="btn-export-pet-card">导出</button>
+</div>
             </div>
           </div>
 
@@ -614,6 +620,7 @@
               </div>
             </div>
           </div>
+          
                     <!-- ── Tab: 提示词控制中心 ── -->
           <div id="tab-prompt" class="tab-content">
             <div class="settings-section">
@@ -2578,6 +2585,10 @@ function bindDataManagement() {
       logError('app', 'Clear friends failed', { stack: err.stack });
     }
   });
+    // 导出宠物名片
+  document.getElementById('btn-export-pet-card')?.addEventListener('click', () => {
+    openPetCardModal();
+  });
 
   // 重置宠物（二次确认）
   document.getElementById('btn-reset-pet')?.addEventListener('click', async () => {
@@ -2924,6 +2935,360 @@ function bindFriendsPage() {
       }
     });
 }
+// ══════════════════════════════════════════════════════════════
+// 宠物名片生成
+// ══════════════════════════════════════════════════════════════
+
+const CARD_THEMES = [
+  {
+    id: 'sakura',
+    label: '樱花粉',
+    dot: 'linear-gradient(135deg,#ffd6e7,#ffb3c6)',
+    bg:  'linear-gradient(145deg,#ffd6e7 0%,#ffb3c6 60%,#ff8fab 100%)',
+    dark: false,
+  },
+  {
+    id: 'mint',
+    label: '薄荷绿',
+    dot: 'linear-gradient(135deg,#c8f7c5,#a8e6cf)',
+    bg:  'linear-gradient(145deg,#c8f7c5 0%,#a8e6cf 60%,#7ecba1 100%)',
+    dark: false,
+  },
+  {
+    id: 'cosmos',
+    label: '星空蓝',
+    dot: 'linear-gradient(135deg,#667eea,#764ba2)',
+    bg:  'linear-gradient(145deg,#667eea 0%,#764ba2 60%,#5a3d8a 100%)',
+    dark: true,
+  },
+  {
+    id: 'cream',
+    label: '奶油黄',
+    dot: 'linear-gradient(135deg,#ffecd2,#fcb69f)',
+    bg:  'linear-gradient(145deg,#ffecd2 0%,#fcb69f 60%,#f9845b 100%)',
+    dark: false,
+  },
+  {
+    id: 'carbon',
+    label: '烟灰黑',
+    dot: 'linear-gradient(135deg,#2c2c2c,#4a4a4a)',
+    bg:  'linear-gradient(145deg,#1a1a1a 0%,#2c2c2c 50%,#3d3d3d 100%)',
+    dark: true,
+  },
+  {
+    id: 'aurora',
+    label: '极光紫',
+    dot: 'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+    bg:  'linear-gradient(145deg,#a18cd1 0%,#c471ed 50%,#fbc2eb 100%)',
+    dark: false,
+  },
+];
+
+let _cardThemeIndex = 0;   // 当前选中主题
+let _cardIntroText  = '';  // 缓存生成的自我介绍
+
+// ── 打开名片 Modal ────────────────────────────────────────────
+async function openPetCardModal() {
+  const overlay = document.getElementById('modal-overlay');
+
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-height:92vh; display:flex; flex-direction:column; padding-bottom:24px;">
+      <div class="modal-handle"></div>
+      <div class="modal-title" style="margin-bottom:4px;">🪪 宠物名片</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+        生成一张可分享的宠物信息卡
+      </div>
+
+      <!-- 主题色选择 -->
+      <div id="card-theme-row"></div>
+
+      <!-- 名片预览 -->
+      <div id="pet-card-preview-wrap">
+        <div id="pet-card">
+          <!-- 由 JS 填充 -->
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div style="display:flex; gap:8px; padding:0 4px;">
+        <button class="btn btn-ghost" id="card-copy-btn" style="flex:1;">
+          📋 复制图片
+        </button>
+        <button class="btn btn-primary" id="card-download-btn" style="flex:1;">
+          ⬇️ 下载 PNG
+        </button>
+      </div>
+      <button class="btn btn-ghost" id="card-close-btn"
+        style="margin-top:8px; width:100%;">关闭</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+
+  // 渲染主题点
+  _renderThemeDots();
+
+  // 生成自我介绍（首次打开时生成，切换主题不重新生成）
+  _cardIntroText = '';
+  await _generateCardIntro();
+
+  // 渲染名片
+  _renderCard();
+
+  // 下载
+  document.getElementById('card-download-btn')?.addEventListener('click', () => {
+    _exportCard('download');
+  });
+
+  // 复制
+  document.getElementById('card-copy-btn')?.addEventListener('click', () => {
+    _exportCard('copy');
+  });
+
+  // 关闭
+  document.getElementById('card-close-btn')?.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+  });
+}
+
+// ── 渲染主题色点 ──────────────────────────────────────────────
+function _renderThemeDots() {
+  const row = document.getElementById('card-theme-row');
+  if (!row) return;
+
+  row.innerHTML = CARD_THEMES.map((t, i) => `
+    <div class="card-theme-dot ${i === _cardThemeIndex ? 'active' : ''}"
+      data-theme-index="${i}"
+      style="background:${t.dot};"
+      title="${t.label}">
+    </div>
+  `).join('');
+
+  row.addEventListener('click', (e) => {
+    const dot = e.target.closest('.card-theme-dot');
+    if (!dot) return;
+    _cardThemeIndex = parseInt(dot.dataset.themeIndex);
+    // 更新选中状态
+    row.querySelectorAll('.card-theme-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === _cardThemeIndex);
+    });
+    _renderCard();
+  });
+}
+
+// ── 生成宠物自我介绍 ──────────────────────────────────────────
+async function _generateCardIntro() {
+  const pet      = runtime.pet      || {};
+  const settings = runtime.settings || {};
+
+  // 先用占位文字
+  _cardIntroText = '正在生成自我介绍...';
+  _renderCard();
+
+  try {
+    const { buildSystemPrompt } = await import('./js/ai.js');
+    const { getPersonalityPrompt, getPetStatusContext } = await import('./js/pet.js');
+
+    const personalityPr = getPersonalityPrompt(pet);
+    const statusCtx     = getPetStatusContext(pet);
+    const { getGrowthStage } = await import('./js/state.js');
+    const stage = getGrowthStage(pet.level || 1);
+
+    const systemPrompt = await buildSystemPrompt({
+      rolePrompt: [
+        `你是「${pet.name || '宠物'}」，一只电子宠物，性格：${personalityPr}`,
+        `成长阶段：${stage.label}，等级 Lv.${pet.level || 1}。`,
+        `请用第一人称写一句自我介绍，25~40字，活泼可爱，可以用颜文字，只输出这句话本身。`,
+      ].join('\n'),
+      statusContext: statusCtx,
+      promptKeys: ['petExtra', 'bubbleStyle'],
+    });
+
+    const text = await callAI({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: '请写你的自我介绍。' },
+      ],
+      stream: false,
+    });
+
+    _cardIntroText = text.trim();
+  } catch (_) {
+    // 本地兜底
+    const pet = runtime.pet || {};
+    const fallbacks = [
+      `大家好，我是${pet.name||'宠物'}！喜欢玩耍和吃东西，希望和你成为好朋友 (｡•̀ᴗ-)✧`,
+      `嗨！我叫${pet.name||'宠物'}，是一只超级可爱的电子宠物，快来陪我玩吧！`,
+      `${pet.name||'宠物'}在此！虽然是电子宠物，但我的心是真实的 ✨`,
+    ];
+    _cardIntroText = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  }
+
+  _renderCard();
+}
+
+// ── 渲染名片内容 ──────────────────────────────────────────────
+function _renderCard() {
+  const card = document.getElementById('pet-card');
+  if (!card) return;
+
+  const pet      = runtime.pet      || {};
+  const settings = runtime.settings || {};
+  const theme    = CARD_THEMES[_cardThemeIndex];
+  const textColor = theme.dark ? '#ffffff' : '#1a1a1a';
+  const subColor  = theme.dark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.6)';
+
+  // 成长阶段
+  const { getGrowthStage } = window._stateHelpers || {};
+  const level = pet.level || 1;
+  // 直接用已 import 的函数（模块顶层已 import）
+  const stage = getGrowthStage(level);
+
+  // 性格标签
+  const { PERSONALITY_PRESETS } = window._stateHelpers || {};
+  const personalityLabel = pet.customPrompt
+    ? '自定义性格'
+    : (PERSONALITY_PRESETS?.[pet.personality]?.label || '元气');
+
+  // 主人昵称
+  const ownerName = settings.userInfo?.name || settings.userInfo?.nickname || '';
+
+  // 头像
+  const avatarHtml = pet.avatarUrl
+    ? `<img src="${pet.avatarUrl}" alt="avatar" />`
+    : `<span class="card-avatar-emoji">🐾</span>`;
+
+  // 状态格子
+  const stats = [
+    { icon: '🍖', label: 'Full',    value: Math.round(pet.hunger  || 0) },
+    { icon: '😊', label: 'Mood',    value: Math.round(pet.mood    || 0) },
+    { icon: '❤️', label: 'Health',  value: Math.round(pet.health  || 0) },
+    { icon: '✨', label: 'Clean',   value: Math.round(pet.clean   || 0) },
+    { icon: '💞', label: 'Bond',    value: Math.round(pet.bond    || 0) },
+  ];
+
+  const statsHtml = stats.map(s => `
+    <div class="card-stat-item">
+      <span class="card-stat-icon">${s.icon}</span>
+      <span class="card-stat-value" style="color:${textColor};">${s.value}</span>
+      <span class="card-stat-label" style="color:${subColor};">${s.label}</span>
+    </div>
+  `).join('');
+
+  const today = new Date().toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' });
+
+  card.style.background = theme.bg;
+  card.style.color      = textColor;
+
+  card.innerHTML = `
+    <!-- 头像区 -->
+    <div class="card-avatar-wrap">
+      <div class="card-avatar-ring">${avatarHtml}</div>
+      <div class="card-pet-name" style="color:${textColor};">${pet.name || '宠物'}</div>
+      ${ownerName
+        ? `<div class="card-owner-name" style="color:${subColor};">主人：${ownerName}</div>`
+        : ''}
+    </div>
+
+    <!-- 阶段 + 等级 -->
+    <div class="card-stage-row">
+      <span class="card-stage-badge" style="color:${textColor};">
+        ${stage.icon} ${stage.label}
+      </span>
+      <span class="card-level-badge" style="color:${textColor};">
+        Lv.${level}
+      </span>
+      <span class="card-level-badge" style="color:${textColor};">
+        ${personalityLabel}
+      </span>
+    </div>
+
+    <!-- 自我介绍 -->
+    <div class="card-intro">
+      <span class="card-intro-quote" style="color:${textColor};">"</span>
+      <span style="color:${textColor};">${_cardIntroText}</span>
+    </div>
+
+    <!-- 状态格子 -->
+    <div class="card-stats-grid">${statsHtml}</div>
+
+    <!-- 水印 -->
+    <div class="card-watermark">
+      <span class="card-watermark-brand" style="color:${textColor};">PetOS-S</span>
+      <span class="card-watermark-date" style="color:${subColor};">${today}</span>
+    </div>
+  `;
+}
+
+// ── 导出名片 ──────────────────────────────────────────────────
+async function _exportCard(mode) {
+  const card       = document.getElementById('pet-card');
+  const downloadBtn = document.getElementById('card-download-btn');
+  const copyBtn    = document.getElementById('card-copy-btn');
+
+  if (!card) return;
+  if (!window.html2canvas) {
+    showToast('html2canvas 未加载，请检查网络', 'error');
+    return;
+  }
+
+  // loading 状态
+  const targetBtn = mode === 'download' ? downloadBtn : copyBtn;
+  const origText  = targetBtn?.innerHTML || '';
+  if (targetBtn) {
+    targetBtn.disabled  = true;
+    targetBtn.innerHTML = '<span class="spinner"></span> 生成中...';
+  }
+
+  try {
+    const canvas = await html2canvas(card, {
+      scale:           2,          // 2x 清晰度
+      useCORS:         true,
+      allowTaint:      true,
+      backgroundColor: null,
+      logging:         false,
+    });
+
+    if (mode === 'download') {
+      // 下载
+      const petName = runtime.pet?.name || 'pet';
+      const link    = document.createElement('a');
+      link.download = `${petName}-card.png`;
+      link.href     = canvas.toDataURL('image/png');
+      link.click();
+      showToast('名片已下载 ✓', 'success');
+
+    } else {
+      // 复制到剪贴板
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          showToast('已复制到剪贴板 ✓', 'success');
+        } catch (_) {
+          // 剪贴板 API 不支持时降级为下载
+          showToast('复制失败，已改为下载', 'warn');
+          const petName = runtime.pet?.name || 'pet';
+          const link    = document.createElement('a');
+          link.download = `${petName}-card.png`;
+          link.href     = canvas.toDataURL('image/png');
+          link.click();
+        }
+      }, 'image/png');
+    }
+
+  } catch (err) {
+    logError('card', `Export failed: ${err.message}`);
+    showToast(`导出失败：${err.message}`, 'error');
+  } finally {
+    if (targetBtn) {
+      targetBtn.disabled  = false;
+      targetBtn.innerHTML = origText;
+    }
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 // 好友串门系统
 // ══════════════════════════════════════════════════════════════
@@ -3516,6 +3881,7 @@ function _buildFriendFreeChatPrompt(friend, pet) {
 import {
   PRESET_SCENES, EASTER_EGGS,
   GROWTH_STAGES, getGrowthStage, getExpForLevel,
+  PERSONALITY_PRESETS,
 } from './js/state.js';
 
 // ── 成长状态栏 ────────────────────────────────────────────────
