@@ -59,7 +59,7 @@ async function checkAndNotify() {
   };
 
   const alerts = [];
-  if (pet.hunger < thresholds.hunger) alerts.push(`🍖 饥饿度过低 (${Math.round(pet.hunger)})`);
+  if (pet.hunger < thresholds.hunger) alerts.push(`🍖 饱食度过低 (${Math.round(pet.hunger)})`);
   if (pet.mood   < thresholds.mood)   alerts.push(`😢 心情很差 (${Math.round(pet.mood)})`);
   if (pet.health < thresholds.health) alerts.push(`❤️ 健康告急 (${Math.round(pet.health)})`);
   if (pet.clean  < thresholds.clean)  alerts.push(`🚿 需要洗澡 (${Math.round(pet.clean)})`);

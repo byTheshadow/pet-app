@@ -76,7 +76,7 @@
         <div id="status-bars">
           <div class="status-card">
             <div class="status-row">
-              <span class="status-label">Hunger</span>
+              <span class="status-label">Fullness</span>
               <div class="status-bar-track">
                 <div class="status-bar-fill hunger" style="width:80%"></div>
               </div>
@@ -289,7 +289,7 @@
               <div class="settings-section-title">属性衰减速率（每小时）</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
-                  <label class="form-label">🍖 饥饿</label>
+                  <label class="form-label">🍖 饱食</label>
                   <input type="number" class="form-input" id="set-decay-hunger"
                     min="0" max="20" step="0.5" value="2" />
                 </div>
@@ -451,7 +451,7 @@
               <div class="settings-section-title">告警阈值</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
-                  <label class="form-label">🍖 饥饿</label>
+                  <label class="form-label">🍖 饱食</label>
                   <input type="number" class="form-input" id="set-thresh-hunger"
                     min="0" max="100" step="5" value="20" />
                 </div>
@@ -714,26 +714,64 @@
   <!-- Bottom Navigation -->
   <nav id="bottom-nav">
     <button class="nav-item active" data-page="pet">
-      <span class="nav-icon">🐱</span>
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C8 2 5 5 5 9c0 2.5 1 4.5 2.5 6L12 22l4.5-7C18 13.5 19 11.5 19 9c0-4-3-7-7-7z"/>
+          <circle cx="9" cy="8" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="15" cy="8" r="1" fill="currentColor" stroke="none"/>
+          <path d="M9 12 Q12 14 15 12"/>
+        </svg>
+      </span>
       <span class="nav-label">宠物</span>
     </button>
+
     <button class="nav-item" data-page="friends">
-      <span class="nav-icon">🐾</span>
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="8" r="3"/>
+          <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+          <circle cx="17" cy="8" r="2.5"/>
+          <path d="M21 20c0-2.8-1.8-5-4-5.5"/>
+        </svg>
+      </span>
       <span class="nav-label">好友</span>
     </button>
+
     <button class="nav-item" data-page="adventure">
-      <span class="nav-icon">🗺</span>
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3,17 12,3 21,17"/>
+          <path d="M3 17h18"/>
+          <path d="M8 17 Q12 11 16 17"/>
+        </svg>
+      </span>
       <span class="nav-label">冒险</span>
     </button>
+
     <button class="nav-item" data-page="settings">
-      <span class="nav-icon">⚙</span>
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </span>
       <span class="nav-label">设置</span>
     </button>
-        <button class="nav-item" id="nav-parent-btn" data-page="parent" aria-label="家长">
-      <span class="nav-icon">👨‍👩‍👧</span>
+
+    <button class="nav-item" id="nav-parent-btn" aria-label="家长">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="7" r="3"/>
+          <path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+          <circle cx="17" cy="9" r="2.5"/>
+          <path d="M17 14c2.2 0 4 1.8 4 4v2"/>
+          <path d="M14 17.5c.5-.3 1-.5 1.5-.5"/>
+        </svg>
+      </span>
       <span class="nav-label">家长</span>
     </button>
   </nav>
+
 
   <!-- ====================================================
      好友串门 Modal
@@ -3787,19 +3825,36 @@ function _buildParentSystemPrompt(scene = '') {
 
   return parts.join('\n');
 }
-
 function _buildPetSystemPromptForParent(scene = '') {
-  const pet      = runtime.pet       || {};
-  const parent   = runtime.aiParent  || {};
-  const s        = runtime.settings  || {};
-  const pc       = s.promptConfig    || {};
-  const u        = s.userInfo        || {};
-  const relation = parent.relation   || 'parent-of-pet';
-  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const pet      = runtime.pet      || {};
+  const parent   = runtime.aiParent || {};
+  const s        = runtime.settings || {};
+  const pc       = s.promptConfig   || {};
+  const u        = s.userInfo       || {};
+  const relation = parent.relation  || 'parent-of-pet';
 
   const petName    = pet.name    || '宠物';
   const parentName = parent.name || '家长';
   const userName   = u.realName  || '主人';
+
+  // 直接内联性格，不依赖 window._petHelpers
+  const personalityPrompt = pet.customPrompt
+    || (() => {
+      const presets = {
+        tsundere: '表面冷淡实则关心，说话时经常用"才、才不是"等傲娇语气，偶尔脸红。',
+        genki:    '活泼开朗，充满正能量，说话语速快，喜欢用感叹号和开心的颜文字。',
+        lazy:     '慵懒随性，说话简短，经常表示困倦，但对喜欢的事会突然来劲。',
+        kuudere:  '表面温和，内心腹黑，偶尔说出意想不到的毒舌话，但不是恶意的。',
+        airhead:  '天然呆萌，经常误解意思，反应慢半拍，但非常可爱真诚。',
+        calm:     '冷静理性，说话简洁有条理，不轻易表露情绪，但内心细腻。',
+      };
+      return presets[pet.personality] || presets.genki;
+    })();
+
+  // 直接内联状态描述
+  const statusContext = pet.hunger !== undefined
+    ? `【当前状态】饱食度：th.round(pet.hunger)}/100，心情:${Math.round(pet.mood)}/100，健康:${Math.round(pet.health)}/100，清洁:${Math.round(pet.clean)}/100，亲密度:${Math.round(pet.bond)}/100。`
+    : '';
 
   const relationDesc = relation === 'co-owner'
     ? [
@@ -3807,25 +3862,28 @@ function _buildPetSystemPromptForParent(scene = '') {
         `你对两位主人都很依赖和喜爱，见到他们都会开心撒娇。`,
       ]
     : [
-        `「${parentName}」是你的家长（爸爸/妈妈），你对它撒娇、依赖，像孩子对父母一样。`,
+        `「${parentName}」是你的家长，你对它撒娇、依赖，像孩子对父母一样。`,
         `「${userName}」是你的主人，负责日常照顾你。`,
       ];
+
+  const behaviorRule = relation === 'co-owner'
+    ? '你是宠物，说话符合你的性格，对两位主人都撒娇。不要说出像主人叮嘱别人的话。回复简短（30字以内），可以用颜文字。只输出这句话本身。'
+    : '你是宠物，说话要像一只宠物，对家长撒娇依赖。绝对不能说出像家长或主人叮嘱别人的话，比如"想你们了""来看看你们"这类话是家长说的，不是宠物说的。回复简短（30字以内），可以用颜文字。只输出这句话本身。';
 
   const parts = [
     s.globalPrompt || '',
     `你是一只名叫「${petName}」的电子宠物。`,
     ...relationDesc,
-    getPersonalityPrompt ? getPersonalityPrompt(pet) : '',
+    `你的性格：${personalityPrompt}`,
     pc.petExtra || '',
-    getPetStatusContext ? getPetStatusContext(pet) : '',
+    statusContext,
     scene,
-    relation === 'co-owner'
-      ? '你是宠物，说话符合你的性格，对两位主人都撒娇。回复简短（30字以内），可以用颜文字。只输出这句话本身。'
-      : '你是宠物孩子，说话符合你的性格，对家长撒娇依赖。不要说出像家长叮嘱人的话。回复简短（30字以内），可以用颜文字。只输出这句话本身。',
+    behaviorRule,
   ].filter(Boolean);
 
   return parts.join('\n');
 }
+
 
 
 // ── 家长开场白（房间1：家长×你）────────────────────────────
@@ -3867,16 +3925,16 @@ async function _parentTrioGreet() {
   ], 'greet');
 
   // 宠物回应
-  await _parentSpeak('parent-trio', 'pet', [
-    {
-      role: 'system',
-      content: _buildPetSystemPromptForParent(
-        `你的家长「${parent.name || '妈妈'}」来看你了，你很开心，像孩子见到家长一样撒娇或欢迎它。`
-      ),
-    },
-    { role: 'user', content: '你的家长来了，你怎么反应？' },
-  ], 'greet');
-}
+await _parentSpeak('parent-trio', 'pet', [
+  {
+    role: 'system',
+    content: _buildPetSystemPromptForParent(
+      `你的家长「${parent.name || '家长'}」刚来了，你很开心，用宠物的方式表达欢迎，比如蹭过去、叫一声、撒娇等。`
+    ),
+  },
+  { role: 'user', content: '家长来了，你作为宠物怎么反应？用宠物的方式回应。' },
+], 'greet');
+
 
 // ── 用户发言后，家长和宠物各回应一次 ────────────────────────
 async function _parentUserTurn(userText) {

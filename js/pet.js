@@ -102,7 +102,7 @@ export function getPetStatusContext(pet) {
   const p = pet || runtime.pet;
   if (!p) return '';
   const statusDesc = [
-    `饥饿度:${Math.round(p.hunger)}/100`,
+    `饱食度:${Math.round(p.hunger)}/100`,
     `心情:${Math.round(p.mood)}/100`,
     `健康:${Math.round(p.health)}/100`,
     `清洁:${Math.round(p.clean)}/100`,
