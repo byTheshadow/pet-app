@@ -3993,31 +3993,127 @@ async function renderAdventureLog() {
 
   const records = await dbList('sceneHistory', { limit: 10 });
   if (!records.length) {
-    logEl.innerHTML = `<div class="empty-state" style="padding:24px;"><div class="empty-state-text">暂无冒险记录</div></div>`;
+    logEl.innerHTML = `<div class="empty-state" style="padding:24px;">
+      <div class="empty-state-text">暂无冒险记录</div>
+    </div>`;
     return;
   }
 
   logEl.innerHTML = records.map(r => `
-    <div class="adv-log-entry" data-record-id="${r.id}">
+    <div class="adv-log-entry" data-record-id="${r.id}" style="cursor:pointer;">
       <div class="adv-log-icon">${r.sceneIcon || '🗺'}</div>
       <div class="adv-log-body">
         <div class="adv-log-title">
           ${r.sceneLabel || '冒险'}
-          ${r.eggLabel ? `<span class="adv-egg-badge">${r.eggIcon||''} ${r.eggLabel}</span>` : ''}
+          ${r.eggLabel  ? `<span class="adv-egg-badge">${r.eggIcon||''} ${r.eggLabel}</span>` : ''}
           ${r.isLetter  ? `<span class="adv-egg-badge" style="background:rgba(255,180,0,0.15);color:#a07000;">📬 有信件</span>` : ''}
           ${r.taskName  ? `<span class="adv-egg-badge" style="background:rgba(90,120,255,0.12);color:#3a5bd9;">🎯 ${r.taskName}</span>` : ''}
+          ${r.earlyReturn ? `<span class="adv-egg-badge" style="background:rgba(255,59,48,0.1);color:#c0392b;">提前回来</span>` : ''}
         </div>
-        <div class="adv-log-story">${r.story || ''}</div>
+        <!-- 折叠状态：只显示两行 -->
+        <div class="adv-log-story adv-log-story-collapsed"
+             data-full="${encodeURIComponent(r.story || '')}"
+             data-collapsed="true">
+          ${r.story || ''}
+        </div>
         ${r.praiseText ? `<div class="adv-log-praise">${r.praiseText}</div>` : ''}
         <div class="adv-log-meta">
           ${r.expGained ? `+${r.expGained} EXP` : ''}
           ${r.leveledUp ? ` · 🎉 升级到 Lv.${r.newLevel}` : ''}
           · ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+          <span class="adv-log-expand-hint">点击展开 ▾</span>
         </div>
       </div>
     </div>
   `).join('');
+
+  // 事件委托：点击条目展开/收起
+  logEl.addEventListener('click', (e) => {
+    const entry = e.target.closest('.adv-log-entry');
+    if (!entry) return;
+
+    const storyEl  = entry.querySelector('.adv-log-story');
+    const hintEl   = entry.querySelector('.adv-log-expand-hint');
+    if (!storyEl) return;
+
+    const isCollapsed = storyEl.dataset.collapsed === 'true';
+
+    if (isCollapsed) {
+      // 展开：移除截断，显示完整内容
+      storyEl.classList.remove('adv-log-story-collapsed');
+      storyEl.dataset.collapsed = 'false';
+      if (hintEl) hintEl.textContent = '收起 ▴';
+
+      // 如果有彩蛋信件，也展开显示
+      const recordId = entry.dataset.recordId;
+      _expandRecordDetail(entry, Number(recordId));
+    } else {
+      // 收起
+      storyEl.classList.add('adv-log-story-collapsed');
+      storyEl.dataset.collapsed = 'true';
+      if (hintEl) hintEl.textContent = '点击展开 ▾';
+
+      // 移除展开的详情区
+      entry.querySelector('.adv-log-detail')?.remove();
+    }
+  });
 }
+
+// 展开时追加彩蛋信件 + 效果标签
+async function _expandRecordDetail(entry, recordId) {
+  // 避免重复追加
+  if (entry.querySelector('.adv-log-detail')) return;
+
+  // 从 DB 取完整记录
+  const records = await dbList('sceneHistory', { limit: 200 });
+  const r = records.find(rec => rec.id === recordId);
+  if (!r) return;
+
+  const effectLabels = { mood:'心情', hunger:'饱食', health:'健康', clean:'清洁', bond:'亲密' };
+
+  const effectTagsHtml = Object.entries(r.effects || {})
+    .filter(([, v]) => v !== 0)
+    .map(([k, v]) => {
+      const sign = v > 0 ? '+' : '';
+      const cls  = v > 0 ? 'effect-pos' : 'effect-neg';
+      return `<span class="effect-tag ${cls}">${effectLabels[k]||k} ${sign}${v}</span>`;
+    }).join('');
+
+  const detail = document.createElement('div');
+  detail.className = 'adv-log-detail';
+  detail.innerHTML = `
+    ${r.eggLetter ? `
+      <div style="
+        background:var(--bg-card-alt);
+        border-radius:var(--radius-sm);
+        padding:10px 12px;
+        margin-top:8px;
+        border-left:3px solid var(--border-color);
+      ">
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
+                    margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
+          ${r.eggIcon||'📬'} ${r.eggLabel||'信件'}
+        </div>
+        <div style="font-size:13px; line-height:1.7; color:var(--text-secondary);
+                    white-space:pre-wrap;">
+          ${r.eggLetter}
+        </div>
+      </div>
+    ` : ''}
+    ${effectTagsHtml ? `
+      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:8px;">
+        ${effectTagsHtml}
+        ${r.expGained ? `<span class="effect-tag effect-exp">+${r.expGained} EXP${r.earlyReturn?' (减半)':''}</span>` : ''}
+        ${r.leveledUp ? `<span class="effect-tag effect-levelup">🎉 升级 Lv.${r.newLevel}</span>` : ''}
+      </div>
+    ` : ''}
+  `;
+
+  // 插入到 meta 行之前
+  const metaEl = entry.querySelector('.adv-log-meta');
+  metaEl ? metaEl.before(detail) : entry.querySelector('.adv-log-body').appendChild(detail);
+}
+
 
 // ── 信箱红点 ──────────────────────────────────────────────────
 async function updateMailboxBadge() {

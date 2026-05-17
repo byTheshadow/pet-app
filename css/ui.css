@@ -1187,11 +1187,6 @@
   color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 4px;
-  /* 最多显示2行 */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .adv-log-meta {
@@ -1615,6 +1610,24 @@
 
 .card-theme-dot:active { transform: scale(0.9); }
 .card-theme-dot.active { border-color: var(--text-primary); transform: scale(1.15); }
+/* 冒险记录折叠/展开 */
+.adv-log-story-collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adv-log-expand-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+.adv-log-detail {
+  margin-top: 4px;
+}
 
 
 
