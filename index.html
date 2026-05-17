@@ -708,7 +708,12 @@
       <span class="nav-icon">⚙</span>
       <span class="nav-label">设置</span>
     </button>
+        <button class="nav-item" id="nav-parent-btn" data-page="parent" aria-label="家长">
+      <span class="nav-icon">👨‍👩‍👧</span>
+      <span class="nav-label">家长</span>
+    </button>
   </nav>
+
   <!-- ====================================================
      好友串门 Modal
      ==================================================== -->
@@ -751,6 +756,55 @@
 
   </div>
 </div><!-- /visit-modal-overlay -->
+<!-- ====================================================
+     AI 家长 Modal
+     ==================================================== -->
+<div id="parent-modal-overlay">
+  <div class="parent-panel">
+
+    <!-- 顶栏 -->
+    <div class="parent-header">
+      <div class="parent-header-avatar" id="parent-header-avatar">👨‍👩‍👧</div>
+      <div class="parent-header-info">
+        <div class="parent-header-name" id="parent-header-name">妈妈</div>
+        <div class="parent-header-sub" id="parent-header-sub">AI 家长</div>
+      </div>
+      <!-- 聊天室切换 -->
+      <div class="parent-room-switcher">
+        <button class="parent-room-btn active" data-room="parent-user">与你</button>
+        <button class="parent-room-btn" data-room="parent-trio">三方</button>
+      </div>
+      <button class="parent-close-btn" id="parent-close-btn" aria-label="关闭">✕</button>
+    </div>
+
+    <!-- 聊天区（两个房间） -->
+    <div class="parent-chat-wrap">
+      <!-- 房间1：家长 × 你 -->
+      <div class="parent-chat-area active" id="parent-room-parent-user"></div>
+      <!-- 房间2：家长 × 你 × 宠物 -->
+      <div class="parent-chat-area" id="parent-room-parent-trio"></div>
+    </div>
+
+    <!-- 底部输入 -->
+    <div class="parent-footer">
+      <div class="parent-status-bar">
+        <span id="parent-status-text" style="font-size:11px; color:var(--text-tertiary);"></span>
+      </div>
+      <div class="parent-input-row">
+        <input
+          type="text"
+          id="parent-input"
+          placeholder="和家长说说话..."
+          maxlength="200"
+          autocomplete="off"
+        />
+        <button class="parent-send-btn" id="parent-send-btn" aria-label="发送">↑</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /parent-modal-overlay -->
+
 
 </div><!-- /app-shell -->
 
@@ -852,9 +906,11 @@ async function init() {
   bindSettingsSave();
   bindDataManagement();
   bindFriendsPage();
+  bindParentNav();
+  initParentTrigger();
   bindPromptTab();
   fillPromptForms();
-  
+
   // 暴露 pet helpers 给串门系统使用
 import('./js/pet.js').then(m => {
   window._petHelpers = {
@@ -862,6 +918,7 @@ import('./js/pet.js').then(m => {
     getPetStatusContext:  m.getPetStatusContext,
   };
 });
+
 
 
   // 监听宠物更新
@@ -3320,6 +3377,704 @@ function _buildFriendFreeChatPrompt(friend, pet) {
     { role: 'user',   content: '和好友随便聊一句。' },
   ];
 }
+// ══════════════════════════════════════════════════════════════
+// AI 家长系统
+// ══════════════════════════════════════════════════════════════
+
+// ── 家长 Modal 状态 ───────────────────────────────────────────
+const parentState = {
+  isOpen:    false,
+  isAIBusy:  false,
+  abortCtrl: null,
+  room:      'parent-user',  // 'parent-user' | 'parent-trio'
+};
+
+// ── 本地兜底台词 ──────────────────────────────────────────────
+const PARENT_FALLBACKS = {
+  greet: [
+    '宝贝，你在吗？',
+    '来看看你们了～',
+    '最近过得怎么样？',
+    '想你们了，来看看。',
+    '有没有好好照顾自己？',
+  ],
+  care_feed: [
+    '看你饿成这样，快来吃点东西。',
+    '肚子饿了吧，我来喂你。',
+    '不吃饭怎么行，来来来。',
+  ],
+  care_clean: [
+    '这么脏了，让我帮你洗洗。',
+    '来，洗个澡，干净一点。',
+    '脏兮兮的，快洗澡。',
+  ],
+  care_heal: [
+    '身体不舒服吗？让我来照顾你。',
+    '看你状态不好，来，吃点药。',
+    '要好好休息，我来帮你。',
+  ],
+  care_play: [
+    '心情不好吗？来，陪你玩一会儿。',
+    '别闷闷不乐的，我们来玩吧。',
+    '笑一笑，来陪你开心一下。',
+  ],
+  reply: [
+    '嗯嗯，我听着呢。',
+    '是这样啊，说来听听。',
+    '好的，我明白了。',
+    '你说得对，我支持你。',
+  ],
+};
+
+function _pickParentFallback(key) {
+  const pool = PARENT_FALLBACKS[key] || PARENT_FALLBACKS.reply;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── 打开家长 Modal ────────────────────────────────────────────
+function openParentModal() {
+  const overlay = document.getElementById('parent-modal-overlay');
+  if (!overlay) return;
+
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+
+  // 填充顶栏
+  _setParentHeaderAvatar(parent.avatarUrl);
+  const nameEl = document.getElementById('parent-header-name');
+  const subEl  = document.getElementById('parent-header-sub');
+  if (nameEl) nameEl.textContent = parent.name || '妈妈';
+  if (subEl)  subEl.textContent  = 'AI 家长';
+
+  // 重置状态
+  parentState.isOpen   = true;
+  parentState.isAIBusy = false;
+  parentState.room     = 'parent-user';
+
+  // 切换到默认房间
+  _switchParentRoom('parent-user');
+
+  // 如果两个房间都是空的，触发家长开场白
+  const room1 = document.getElementById('parent-room-parent-user');
+  if (room1 && !room1.querySelector('.parent-line')) {
+    _parentGreet();
+  }
+
+  overlay.classList.add('show');
+  _bindParentModal();
+}
+
+// ── 关闭家长 Modal ────────────────────────────────────────────
+function closeParentModal() {
+  const overlay = document.getElementById('parent-modal-overlay');
+  overlay?.classList.remove('show');
+  parentState.isOpen = false;
+
+  if (parentState.abortCtrl) {
+    parentState.abortCtrl.abort();
+    parentState.abortCtrl = null;
+  }
+}
+
+// ── 设置家长头像 ──────────────────────────────────────────────
+function _setParentHeaderAvatar(avatarUrl) {
+  const el = document.getElementById('parent-header-avatar');
+  if (!el) return;
+  el.innerHTML = '';
+  if (avatarUrl) {
+    const img = document.createElement('img');
+    img.src = avatarUrl;
+    img.alt = '';
+    img.onerror = () => { el.textContent = '👨‍👩‍👧'; };
+    el.appendChild(img);
+  } else {
+    el.textContent = '👨‍👩‍👧';
+  }
+}
+
+// ── 绑定 Modal 内部事件 ───────────────────────────────────────
+function _bindParentModal() {
+  // 关闭按钮（替换节点去除旧监听）
+  const oldClose = document.getElementById('parent-close-btn');
+  if (oldClose) {
+    const newClose = oldClose.cloneNode(true);
+    oldClose.replaceWith(newClose);
+    newClose.addEventListener('click', closeParentModal);
+  }
+
+  // 点击遮罩关闭
+  const overlay = document.getElementById('parent-modal-overlay');
+  const onOverlay = (e) => {
+    if (e.target === overlay) {
+      closeParentModal();
+      overlay.removeEventListener('click', onOverlay);
+    }
+  };
+  overlay?.addEventListener('click', onOverlay);
+
+  // 房间切换
+  document.querySelectorAll('.parent-room-btn').forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.replaceWith(newBtn);
+    newBtn.addEventListener('click', () => {
+      _switchParentRoom(newBtn.dataset.room);
+    });
+  });
+
+  // 输入发送（替换节点）
+  const oldInput  = document.getElementById('parent-input');
+  const oldSend   = document.getElementById('parent-send-btn');
+  if (oldInput && oldSend) {
+    const newInput = oldInput.cloneNode(true);
+    const newSend  = oldSend.cloneNode(true);
+    oldInput.replaceWith(newInput);
+    oldSend.replaceWith(newSend);
+
+    const doSend = async () => {
+      const input = document.getElementById('parent-input');
+      const text  = input?.value?.trim();
+      if (!text || parentState.isAIBusy) return;
+      if (input) input.value = '';
+
+      _appendParentLine(parentState.room, 'user', text, '你');
+      await _parentUserTurn(text);
+    };
+
+    newSend.addEventListener('click', doSend);
+    newInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+    });
+  }
+}
+
+// ── 切换聊天室 ────────────────────────────────────────────────
+function _switchParentRoom(roomKey) {
+  parentState.room = roomKey;
+
+  // 更新按钮高亮
+  document.querySelectorAll('.parent-room-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.room === roomKey);
+  });
+
+  // 切换聊天区
+  document.querySelectorAll('.parent-chat-area').forEach(area => {
+    area.classList.toggle('active', area.id === `parent-room-${roomKey}`);
+  });
+
+  // 更新输入框 placeholder
+  const input = document.getElementById('parent-input');
+  if (input) {
+    input.placeholder = roomKey === 'parent-trio'
+      ? '三方对话中说话...'
+      : '和家长说说话...';
+  }
+
+  // 如果三方房间是空的，触发三方开场
+  if (roomKey === 'parent-trio') {
+    const trioArea = document.getElementById('parent-room-parent-trio');
+    if (trioArea && !trioArea.querySelector('.parent-line')) {
+      _parentTrioGreet();
+    }
+  }
+}
+
+// ── 向聊天区追加消息 ──────────────────────────────────────────
+function _appendParentLine(room, role, text, speakerName = '', isTyping = false) {
+  const areaId = `parent-room-${room}`;
+  const area   = document.getElementById(areaId);
+  if (!area) return null;
+
+  const line = document.createElement('div');
+  line.className = `parent-line ${role}${isTyping ? ' typing' : ''}`;
+
+  if (role === 'system') {
+    const bubble = document.createElement('div');
+    bubble.className = 'parent-bubble';
+    bubble.textContent = text || '';
+    line.appendChild(bubble);
+  } else {
+    // 头像
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'parent-avatar-sm';
+
+    if (role === 'parent') {
+      const p = runtime.aiParent || {};
+      if (p.avatarUrl) {
+        const img = document.createElement('img');
+        img.src = p.avatarUrl;
+        img.alt = '';
+        img.onerror = () => { avatarEl.textContent = '👨‍👩‍👧'; };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = '👨‍👩‍👧';
+      }
+    } else if (role === 'pet') {
+      const pet = runtime.pet || {};
+      if (pet.avatarUrl) {
+        const img = document.createElement('img');
+        img.src = pet.avatarUrl;
+        img.alt = '';
+        img.onerror = () => { avatarEl.textContent = '🐱'; };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = '🐱';
+      }
+    } else {
+      avatarEl.textContent = '👤';
+    }
+
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.className = 'parent-bubble-wrap';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'parent-bubble-name';
+    nameEl.textContent = speakerName;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'parent-bubble';
+
+    if (isTyping) {
+      bubble.appendChild(createTypingIndicator());
+    } else {
+      bubble.textContent = text || '';
+    }
+
+    bubbleWrap.appendChild(nameEl);
+    bubbleWrap.appendChild(bubble);
+    line.appendChild(avatarEl);
+    line.appendChild(bubbleWrap);
+  }
+
+  area.appendChild(line);
+
+  // 最多保留 80 条
+  const allLines = area.querySelectorAll('.parent-line');
+  if (allLines.length > 80) allLines[0].remove();
+
+  area.scrollTop = area.scrollHeight;
+  return line;
+}
+
+// ── AI 发言（流式）───────────────────────────────────────────
+async function _parentSpeak(room, role, messages, fallbackKey = 'reply') {
+  if (parentState.isAIBusy) return;
+
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+  const s      = runtime.settings || {};
+
+  const speakerName = role === 'parent'
+    ? (parent.name || '妈妈')
+    : (pet.name    || '宠物');
+
+  // 无 API：本地兜底
+  if (!s.apiBase || !s.apiKey) {
+    _appendParentLine(room, role, _pickParentFallback(fallbackKey), speakerName);
+    return;
+  }
+
+  parentState.isAIBusy = true;
+  _setParentInputDisabled(true);
+
+  const typingLine = _appendParentLine(room, role, null, speakerName, true);
+
+  parentState.abortCtrl = new AbortController();
+  let replyText = '';
+
+  try {
+    const { callAI } = await import('./js/ai.js');
+    await callAI({
+      messages,
+      stream:  true,
+      signal:  parentState.abortCtrl.signal,
+      onChunk: (delta) => {
+        replyText += delta;
+        if (typingLine) {
+          const bubble = typingLine.querySelector('.parent-bubble');
+          if (bubble) bubble.textContent = replyText;
+        }
+      },
+    });
+
+    if (!replyText && typingLine) {
+      const bubble = typingLine.querySelector('.parent-bubble');
+      if (bubble) bubble.textContent = _pickParentFallback(fallbackKey);
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      typingLine?.remove();
+      return;
+    }
+    if (typingLine) {
+      const bubble = typingLine.querySelector('.parent-bubble');
+      if (bubble) bubble.textContent = _pickParentFallback(fallbackKey);
+    }
+    logWarn('app', `Parent AI speak failed (${role}): ${err.message}`);
+  } finally {
+    parentState.isAIBusy  = false;
+    parentState.abortCtrl = null;
+    typingLine?.classList.remove('typing');
+    _setParentInputDisabled(false);
+  }
+}
+
+function _setParentInputDisabled(disabled) {
+  const input   = document.getElementById('parent-input');
+  const sendBtn = document.getElementById('parent-send-btn');
+  if (input)   input.disabled   = disabled;
+  if (sendBtn) sendBtn.disabled = disabled;
+}
+
+// ── Prompt 构建 ───────────────────────────────────────────────
+
+function _buildParentSystemPrompt(scene = '') {
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+  const s      = runtime.settings || {};
+  const pc     = s.promptConfig  || {};
+  const u      = s.userInfo      || {};
+
+  const parts = [
+    s.globalPrompt || '',
+    `你是「${pet.name || '宠物'}」的家长，名叫「${parent.name || '妈妈'}」。`,
+    parent.personality ? `性格：${parent.personality}` : '',
+    parent.customPrompt || '',
+    pc.parentExtra || '',
+    u.realName ? `主人的真实名字是「${u.realName}」。` : '',
+    scene,
+    '用温暖自然的语气说话，回复简短（40字以内），可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean);
+
+  return parts.join('\n');
+}
+
+function _buildPetSystemPromptForParent(scene = '') {
+  const pet = runtime.pet || {};
+  const s   = runtime.settings || {};
+  const pc  = s.promptConfig  || {};
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+
+  const parts = [
+    s.globalPrompt || '',
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    getPersonalityPrompt ? getPersonalityPrompt(pet) : '',
+    pc.petExtra || '',
+    getPetStatusContext ? getPetStatusContext(pet) : '',
+    scene,
+    '回复简短（30字以内），符合你的性格，可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean);
+
+  return parts.join('\n');
+}
+
+// ── 家长开场白（房间1：家长×你）────────────────────────────
+async function _parentGreet() {
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+  const u      = (runtime.settings || {}).userInfo || {};
+
+  _appendParentLine('parent-user', 'system', `✨ ${parent.name || '妈妈'} 来看你们了`);
+
+  const scene = u.realName
+    ? `你来看望主人「${u.realName}」和宠物「${pet.name || '宠物'}」，说一句温暖的开场白。`
+    : `你来看望宠物「${pet.name || '宠物'}」和主人，说一句温暖的开场白。`;
+
+  await _parentSpeak('parent-user', 'parent', [
+    { role: 'system', content: _buildParentSystemPrompt(scene) },
+    { role: 'user',   content: '你刚到，说一句开场白。' },
+  ], 'greet');
+}
+
+// ── 三方开场白（房间2：家长×你×宠物）───────────────────────
+async function _parentTrioGreet() {
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+
+  _appendParentLine('parent-trio', 'system', `✨ 三方对话开始`);
+
+  // 家长先说
+  await _parentSpeak('parent-trio', 'parent', [
+    {
+      role: 'system',
+      content: _buildParentSystemPrompt(
+        `你和宠物「${pet.name || '宠物'}」以及主人在一起，说一句欢快的开场白。`
+      ),
+    },
+    { role: 'user', content: '三方对话开始，你先说一句。' },
+  ], 'greet');
+
+    // 宠物回应
+  await _parentSpeak('parent-trio', 'pet', [
+    {
+      role: 'system',
+      content: _buildPetSystemPromptForParent(
+        `家长「${parent.name || '妈妈'}」来了，你很开心，说一句欢迎的话。`
+      ),
+    },
+    { role: 'user', content: '家长来了，你说一句。' },
+  ], 'greet');
+}
+
+// ── 用户发言后，家长和宠物各回应一次 ────────────────────────
+async function _parentUserTurn(userText) {
+  const room   = parentState.room;
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+
+  if (room === 'parent-user') {
+    // 房间1：只有家长回应
+    await _parentSpeak('parent-user', 'parent', [
+      {
+        role: 'system',
+        content: _buildParentSystemPrompt(
+          `主人对你说了话，你温暖地回应。`
+        ),
+      },
+      { role: 'user', content: userText },
+    ], 'reply');
+
+  } else {
+    // 房间2：家长先回，宠物也回
+    await _parentSpeak('parent-trio', 'parent', [
+      {
+        role: 'system',
+        content: _buildParentSystemPrompt(
+          `主人在三方对话中说了话，宠物「${pet.name || '宠物'}」也在场，你温暖地回应主人。`
+        ),
+      },
+      { role: 'user', content: userText },
+    ], 'reply');
+
+    await _parentSpeak('parent-trio', 'pet', [
+      {
+        role: 'system',
+        content: _buildPetSystemPromptForParent(
+          `家长「${parent.name || '妈妈'}」和主人都在，主人刚说了话，你也回应一句。`
+        ),
+      },
+      { role: 'user', content: userText },
+    ], 'reply');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// AI 家长自动照顾宠物（后台触发，user 不在场）
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * 检查宠物状态，决定家长是否需要主动照顾
+ * 返回需要照顾的动作列表
+ */
+function _getParentCareActions(pet, settings) {
+  const thresh = settings?.notifyThresholds || { hunger: 20, mood: 20, health: 20, clean: 20 };
+  const actions = [];
+
+  if (pet.hunger  < thresh.hunger)  actions.push('feed');
+  if (pet.mood    < thresh.mood)    actions.push('play');
+  if (pet.health  < thresh.health)  actions.push('heal');
+  if (pet.clean   < thresh.clean)   actions.push('clean');
+
+  return actions;
+}
+
+/**
+ * 家长自动照顾宠物
+ * 照顾完成后写入 actionLog，并在界面显示 Banner 通知
+ */
+async function parentAutoCare() {
+  const pet      = runtime.pet;
+  const parent   = runtime.aiParent || {};
+  const settings = runtime.settings || {};
+
+  if (!pet) return;
+
+  const actions = _getParentCareActions(pet, settings);
+  if (!actions.length) return;
+
+  logInfo('app', `Parent auto care triggered: ${actions.join(', ')}`);
+
+  // 执行照顾动作，更新宠物状态
+  const clamp = (v) => Math.min(100, Math.max(0, v));
+  const patch = {};
+
+  const careMessages = [];
+  const actionLabels = {
+    feed:  { label: '喂食', emoji: '🍖', stat: 'hunger', delta: 25 },
+    play:  { label: '陪玩', emoji: '🎮', stat: 'mood',   delta: 20 },
+    heal:  { label: '治疗', emoji: '💊', stat: 'health', delta: 20 },
+    clean: { label: '洗澡', emoji: '🚿', stat: 'clean',  delta: 30 },
+  };
+
+  for (const action of actions) {
+    const info = actionLabels[action];
+    if (!info) continue;
+    patch[info.stat] = clamp((pet[info.stat] || 0) + info.delta);
+    careMessages.push(`${info.emoji} ${info.label}`);
+  }
+
+  patch.lastOnlineAt = Date.now();
+
+  try {
+    // 保存宠物状态
+    const { savePet } = await import('./js/pet.js');
+    await savePet(patch);
+
+    // 生成家长照顾后的 AI 留言
+    const careDesc = careMessages.join('、');
+    const s = runtime.settings || {};
+    let parentNote = '';
+
+    if (s.apiBase && s.apiKey) {
+      try {
+        const { callAI } = await import('./js/ai.js');
+        const pc = s.promptConfig || {};
+        const systemPrompt = [
+          s.globalPrompt || '',
+          `你是「${pet.name || '宠物'}」的家长，名叫「${parent.name || '妈妈'}」。`,
+          parent.personality ? `性格：${parent.personality}` : '',
+          parent.customPrompt || '',
+          pc.parentExtra || '',
+          `你趁主人不在，帮宠物做了：${careDesc}。`,
+          '用一句话（30字以内）留下一条温暖的照顾留言，像便条一样。只输出这句话本身。',
+        ].filter(Boolean).join('\n');
+
+        parentNote = await callAI({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: '留下一条照顾留言。' },
+          ],
+          stream: false,
+        });
+        parentNote = parentNote.trim();
+      } catch (err) {
+        logWarn('app', `Parent care note AI failed: ${err.message}`);
+      }
+    }
+
+    if (!parentNote) {
+      parentNote = `趁你不在，我帮 ${pet.name || '宠物'} 做了${careDesc}，放心吧～`;
+    }
+
+    // 写入行为日志
+    const logMsg = `👨‍👩‍👧 ${parent.name || '家长'} 照顾了宠物（${careDesc}）：「${parentNote}」`;
+    await dbAppend('actionLog', {
+      id:      Date.now() + Math.random(),
+      type:    'PARENT_CARE',
+      source:  'parent',
+      message: logMsg,
+    });
+
+    // 更新家长最后访问时间
+    const updatedParent = { ...runtime.aiParent, lastVisitAt: Date.now() };
+    await dbSet('aiParent', updatedParent);
+    runtime.aiParent = updatedParent;
+
+    // 界面通知 Banner
+    _showParentCareBanner(parent.name || '家长', careDesc, parentNote);
+
+    logInfo('app', `Parent auto care done: ${careDesc}`);
+
+  } catch (err) {
+    logError('app', 'Parent auto care failed', { stack: err.stack });
+  }
+}
+
+/**
+ * 在界面顶部显示家长照顾通知 Banner
+ */
+function _showParentCareBanner(parentName, careDesc, note) {
+  const stack = document.getElementById('system-banner-stack');
+  if (!stack) return;
+
+  const el = document.createElement('div');
+  el.className = 'system-banner info';
+  el.setAttribute('role', 'status');
+
+  const iconEl = document.createElement('span');
+  iconEl.className = 'system-banner-icon';
+  iconEl.textContent = '👨‍👩‍👧';
+
+  const textEl = document.createElement('span');
+  textEl.className = 'system-banner-text';
+  textEl.textContent = `${parentName} 照顾了宠物（${careDesc}）：「${note}」`;
+
+  const closeEl = document.createElement('span');
+  closeEl.className = 'system-banner-arrow';
+  closeEl.textContent = '✕';
+  closeEl.style.cursor = 'pointer';
+
+  el.appendChild(iconEl);
+  el.appendChild(textEl);
+  el.appendChild(closeEl);
+
+  // 点击关闭
+  el.addEventListener('click', () => {
+    el.style.animation = 'toast-out 0.2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+  });
+
+  stack.appendChild(el);
+
+  // 15 秒后自动消失
+  setTimeout(() => {
+    if (el.parentNode) {
+      el.style.animation = 'toast-out 0.2s ease forwards';
+      setTimeout(() => el.remove(), 200);
+    }
+  }, 15000);
+}
+
+// ── 家长定时/状态触发检查 ────────────────────────────────────
+function initParentTrigger() {
+  const CHECK_INTERVAL = 60 * 1000; // 每分钟检查一次
+
+  const check = async () => {
+    const settings = runtime.settings || {};
+    const parent   = runtime.aiParent || {};
+    const pet      = runtime.pet;
+
+    if (!pet) return;
+
+    // 家长没有配置名字，跳过
+    if (!parent.name && !parent.personality && !parent.customPrompt) return;
+
+    const mode     = settings.aiParentMode     || 'timer';
+    const interval = (settings.aiParentInterval || 4) * 3600 * 1000; // 转毫秒
+    const lastVisit = parent.lastVisitAt || 0;
+    const now       = Date.now();
+
+    if (mode === 'timer') {
+      // 定时触发：距上次访问超过设定间隔
+      if (now - lastVisit < interval) return;
+    } else {
+      // 状态触发：任意状态低于阈值
+      const actions = _getParentCareActions(pet, settings);
+      if (!actions.length) return;
+      // 状态触发也要有最短冷却（1小时），避免频繁触发
+      if (now - lastVisit < 3600 * 1000) return;
+    }
+
+    // 触发家长自动照顾
+    await parentAutoCare();
+  };
+
+  // 启动时检查一次（延迟 3 秒，等初始化完成）
+  setTimeout(check, 3000);
+
+  // 之后每分钟检查
+  setInterval(check, CHECK_INTERVAL);
+}
+
+// ── 绑定家长入口按钮 ─────────────────────────────────────────
+function bindParentNav() {
+  document.getElementById('nav-parent-btn')
+    ?.addEventListener('click', () => {
+      openParentModal();
+    });
+}
+
+
 
 
 // ── 系统状态 Banner ───────────────────────────────────────
