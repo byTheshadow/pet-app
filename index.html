@@ -2183,24 +2183,43 @@ function bindPromptTab() {
     update();
   });
 
-  // 简单模式互动规则 → 同步到详细模式的对应字段
+    // 简单 ↔ 详细 互动规则双向同步
+  let syncingInteraction = false;
+
   document.getElementById('set-prompt-interaction')
     ?.addEventListener('input', () => {
+      if (syncingInteraction) return;
+      syncingInteraction = true;
       const val = document.getElementById('set-prompt-interaction')?.value || '';
       const detailEl = document.getElementById('set-prompt-interaction-detail');
-      if (detailEl) detailEl.value = val;
-      // 触发详细模式字数更新
-      detailEl?.dispatchEvent(new Event('input'));
+      if (detailEl) {
+        detailEl.value = val;
+        const hint = document.getElementById('hint-interaction-detail');
+        if (hint) {
+          hint.textContent = `${val.length} / 300`;
+          hint.style.color = val.length > 270 ? '#ff6b6b' : 'var(--text-tertiary)';
+        }
+      }
+      syncingInteraction = false;
     });
 
-  // 详细模式互动规则 → 同步回简单模式
   document.getElementById('set-prompt-interaction-detail')
     ?.addEventListener('input', () => {
+      if (syncingInteraction) return;
+      syncingInteraction = true;
       const val = document.getElementById('set-prompt-interaction-detail')?.value || '';
       const simpleEl = document.getElementById('set-prompt-interaction');
-      if (simpleEl) simpleEl.value = val;
-      simpleEl?.dispatchEvent(new Event('input'));
+      if (simpleEl) {
+        simpleEl.value = val;
+        const hint = document.getElementById('hint-interaction');
+        if (hint) {
+          hint.textContent = `${val.length} / 300`;
+          hint.style.color = val.length > 270 ? '#ff6b6b' : 'var(--text-tertiary)';
+        }
+      }
+      syncingInteraction = false;
     });
+
 
   // ── 简单模式保存 ──
   document.getElementById('btn-save-prompt-simple')
@@ -2274,22 +2293,28 @@ function bindPromptTab() {
 function fillPromptForms() {
   const pc = runtime.settings?.promptConfig || {};
 
-  const set = (id, val) => {
+  const set = (id, val, hintId, max) => {
     const el = document.getElementById(id);
-    if (el) {
-      el.value = val || '';
-      // 触发字数更新
-      el.dispatchEvent(new Event('input'));
+    if (!el) return;
+    el.value = val || '';
+    // 直接更新字数，不触发 input 事件（避免循环）
+    if (hintId) {
+      const hint = document.getElementById(hintId);
+      if (hint) {
+        const len = el.value.length;
+        hint.textContent = `${len} / ${max}`;
+        hint.style.color = len > max * 0.9 ? '#ff6b6b' : 'var(--text-tertiary)';
+      }
     }
   };
 
-  set('set-prompt-interaction',        pc.interaction       || '');
-  set('set-prompt-interaction-detail', pc.interaction       || '');
-  set('set-prompt-pet-extra',          pc.petExtra          || '');
-  set('set-prompt-parent-extra',       pc.parentExtra       || '');
-  set('set-prompt-friend-interaction', pc.friendInteraction || '');
-  set('set-prompt-adventure-style',    pc.adventureStyle    || '');
-  set('set-prompt-bubble-style',       pc.bubbleStyle       || '');
+  set('set-prompt-interaction',        pc.interaction       || '', 'hint-interaction',        300);
+  set('set-prompt-interaction-detail', pc.interaction       || '', 'hint-interaction-detail', 300);
+  set('set-prompt-pet-extra',          pc.petExtra          || '', 'hint-pet-extra',          500);
+  set('set-prompt-parent-extra',       pc.parentExtra       || '', 'hint-parent-extra',       500);
+  set('set-prompt-friend-interaction', pc.friendInteraction || '', 'hint-friend-interaction', 500);
+  set('set-prompt-adventure-style',    pc.adventureStyle    || '', 'hint-adventure-style',    500);
+  set('set-prompt-bubble-style',       pc.bubbleStyle       || '', 'hint-bubble-style',       300);
 }
 
 // ── 启动 ─────────────────────────────────────────────────────
