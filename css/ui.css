@@ -1277,6 +1277,105 @@
 .toggle-switch input:checked + .toggle-track::after {
   transform: translateX(16px);
 }
+/* ============================================================
+   出发 Modal — 模式选择卡片
+   ============================================================ */
+.mode-radio-label {
+  flex: 1;
+  cursor: pointer;
+}
+
+.mode-radio-label input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mode-radio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-color);
+  background: var(--bg-card-alt);
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.mode-radio-label input:checked + .mode-radio-card {
+  border-color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+/* 信件卡片 */
+.letter-card {
+  background: var(--bg-card-alt);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.letter-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.letter-card-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.letter-card-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.letter-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.letter-card-date {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.letter-card-body {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border-color);
+}
+
+/* 夸夸文字 */
+.adv-log-praise {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-style: italic;
+  background: var(--bg-card-alt);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  margin: 4px 0;
+  border-left: 2px solid var(--border-color);
+}
+
+/* 时长标签 */
+.effect-duration {
+  background: var(--bg-card-alt);
+  color: var(--text-secondary);
+}
 
 
 

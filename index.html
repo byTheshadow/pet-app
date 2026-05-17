@@ -186,57 +186,26 @@
       <!-- ====================================================
            PAGE: 冒险 #adventure
            ==================================================== -->
-<section id="page-adventure" class="page-section">
+           <section id="page-adventure" class="page-section">
 
   <!-- 成长状态栏 -->
-  <div id="growth-bar-wrap" style="
-    padding: 12px 16px 0;
-    flex-shrink: 0;
-  ">
+  <div id="growth-bar-wrap" style="padding:12px 16px 0; flex-shrink:0;">
     <div id="growth-bar-card" style="
-      background: var(--bg-card);
-      border-radius: var(--radius-lg);
-      padding: 12px 16px;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    ">
+      background:var(--bg-card); border-radius:var(--radius-lg);
+      padding:12px 16px; box-shadow:var(--shadow-card);
+      display:flex; align-items:center; gap:12px;">
       <div id="growth-stage-icon" style="font-size:28px; flex-shrink:0;">🐣</div>
       <div style="flex:1; min-width:0;">
         <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:4px;">
-          <span id="growth-stage-label" style="
-            font-size:13px; font-weight:700; color:var(--text-primary);
-          ">幼儿园</span>
-          <span id="growth-level-badge" style="
-            font-size:11px; font-weight:600; color:var(--text-secondary);
-            background:var(--bg-card-alt); padding:1px 7px;
-            border-radius:var(--radius-full);
-          ">Lv.1</span>
-          <span id="growth-never-badge" style="
-            display:none;
-            font-size:10px; font-weight:600; color:var(--text-tertiary);
-            background:var(--bg-card-alt); padding:1px 7px;
-            border-radius:var(--radius-full);
-          ">永不成长</span>
+          <span id="growth-stage-label" style="font-size:13px; font-weight:700; color:var(--text-primary);">幼儿园</span>
+          <span id="growth-level-badge" style="font-size:11px; font-weight:600; color:var(--text-secondary); background:var(--bg-card-alt); padding:1px 7px; border-radius:var(--radius-full);">Lv.1</span>
+          <span id="growth-never-badge" style="display:none; font-size:10px; font-weight:600; color:var(--text-tertiary); background:var(--bg-card-alt); padding:1px 7px; border-radius:var(--radius-full);">永不成长</span>
         </div>
-        <div style="
-          height:5px; background:var(--border-color);
-          border-radius:3px; overflow:hidden;
-        ">
-          <div id="growth-exp-bar" style="
-            height:100%; width:0%;
-            background:var(--text-primary);
-            border-radius:3px;
-            transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
-          "></div>
+        <div style="height:5px; background:var(--border-color); border-radius:3px; overflow:hidden;">
+          <div id="growth-exp-bar" style="height:100%; width:0%; background:var(--text-primary); border-radius:3px; transition:width 0.6s cubic-bezier(0.34,1.56,0.64,1);"></div>
         </div>
-        <div id="growth-exp-text" style="
-          font-size:10px; color:var(--text-tertiary);
-          margin-top:3px;
-        ">0 / 100 EXP</div>
+        <div id="growth-exp-text" style="font-size:10px; color:var(--text-tertiary); margin-top:3px;">0 / 100 EXP</div>
       </div>
-      <!-- 永不成长切换 -->
       <label class="toggle-switch" title="永不成长模式" style="flex-shrink:0;">
         <input type="checkbox" id="toggle-never-grow" />
         <span class="toggle-track"></span>
@@ -244,41 +213,59 @@
     </div>
   </div>
 
-  <!-- 场景列表标题行 -->
-  <div style="
-    padding: 14px 16px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-  ">
-    <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
-                text-transform:uppercase; letter-spacing:1px;">
-      选择场景
+  <!-- 进行中冒险卡片（默认隐藏） -->
+  <div id="active-adventure-wrap" style="padding:10px 16px 0; flex-shrink:0; display:none;">
+    <div id="active-adventure-card" style="
+      background:var(--bg-card); border-radius:var(--radius-lg);
+      padding:14px 16px; box-shadow:var(--shadow-card);
+      border-left:3px solid var(--text-primary);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <span id="adv-active-icon" style="font-size:24px;">🌳</span>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span id="adv-active-label" style="font-size:14px; font-weight:700; color:var(--text-primary);">公园散步</span>
+            <span id="adv-active-mode-badge" style="font-size:10px; font-weight:600; padding:1px 7px; border-radius:var(--radius-full); background:rgba(90,120,255,0.12); color:#3a5bd9;">🎮 游玩</span>
+          </div>
+          <div id="adv-active-task" style="font-size:12px; color:var(--text-secondary); margin-top:1px; display:none;"></div>
+        </div>
+        <div id="adv-active-timer" style="font-size:18px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums; flex-shrink:0;">20:00</div>
+      </div>
+      <!-- 进度条 -->
+      <div style="height:4px; background:var(--border-color); border-radius:2px; overflow:hidden; margin-bottom:10px;">
+        <div id="adv-active-progress" style="height:100%; width:0%; background:var(--text-primary); border-radius:2px; transition:width 1s linear;"></div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost btn-sm" id="btn-adv-early-return" style="flex:1;">提前回来（经验减半）</button>
+        <button class="btn btn-primary btn-sm" id="btn-adv-finish" style="flex:1; display:none;">🎉 结算</button>
+      </div>
     </div>
-    <button class="btn btn-ghost btn-sm" id="btn-add-custom-scene"
-      style="padding:6px 12px;">
-      + 自定义
-    </button>
+  </div>
+
+  <!-- 场景列表标题行 -->
+  <div style="padding:14px 16px 8px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+    <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px;">选择场景</div>
+    <div style="display:flex; gap:8px;">
+      <!-- 信箱按钮 -->
+      <button class="btn btn-ghost btn-sm" id="btn-open-mailbox" style="padding:6px 12px; position:relative;">
+        📬 信箱
+        <span id="mailbox-badge" style="
+          display:none; position:absolute; top:-3px; right:-3px;
+          width:8px; height:8px; background:#ff3b30;
+          border-radius:50%; border:1.5px solid var(--bg-card);
+        "></span>
+      </button>
+      <button class="btn btn-ghost btn-sm" id="btn-add-custom-scene" style="padding:6px 12px;">+ 自定义</button>
+    </div>
   </div>
 
   <!-- 场景卡片列表 -->
-  <div id="scene-list" style="flex:1; overflow-y:auto; padding:0 16px 12px;">
-    <!-- 由 JS 渲染 -->
-  </div>
+  <div id="scene-list" style="flex:1; overflow-y:auto; padding:0 16px 12px;"></div>
 
   <!-- 最近冒险记录 -->
-  <div style="padding: 0 16px 16px; flex-shrink:0;">
-    <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
-                text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-      最近记录
-    </div>
-    <div id="adventure-log"
-         style="background:var(--bg-card); border-radius:var(--radius-lg);
-                overflow:hidden; box-shadow:var(--shadow-card);">
-      <div class="empty-state" style="padding:24px;">
-        <div class="empty-state-text">暂无冒险记录</div>
-      </div>
+  <div style="padding:0 16px 16px; flex-shrink:0;">
+    <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">最近记录</div>
+    <div id="adventure-log" style="background:var(--bg-card); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-card);">
+      <div class="empty-state" style="padding:24px;"><div class="empty-state-text">暂无冒险记录</div></div>
     </div>
   </div>
 
@@ -3522,45 +3509,39 @@ function _buildFriendFreeChatPrompt(friend, pet) {
 // ══════════════════════════════════════════════════════════════
 // 冒险页 + 成长系统
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// 冒险页 + 成长系统 + 番茄钟
+// ══════════════════════════════════════════════════════════════
 
 import {
   PRESET_SCENES, EASTER_EGGS,
   GROWTH_STAGES, getGrowthStage, getExpForLevel,
 } from './js/state.js';
-import { gainExp } from './js/pet.js';
 
-// ── 渲染成长状态栏 ────────────────────────────────────────────
+// ── 成长状态栏 ────────────────────────────────────────────────
 function renderGrowthBar() {
-  const pet      = runtime.pet || {};
+  const pet      = runtime.pet      || {};
   const settings = runtime.settings || {};
-  const level    = pet.level || 1;
-  const exp      = pet.exp   || 0;
+  const level    = pet.level    || 1;
+  const exp      = pet.exp      || 0;
   const neverGrow = !!settings.neverGrow;
+  const stage    = getGrowthStage(level);
+  const needed   = getExpForLevel(level);
+  const pct      = Math.min(100, Math.round((exp / needed) * 100));
 
-  const stage  = getGrowthStage(level);
-  const needed = getExpForLevel(level);
-  const pct    = Math.min(100, Math.round((exp / needed) * 100));
-
-  const iconEl   = document.getElementById('growth-stage-icon');
-  const labelEl  = document.getElementById('growth-stage-label');
-  const badgeEl  = document.getElementById('growth-level-badge');
-  const neverEl  = document.getElementById('growth-never-badge');
-  const barEl    = document.getElementById('growth-exp-bar');
-  const textEl   = document.getElementById('growth-exp-text');
-  const toggleEl = document.getElementById('toggle-never-grow');
-
-  if (iconEl)   iconEl.textContent  = stage.icon;
-  if (labelEl)  labelEl.textContent = stage.label;
-  if (badgeEl)  badgeEl.textContent = `Lv.${level}`;
-  if (neverEl)  neverEl.style.display = neverGrow ? 'inline' : 'none';
-  if (barEl)    barEl.style.width    = `${pct}%`;
-  if (textEl)   textEl.textContent   = neverGrow
+  const el = id => document.getElementById(id);
+  if (el('growth-stage-icon'))  el('growth-stage-icon').textContent  = stage.icon;
+  if (el('growth-stage-label')) el('growth-stage-label').textContent = stage.label;
+  if (el('growth-level-badge')) el('growth-level-badge').textContent = `Lv.${level}`;
+  if (el('growth-never-badge')) el('growth-never-badge').style.display = neverGrow ? 'inline' : 'none';
+  if (el('growth-exp-bar'))     el('growth-exp-bar').style.width = `${pct}%`;
+  if (el('growth-exp-text'))    el('growth-exp-text').textContent = neverGrow
     ? '永不成长模式已开启'
     : `${exp} / ${needed} EXP`;
-  if (toggleEl) toggleEl.checked = neverGrow;
+  if (el('toggle-never-grow'))  el('toggle-never-grow').checked = neverGrow;
 }
 
-// ── 渲染场景卡片列表 ──────────────────────────────────────────
+// ── 场景卡片列表 ──────────────────────────────────────────────
 function renderSceneList() {
   const container = document.getElementById('scene-list');
   if (!container) return;
@@ -3570,50 +3551,51 @@ function renderSceneList() {
   const level    = pet.level || 1;
   const stage    = getGrowthStage(level);
   const customs  = settings.customScenes || [];
+  const isActive = !!settings.activeAdventure;
 
-  // 合并预设 + 自定义
-  const allScenes = [
-    ...PRESET_SCENES,
-    ...customs.map(c => ({ ...c, isCustom: true })),
-  ];
-
+  const allScenes = [...PRESET_SCENES, ...customs.map(c => ({ ...c, isCustom: true }))];
   container.innerHTML = '';
 
-  // 按阶段可用性分组渲染
   const available   = allScenes.filter(s => !s.stageReq || s.stageReq.includes(stage.id));
   const unavailable = allScenes.filter(s =>  s.stageReq && !s.stageReq.includes(stage.id));
+
+  const effectLabels = { mood:'心情', hunger:'饱食', health:'健康', clean:'清洁', bond:'亲密' };
 
   const renderCard = (scene, locked) => {
     const card = document.createElement('div');
     card.className = 'scene-card' + (locked ? ' scene-card-locked' : '');
-    card.dataset.sceneId = scene.id;
 
-    // 效果标签
     const effectTags = Object.entries(scene.effects || {})
       .filter(([, v]) => v !== 0)
       .map(([k, v]) => {
-        const labels = { mood:'心情', hunger:'饱食', health:'健康', clean:'清洁', bond:'亲密' };
-        const sign   = v > 0 ? '+' : '';
-        const cls    = v > 0 ? 'effect-pos' : 'effect-neg';
-        return `<span class="effect-tag ${cls}">${labels[k] || k}${sign}${v}</span>`;
+        const sign = v > 0 ? '+' : '';
+        const cls  = v > 0 ? 'effect-pos' : 'effect-neg';
+        return `<span class="effect-tag ${cls}">${effectLabels[k]||k}${sign}${v}</span>`;
       }).join('');
+
+    const durationMin = scene.duration || 20;
 
     card.innerHTML = `
       <div class="scene-card-icon">${scene.icon}</div>
       <div class="scene-card-body">
-        <div class="scene-card-title">${scene.label}
+        <div class="scene-card-title">
+          ${scene.label}
           ${scene.isCustom ? '<span class="scene-custom-badge">自定义</span>' : ''}
-          ${locked ? `<span class="scene-locked-badge">🔒 ${scene.stageReq?.map(id => GROWTH_STAGES.find(g=>g.id===id)?.label).join('/')||''}</span>` : ''}
+          ${locked ? `<span class="scene-locked-badge">🔒 ${scene.stageReq?.map(id=>GROWTH_STAGES.find(g=>g.id===id)?.label).join('/')||''}</span>` : ''}
         </div>
         <div class="scene-card-desc">${scene.desc}</div>
-        <div class="scene-card-effects">${effectTags}
+        <div class="scene-card-effects">
+          ${effectTags}
           <span class="effect-tag effect-exp">+${scene.expReward} EXP</span>
+          <span class="effect-tag effect-duration">⏱ ${durationMin}min</span>
         </div>
       </div>
       <div class="scene-card-action">
         ${locked
           ? `<span class="scene-locked-icon">🔒</span>`
-          : `<button class="btn btn-primary btn-sm scene-go-btn" data-scene-id="${scene.id}">出发</button>`
+          : isActive
+            ? `<span style="font-size:11px; color:var(--text-tertiary);">冒险中</span>`
+            : `<button class="btn btn-primary btn-sm scene-go-btn" data-scene-id="${scene.id}">出发</button>`
         }
         ${scene.isCustom && !locked
           ? `<button class="btn btn-ghost btn-sm scene-del-btn" data-scene-id="${scene.id}" style="margin-top:4px;">删除</button>`
@@ -3621,475 +3603,691 @@ function renderSceneList() {
         }
       </div>
     `;
-
     container.appendChild(card);
   };
 
   if (available.length === 0 && unavailable.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">🗺</div>
-        <div class="empty-state-text">还没有场景<br>点击「+ 自定义」添加吧</div>
-      </div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🗺</div><div class="empty-state-text">还没有场景<br>点击「+ 自定义」添加吧</div></div>`;
     return;
   }
 
-  available.forEach(s   => renderCard(s, false));
+  available.forEach(s => renderCard(s, false));
+
   if (unavailable.length) {
-    const divider = document.createElement('div');
-    divider.className = 'section-divider';
-    divider.innerHTML = `
-      <div class="section-divider-line"></div>
-      <div class="section-divider-text">其他阶段解锁</div>
-      <div class="section-divider-line"></div>`;
-    container.appendChild(divider);
+    const div = document.createElement('div');
+    div.className = 'section-divider';
+    div.innerHTML = `<div class="section-divider-line"></div><div class="section-divider-text">其他阶段解锁</div><div class="section-divider-line"></div>`;
+    container.appendChild(div);
     unavailable.forEach(s => renderCard(s, true));
   }
 }
 
-// ── 渲染冒险记录 ──────────────────────────────────────────────
+// ── 冒险记录 ──────────────────────────────────────────────────
 async function renderAdventureLog() {
   const logEl = document.getElementById('adventure-log');
   if (!logEl) return;
 
   const records = await dbList('sceneHistory', { limit: 10 });
-
   if (!records.length) {
-    logEl.innerHTML = `<div class="empty-state" style="padding:24px;">
-      <div class="empty-state-text">暂无冒险记录</div>
-    </div>`;
+    logEl.innerHTML = `<div class="empty-state" style="padding:24px;"><div class="empty-state-text">暂无冒险记录</div></div>`;
     return;
   }
 
   logEl.innerHTML = records.map(r => `
-    <div class="adv-log-entry">
+    <div class="adv-log-entry" data-record-id="${r.id}">
       <div class="adv-log-icon">${r.sceneIcon || '🗺'}</div>
       <div class="adv-log-body">
         <div class="adv-log-title">
           ${r.sceneLabel || '冒险'}
-          ${r.eggLabel ? `<span class="adv-egg-badge">${r.eggIcon} ${r.eggLabel}</span>` : ''}
+          ${r.eggLabel ? `<span class="adv-egg-badge">${r.eggIcon||''} ${r.eggLabel}</span>` : ''}
+          ${r.isLetter  ? `<span class="adv-egg-badge" style="background:rgba(255,180,0,0.15);color:#a07000;">📬 有信件</span>` : ''}
+          ${r.taskName  ? `<span class="adv-egg-badge" style="background:rgba(90,120,255,0.12);color:#3a5bd9;">🎯 ${r.taskName}</span>` : ''}
         </div>
         <div class="adv-log-story">${r.story || ''}</div>
+        ${r.praiseText ? `<div class="adv-log-praise">${r.praiseText}</div>` : ''}
         <div class="adv-log-meta">
           ${r.expGained ? `+${r.expGained} EXP` : ''}
           ${r.leveledUp ? ` · 🎉 升级到 Lv.${r.newLevel}` : ''}
-          · ${new Date(r.createdAt).toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })}
+          · ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
         </div>
       </div>
     </div>
   `).join('');
 }
 
-// ── 抽取彩蛋 ─────────────────────────────────────────────────
-function _rollEasterEgg(stageId) {
-  const pet = runtime.pet || {};
-  const candidates = EASTER_EGGS.filter(e =>
-    !e.stageReq || e.stageReq.includes(stageId)
-  );
-  for (const egg of candidates) {
-    if (Math.random() < egg.prob) return egg;
-  }
-  return null;
+// ── 信箱红点 ──────────────────────────────────────────────────
+async function updateMailboxBadge() {
+  const badge = document.getElementById('mailbox-badge');
+  if (!badge) return;
+  const letters = await dbQuery('sceneHistory', r => r.isLetter && !r.letterRead);
+  badge.style.display = letters.length > 0 ? 'block' : 'none';
 }
 
-// ── 执行冒险 ─────────────────────────────────────────────────
-async function _runAdventure(scene) {
-  const pet     = runtime.pet || {};
-  const stage   = getGrowthStage(pet.level || 1);
-  const settings = runtime.settings || {};
+// ── 信箱 Modal ────────────────────────────────────────────────
+async function openMailboxModal() {
+  const overlay = document.getElementById('modal-overlay');
+  const letters = await dbQuery('sceneHistory', r => r.isLetter, { limit: 50 });
 
-  // 检查冷却（同一场景 30 分钟内不能重复）
-  const lastRecords = await dbList('sceneHistory', { limit: 20 });
-  const lastSame = lastRecords.find(r => r.sceneId === scene.id);
-  if (lastSame) {
-    const cooldown = 30 * 60 * 1000;
-    const elapsed  = Date.now() - (lastSame.createdAt || 0);
-    if (elapsed < cooldown) {
-      const mins = Math.ceil((cooldown - elapsed) / 60000);
-      showToast(`${scene.label} 还需要冷却 ${mins} 分钟`, 'warn');
-      return;
+   // 标记全部已读
+  for (const r of letters) {
+    if (!r.letterRead) {
+      await dbSet('sceneHistory', { ...r, letterRead: true });
     }
   }
+  updateMailboxBadge();
 
-  // 打开冒险 Modal
-  _openAdventureModal(scene, stage, settings);
-}
-
-// ── 冒险 Modal ────────────────────────────────────────────────
-function _openAdventureModal(scene, stage, settings) {
-  const pet    = runtime.pet || {};
-  const pc     = (runtime.settings || {}).promptConfig || {};
-
-  // 构建 Modal DOM
-  const overlay = document.getElementById('modal-overlay');
   overlay.innerHTML = `
-    <div class="modal-box adv-modal">
+    <div class="modal-box" style="max-height:85vh; display:flex; flex-direction:column;">
       <div class="modal-handle"></div>
-      <div class="adv-modal-header">
-        <span class="adv-modal-icon">${scene.icon}</span>
-        <div>
-          <div class="modal-title">${scene.label}</div>
-          <div style="font-size:12px; color:var(--text-secondary);">${scene.desc}</div>
-        </div>
+      <div class="modal-title" style="margin-bottom:16px;">📬 信箱</div>
+
+      <div id="mailbox-list" style="flex:1; overflow-y:auto;">
+        ${letters.length === 0
+          ? `<div class="empty-state" style="padding:32px 0;">
+               <div class="empty-state-icon">📭</div>
+               <div class="empty-state-text">信箱是空的</div>
+             </div>`
+          : letters.map(r => `
+              <div class="letter-card" data-letter-id="${r.id}">
+                <div class="letter-card-header">
+                  <span class="letter-card-icon">${r.eggIcon || '📄'}</span>
+                  <div class="letter-card-meta">
+                    <div class="letter-card-title">${r.eggLabel || '信件'}</div>
+                    <div class="letter-card-date">
+                      ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+                      · ${r.sceneLabel || ''}
+                    </div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm letter-del-btn"
+                    data-letter-id="${r.id}"
+                    style="flex-shrink:0; padding:6px 10px; color:#ff6b6b;">
+                    删除
+                  </button>
+                </div>
+                <div class="letter-card-body">${r.eggLetter || ''}</div>
+              </div>
+            `).join('')
+        }
       </div>
 
-      <!-- 故事区 -->
-      <div id="adv-story-area" style="
-        background:var(--bg-card-alt);
-        border-radius:var(--radius-sm);
-        padding:14px;
-        min-height:80px;
-        font-size:14px;
-        line-height:1.8;
-        color:var(--text-primary);
-        margin:16px 0;
-        position:relative;
-      ">
-        <div id="adv-story-placeholder" style="color:var(--text-tertiary); font-size:13px;">
-          准备出发...
-        </div>
-        <div id="adv-story-text" style="display:none;"></div>
-      </div>
-
-      <!-- 彩蛋区（隐藏直到触发） -->
-      <div id="adv-egg-area" style="display:none;
-        background:var(--accent-pink-soft);
-        border-radius:var(--radius-sm);
-        padding:12px 14px;
-        margin-bottom:16px;
-      ">
-        <div id="adv-egg-title" style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:6px;"></div>
-        <div id="adv-egg-letter" style="font-size:13px; line-height:1.7; color:var(--text-secondary);"></div>
-      </div>
-
-      <!-- 结果预览 -->
-      <div id="adv-result-area" style="display:none; margin-bottom:16px;">
-        <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
-                    text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-          冒险结果
-        </div>
-        <div id="adv-result-tags" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="adv-cancel-btn">取消</button>
-        <button class="btn btn-primary" id="adv-go-btn">
-          <span class="spinner" style="display:none;" id="adv-spinner"></span>
-          <span id="adv-go-label">开始冒险</span>
-        </button>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-primary" id="mailbox-close-btn">关闭</button>
       </div>
     </div>
   `;
   overlay.classList.add('show');
 
-  // 取消
-  document.getElementById('adv-cancel-btn')?.addEventListener('click', () => {
+  // 关闭
+  document.getElementById('mailbox-close-btn')?.addEventListener('click', () => {
     overlay.classList.remove('show');
     overlay.innerHTML = '';
   });
 
-  // 开始冒险
-  document.getElementById('adv-go-btn')?.addEventListener('click', async () => {
-    const goBtn    = document.getElementById('adv-go-btn');
-    const spinner  = document.getElementById('adv-spinner');
-    const goLabel  = document.getElementById('adv-go-label');
-    const cancelBtn = document.getElementById('adv-cancel-btn');
+  // 删除单封信（事件委托）
+  document.getElementById('mailbox-list')?.addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.letter-del-btn');
+    if (!delBtn) return;
 
-    goBtn.disabled    = true;
-    cancelBtn.disabled = true;
-    spinner.style.display = 'inline-block';
-    goLabel.textContent   = '冒险中...';
+    const letterId = Number(delBtn.dataset.letterId);
+    const ok = await showModal({
+      title:       '删除信件',
+      body:        '删除后无法恢复，确定吗？',
+      confirmText: '删除',
+      danger:      true,
+    });
+    if (!ok) return;
 
-    const placeholder = document.getElementById('adv-story-placeholder');
-    const storyText   = document.getElementById('adv-story-text');
-    placeholder.textContent = '正在生成故事...';
+    await dbDelete('sceneHistory', letterId);
+
+    // 从 DOM 里移除这张卡片
+    const card = document.querySelector(`.letter-card[data-letter-id="${letterId}"]`);
+    card?.remove();
+
+    // 如果全删完了，显示空状态
+    const list = document.getElementById('mailbox-list');
+    if (list && !list.querySelector('.letter-card')) {
+      list.innerHTML = `<div class="empty-state" style="padding:32px 0;">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-text">信箱是空的</div>
+      </div>`;
+    }
+
+    showToast('信件已删除', 'success');
+    updateMailboxBadge();
+  });
+}
+
+// ── 进行中冒险卡片 ────────────────────────────────────────────
+let _advTimerInterval = null;
+
+function renderActiveAdventure() {
+  const settings = runtime.settings || {};
+  const adv      = settings.activeAdventure;
+  const wrap     = document.getElementById('active-adventure-wrap');
+  const sceneList = document.getElementById('scene-list');
+
+  if (!adv) {
+    if (wrap) wrap.style.display = 'none';
+    return;
+  }
+
+  if (wrap) wrap.style.display = 'block';
+
+  // 填充卡片内容
+  const el = id => document.getElementById(id);
+  if (el('adv-active-icon'))  el('adv-active-icon').textContent  = adv.sceneIcon  || '🗺';
+  if (el('adv-active-label')) el('adv-active-label').textContent = adv.sceneLabel || '冒险中';
+
+  const modeBadge = el('adv-active-mode-badge');
+  const taskEl    = el('adv-active-task');
+  if (adv.pomodoro && adv.taskName) {
+    if (modeBadge) { modeBadge.textContent = '🎯 专注'; modeBadge.style.background = 'rgba(255,149,0,0.15)'; modeBadge.style.color = '#b06000'; }
+    if (taskEl)    { taskEl.textContent = `任务：${adv.taskName}`; taskEl.style.display = 'block'; }
+  } else {
+    if (modeBadge) { modeBadge.textContent = '🎮 游玩'; modeBadge.style.background = 'rgba(90,120,255,0.12)'; modeBadge.style.color = '#3a5bd9'; }
+    if (taskEl)    taskEl.style.display = 'none';
+  }
+
+  // 清掉旧计时器
+  if (_advTimerInterval) { clearInterval(_advTimerInterval); _advTimerInterval = null; }
+
+  const finishBtn     = el('btn-adv-finish');
+  const earlyBtn      = el('btn-adv-early-return');
+  const timerEl       = el('adv-active-timer');
+  const progressEl    = el('adv-active-progress');
+  const totalDuration = adv.endAt - adv.startAt;
+
+  function _tick() {
+    const now       = Date.now();
+    const remaining = adv.endAt - now;
+    const elapsed   = now - adv.startAt;
+    const pct       = Math.min(100, Math.round((elapsed / totalDuration) * 100));
+
+    if (progressEl) progressEl.style.width = `${pct}%`;
+
+    if (remaining <= 0) {
+      // 时间到
+      clearInterval(_advTimerInterval);
+      _advTimerInterval = null;
+      if (timerEl)    timerEl.textContent      = '00:00';
+      if (finishBtn)  finishBtn.style.display  = 'flex';
+      if (earlyBtn)   earlyBtn.style.display   = 'none';
+      showToast(`${adv.sceneIcon} 冒险结束！点击结算`, 'success', 5000);
+    } else {
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      if (timerEl) timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    }
+  }
+
+  _tick(); // 立即执行一次
+  _advTimerInterval = setInterval(_tick, 1000);
+
+  // 结算按钮
+  finishBtn?.addEventListener('click', () => _finishAdventure(false));
+
+  // 提前回来
+  earlyBtn?.addEventListener('click', async () => {
+    const ok = await showModal({
+      title:       '提前回来',
+      body:        '提前结束冒险，获得的经验值将减半，确定吗？',
+      confirmText: '确定回来',
+      danger:      false,
+    });
+    if (ok) _finishAdventure(true);
+  });
+}
+
+// ── 结算冒险 ──────────────────────────────────────────────────
+async function _finishAdventure(earlyReturn = false) {
+  const settings = runtime.settings || {};
+  const adv      = settings.activeAdventure;
+  if (!adv) return;
+
+  const pet = runtime.pet || {};
+  const pc  = settings.promptConfig || {};
+
+  // 找回场景定义
+  const allScenes = [...PRESET_SCENES, ...(settings.customScenes || [])];
+  const scene     = allScenes.find(s => s.id === adv.sceneId) || {
+    id: adv.sceneId, label: adv.sceneLabel, icon: adv.sceneIcon,
+    effects: {}, expReward: 20, duration: adv.duration,
+  };
+
+  const stage = getGrowthStage(pet.level || 1);
+
+  // 显示结算 loading
+  const finishBtn = document.getElementById('btn-adv-finish');
+  const earlyBtn  = document.getElementById('btn-adv-early-return');
+  if (finishBtn) { finishBtn.disabled = true; finishBtn.innerHTML = '<span class="spinner"></span> 结算中...'; }
+  if (earlyBtn)  earlyBtn.disabled = true;
+
+  try {
+    // 1. 抽彩蛋（提前回来不触发彩蛋）
+    const egg = earlyReturn ? null : _rollEasterEgg(stage.id);
+
+    // 2. 生成冒险故事
+    let fullStory = '';
+    let eggStory  = '';
 
     try {
-      // 1. 抽彩蛋
-      const egg = _rollEasterEgg(stage.id);
-
-      // 2. 构建 prompt
       const { buildSystemPrompt } = await import('./js/ai.js');
       const { getPetStatusContext, getPersonalityPrompt } = await import('./js/pet.js');
 
-      const statusCtx     = getPetStatusContext(pet);
-      const personalityPr = getPersonalityPrompt(pet);
+      const statusCtx      = getPetStatusContext(pet);
+      const personalityPr  = getPersonalityPrompt(pet);
       const adventureStyle = pc.adventureStyle || '';
+      const eggHint        = egg ? `\n在故事中途，发生了一个意外事件：「${egg.title}」，请自然地融入叙述。` : '';
+      const earlyHint      = earlyReturn ? '\n主人提前结束了这次冒险，故事要体现出意犹未尽的感觉。' : '';
 
-      const eggHint = egg
-        ? `\n在故事中途，发生了一个意外事件：「${egg.title}」，请自然地融入叙述。`
-        : '';
-
-            const systemPrompt = await buildSystemPrompt({
+      const systemPrompt = await buildSystemPrompt({
         rolePrompt: [
           `你是一个温柔的故事叙述者，正在讲述「${pet.name || '宠物'}」的冒险故事。`,
           `宠物性格：${personalityPr}`,
-          `当前场景：${scene.label} — ${scene.desc}`,
-          `宠物成长阶段：${stage.label}（${stage.desc}）`,
-          `请用第三人称叙述，100~150字，语气温馨生动，结尾自然收束。${eggHint}`,
+          `当前场景：${scene.label} — ${scene.desc || ''}`,
+          `宠物成长阶段：${stage.label}（${stage.desc || ''}）`,
+          `请用第三人称叙述，100~150字，语气温馨生动，结尾自然收束。${eggHint}${earlyHint}`,
           adventureStyle,
         ].filter(Boolean).join('\n'),
         statusContext: statusCtx,
         promptKeys: ['adventureStyle'],
       });
 
-      // 3. 流式生成故事
-      placeholder.style.display = 'none';
-      storyText.style.display   = 'block';
-      storyText.textContent     = '';
-
-      let fullStory = '';
-      await callAI({
+      fullStory = await callAI({
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: `请开始讲述这次「${scene.label}」的冒险故事。` },
         ],
-        stream:  true,
-        onChunk: (delta) => {
-          fullStory += delta;
-          storyText.textContent = fullStory;
-        },
+        stream: false,
       });
 
-      // 4. 处理彩蛋
-      let eggStory = '';
-      if (egg) {
-        const eggArea  = document.getElementById('adv-egg-area');
-        const eggTitle = document.getElementById('adv-egg-title');
-        const eggLetter = document.getElementById('adv-egg-letter');
-
-        eggArea.style.display  = 'block';
-        eggTitle.textContent   = `${egg.icon} ${egg.title}`;
-
-        if (egg.letter) {
-          // 生成一封信
-          eggLetter.textContent = '正在生成...';
-          const letterPrompt = await buildSystemPrompt({
-            rolePrompt: [
-              `你正在为电子宠物「${pet.name || '宠物'}」写一封来自「${egg.label}」事件的信或留言。`,
-              `宠物成长阶段：${stage.label}。`,
-              `信的内容要符合事件背景，温馨真实，60~100字，用第一人称写信人视角。`,
-              egg.id === 'teacher_visit'
-                ? `你是${pet.name || '宠物'}的老师，刚刚家访完，留下一封手写便条。`
-                : egg.id === 'gift'
-                ? `你是一个神秘的送礼人，留下一张小卡片。`
-                : '',
-            ].filter(Boolean).join('\n'),
-            statusContext: '',
-            promptKeys: [],
-          });
-
-          eggStory = '';
-          await callAI({
-            messages: [
-              { role: 'system', content: letterPrompt },
-              { role: 'user',   content: '请写这封信。' },
-            ],
-            stream:  true,
-            onChunk: (delta) => {
-              eggStory += delta;
-              eggLetter.textContent = eggStory;
-            },
-          });
-        } else {
-          eggLetter.textContent = '';
-        }
+      // 彩蛋信件
+      if (egg?.letter) {
+        const letterPrompt = await buildSystemPrompt({
+          rolePrompt: [
+            `你正在为电子宠物「${pet.name || '宠物'}」写一封来自「${egg.label}」事件的信或留言。`,
+            `宠物成长阶段：${stage.label}。`,
+            `信的内容要符合事件背景，温馨真实，60~100字，用第一人称写信人视角。`,
+            egg.id === 'teacher_visit' ? `你是${pet.name || '宠物'}的老师，刚刚家访完，留下一封手写便条。` : '',
+            egg.id === 'gift'          ? `你是一个神秘的送礼人，留下一张小卡片。` : '',
+          ].filter(Boolean).join('\n'),
+          statusContext: '',
+          promptKeys: [],
+        });
+        eggStory = await callAI({
+          messages: [
+            { role: 'system', content: letterPrompt },
+            { role: 'user',   content: '请写这封信。' },
+          ],
+          stream: false,
+        });
       }
-
-      // 5. 结算状态变化
-      const clamp = v => Math.max(0, Math.min(100, v));
-      const allEffects = { ...scene.effects };
-      if (egg?.effects) {
-        for (const [k, v] of Object.entries(egg.effects)) {
-          allEffects[k] = (allEffects[k] || 0) + v;
-        }
-      }
-
-      const currentPet = runtime.pet;
-      const patch = {};
-      const effectLabels = {
-        mood: '心情', hunger: '饱食', health: '健康',
-        clean: '清洁', bond: '亲密',
+    } catch (_aiErr) {
+      // AI 失败兜底
+      const fallbacks = {
+        park:      `${pet.name||'宠物'}在公园里跑来跑去，追着蝴蝶玩了好久，玩累了就躺在草地上晒太阳，心情好极了。`,
+        library:   `${pet.name||'宠物'}在图书馆里安静地翻着绘本，虽然有些字不认识，但图画已经让它看得津津有味。`,
+        playground:`${pet.name||'宠物'}在游乐场玩了个痛快，滑梯滑了十几次，最后被你拉着才依依不舍地离开。`,
+        cafe:      `${pet.name||'宠物'}坐在咖啡馆的角落，闻着香气，看着窗外的行人，度过了一个悠闲的下午。`,
+        hospital:  `${pet.name||'宠物'}乖乖配合了体检，虽然有点紧张，但结果一切正常，医生还夸它很勇敢。`,
+        beach:     `${pet.name||'宠物'}在海边踩浪花，被冷水激得跳起来，又忍不住再踩，玩得满身是沙。`,
+        exam:      `${pet.name||'宠物'}认真答完了试卷，走出考场时长舒一口气，不管结果如何，已经尽力了。`,
+        sleepover: `${pet.name||'宠物'}在朋友家玩到很晚，两个人说了好多悄悄话，最后抱着玩具睡着了。`,
       };
-
-      for (const [k, v] of Object.entries(allEffects)) {
-        if (v === 0) continue;
-        if (k in currentPet) {
-          patch[k] = clamp((currentPet[k] || 0) + v);
-        }
-      }
-      await savePet(patch);
-
-      // 6. 经验结算
-      const totalExp = (scene.expReward || 0) + (egg?.expReward || 0);
-      const { gainExp } = await import('./js/pet.js');
-      const growResult  = await gainExp(totalExp);
-
-      // 7. 显示结果标签
-      const resultArea = document.getElementById('adv-result-area');
-      const resultTags = document.getElementById('adv-result-tags');
-      resultArea.style.display = 'block';
-
-      const tagHtml = [
-        ...Object.entries(allEffects)
-          .filter(([, v]) => v !== 0)
-          .map(([k, v]) => {
-            const sign = v > 0 ? '+' : '';
-            const cls  = v > 0 ? 'effect-pos' : 'effect-neg';
-            return `<span class="effect-tag ${cls}">${effectLabels[k] || k} ${sign}${v}</span>`;
-          }),
-        `<span class="effect-tag effect-exp">+${totalExp} EXP</span>`,
-        growResult.leveledUp
-          ? `<span class="effect-tag effect-levelup">🎉 升级！Lv.${growResult.newLevel} ${growResult.stage.icon} ${growResult.stage.label}</span>`
-          : '',
-      ].filter(Boolean).join('');
-
-      resultTags.innerHTML = tagHtml;
-
-      // 8. 写入 sceneHistory
-      await dbAppend('sceneHistory', {
-        sceneId:    scene.id,
-        sceneLabel: scene.label,
-        sceneIcon:  scene.icon,
-        story:      fullStory,
-        eggId:      egg?.id    || null,
-        eggLabel:   egg?.label || null,
-        eggIcon:    egg?.icon  || null,
-        eggLetter:  eggStory   || null,
-        effects:    allEffects,
-        expGained:  totalExp,
-        leveledUp:  growResult.leveledUp,
-        newLevel:   growResult.newLevel,
-      });
-
-      // 9. 升级提示
-      if (growResult.leveledUp) {
-        showToast(
-          `🎉 ${pet.name || '宠物'} 升级了！Lv.${growResult.newLevel} · ${growResult.stage.label}`,
-          'success', 4000
-        );
-        // 刷新成长栏
-        renderGrowthBar();
-        renderSceneList(); // 可能解锁新场景
-      }
-
-      // 10. 按钮变为「完成」
-      goBtn.disabled    = false;
-      spinner.style.display = 'none';
-      goLabel.textContent   = '完成';
-      goBtn.onclick = () => {
-        overlay.classList.remove('show');
-        overlay.innerHTML = '';
-        renderAdventureLog();
-        renderGrowthBar();
-      };
-      cancelBtn.disabled = false;
-      cancelBtn.textContent = '关闭';
-      cancelBtn.onclick = () => {
-        overlay.classList.remove('show');
-        overlay.innerHTML = '';
-        renderAdventureLog();
-        renderGrowthBar();
-      };
-
-    } catch (err) {
-      // AI 失败 → 本地兜底故事
-      const fallbackStories = {
-        park:      `${pet.name || '宠物'}在公园里跑来跑去，追着蝴蝶玩了好久，玩累了就躺在草地上晒太阳，心情好极了。`,
-        library:   `${pet.name || '宠物'}在图书馆里安静地翻着绘本，虽然有些字不认识，但图画已经让它看得津津有味。`,
-        playground:`${pet.name || '宠物'}在游乐场玩了个痛快，滑梯滑了十几次，最后被你拉着才依依不舍地离开。`,
-        cafe:      `${pet.name || '宠物'}坐在咖啡馆的角落，闻着香气，看着窗外的行人，度过了一个悠闲的下午。`,
-        hospital:  `${pet.name || '宠物'}乖乖配合了体检，虽然有点紧张，但结果一切正常，医生还夸它很勇敢。`,
-        beach:     `${pet.name || '宠物'}在海边踩浪花，被冷水激得跳起来，又忍不住再踩，玩得满身是沙。`,
-        exam:      `${pet.name || '宠物'}认真答完了试卷，走出考场时长舒一口气，不管结果如何，已经尽力了。`,
-        sleepover: `${pet.name || '宠物'}在朋友家玩到很晚，两个人说了好多悄悄话，最后抱着玩具睡着了。`,
-      };
-      const fallback = fallbackStories[scene.id]
-        || `${pet.name || '宠物'}完成了这次「${scene.label}」的冒险，虽然没有什么特别的事，但也是一段美好的回忆。`;
-
-      const placeholder = document.getElementById('adv-story-placeholder');
-      const storyText   = document.getElementById('adv-story-text');
-      if (placeholder) placeholder.style.display = 'none';
-      if (storyText) {
-        storyText.style.display = 'block';
-        storyText.textContent   = fallback;
-      }
-
-      // 本地兜底也结算状态和经验
-      const clamp = v => Math.max(0, Math.min(100, v));
-      const currentPet = runtime.pet;
-      const patch = {};
-      for (const [k, v] of Object.entries(scene.effects || {})) {
-        if (v === 0) continue;
-        if (k in currentPet) patch[k] = clamp((currentPet[k] || 0) + v);
-      }
-      await savePet(patch);
-
-      const { gainExp } = await import('./js/pet.js');
-      const growResult  = await gainExp(scene.expReward || 0);
-
-      await dbAppend('sceneHistory', {
-        sceneId:    scene.id,
-        sceneLabel: scene.label,
-        sceneIcon:  scene.icon,
-        story:      fallback,
-        eggId:      null,
-        eggLabel:   null,
-        eggIcon:    null,
-        eggLetter:  null,
-        effects:    scene.effects,
-        expGained:  scene.expReward || 0,
-        leveledUp:  growResult.leveledUp,
-        newLevel:   growResult.newLevel,
-      });
-
-      if (growResult.leveledUp) {
-        showToast(
-          `🎉 ${pet.name || '宠物'} 升级了！Lv.${growResult.newLevel} · ${growResult.stage.label}`,
-          'success', 4000
-        );
-        renderGrowthBar();
-        renderSceneList();
-      }
-
-      const goBtn     = document.getElementById('adv-go-btn');
-      const spinner   = document.getElementById('adv-spinner');
-      const goLabel   = document.getElementById('adv-go-label');
-      const cancelBtn = document.getElementById('adv-cancel-btn');
-      const resultArea = document.getElementById('adv-result-area');
-      const resultTags = document.getElementById('adv-result-tags');
-
-      if (resultArea) resultArea.style.display = 'block';
-      if (resultTags) {
-        const effectLabels = { mood:'心情', hunger:'饱食', health:'健康', clean:'清洁', bond:'亲密' };
-        resultTags.innerHTML = [
-          ...Object.entries(scene.effects || {})
-            .filter(([, v]) => v !== 0)
-            .map(([k, v]) => {
-              const sign = v > 0 ? '+' : '';
-              const cls  = v > 0 ? 'effect-pos' : 'effect-neg';
-              return `<span class="effect-tag ${cls}">${effectLabels[k]||k} ${sign}${v}</span>`;
-            }),
-          `<span class="effect-tag effect-exp">+${scene.expReward || 0} EXP</span>`,
-          growResult.leveledUp
-            ? `<span class="effect-tag effect-levelup">🎉 升级！Lv.${growResult.newLevel}</span>`
-            : '',
-        ].filter(Boolean).join('');
-      }
-
-      if (goBtn)    { goBtn.disabled = false; goBtn.onclick = () => { overlay.classList.remove('show'); overlay.innerHTML=''; renderAdventureLog(); renderGrowthBar(); }; }
-      if (spinner)  spinner.style.display = 'none';
-      if (goLabel)  goLabel.textContent   = '完成';
-      if (cancelBtn){ cancelBtn.disabled = false; cancelBtn.textContent = '关闭'; cancelBtn.onclick = () => { overlay.classList.remove('show'); overlay.innerHTML=''; renderAdventureLog(); renderGrowthBar(); }; }
-
-      logWarn('adventure', `AI failed, used fallback: ${err.message}`);
+      fullStory = earlyReturn
+        ? `${pet.name||'宠物'}还没玩够就被叫回来了，有点意犹未尽，但还是乖乖回来了。`
+        : (fallbacks[scene.id] || `${pet.name||'宠物'}完成了「${scene.label}」，留下了一段美好的回忆。`);
     }
+
+    // 3. 专注夸夸（仅专注模式 + 非提前返回）
+    let praiseText = '';
+    if (adv.pomodoro && adv.taskName && !earlyReturn) {
+      try {
+        const { buildSystemPrompt } = await import('./js/ai.js');
+        const { getPersonalityPrompt } = await import('./js/pet.js');
+        const personalityPr = getPersonalityPrompt(pet);
+
+        const praisePrompt = await buildSystemPrompt({
+          rolePrompt: [
+            `你是「${pet.name||'宠物'}」，一只电子宠物，性格：${personalityPr}`,
+            `主人刚刚完成了一个专注任务：「${adv.taskName}」，持续了 ${adv.duration} 分钟。`,
+            `请用宠物的口吻，真诚地夸夸主人，20~40字，可以用颜文字，只输出夸夸的话本身。`,
+          ].join('\n'),
+          statusContext: '',
+          promptKeys: ['petExtra', 'bubbleStyle'],
+        });
+
+        praiseText = await callAI({
+          messages: [
+            { role: 'system', content: praisePrompt },
+            { role: 'user',   content: '主人完成任务了，夸夸他！' },
+          ],
+          stream: false,
+        });
+        praiseText = praiseText.trim();
+      } catch (_) {
+        // 本地兜底夸夸
+        const praises = [
+          `「${adv.taskName}」完成啦！主人好厉害，我好崇拜你 (｡•̀ᴗ-)✧`,
+          `哇，专注了 ${adv.duration} 分钟！主人真的超级棒！(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧`,
+          `「${adv.taskName}」搞定了！主人最努力了，我要给你一个大大的抱抱！`,
+          `坚持了 ${adv.duration} 分钟，主人你真的做到了！好厉害哦 ✨`,
+        ];
+        praiseText = praises[Math.floor(Math.random() * praises.length)];
+      }
+    }
+
+    // 4. 状态结算
+    const clamp = v => Math.max(0, Math.min(100, v));
+    const allEffects = { ...scene.effects };
+    if (egg?.effects) {
+      for (const [k, v] of Object.entries(egg.effects)) {
+        allEffects[k] = (allEffects[k] || 0) + v;
+      }
+    }
+    const currentPet = runtime.pet;
+    const patch = {};
+    for (const [k, v] of Object.entries(allEffects)) {
+      if (v !== 0 && k in currentPet) patch[k] = clamp((currentPet[k] || 0) + v);
+    }
+    await savePet(patch);
+
+    // 5. 经验结算（提前回来减半）
+    const baseExp  = scene.expReward || 0;
+    const eggExp   = egg?.expReward  || 0;
+    const totalExp = earlyReturn
+      ? Math.floor((baseExp + eggExp) / 2)
+      : baseExp + eggExp;
+
+    const { gainExp } = await import('./js/pet.js');
+    const growResult  = await gainExp(totalExp);
+
+    // 6. 写入 sceneHistory
+    await dbAppend('sceneHistory', {
+      sceneId:    scene.id,
+      sceneLabel: scene.label,
+      sceneIcon:  scene.icon,
+      story:      fullStory,
+      eggId:      egg?.id     || null,
+      eggLabel:   egg?.label  || null,
+      eggIcon:    egg?.icon   || null,
+      eggLetter:  eggStory    || null,
+      isLetter:   !!(egg?.letter && eggStory),
+      letterRead: false,
+      effects:    allEffects,
+      expGained:  totalExp,
+      leveledUp:  growResult.leveledUp,
+      newLevel:   growResult.newLevel,
+      taskName:   adv.taskName  || '',
+      praiseText: praiseText    || '',
+      earlyReturn,
+    });
+
+    // 7. 清除进行中冒险
+    const newSettings = { ...runtime.settings };
+    delete newSettings.activeAdventure;
+    await dbSet('settings', newSettings);
+    runtime.settings = newSettings;
+
+    // 8. 停止计时器
+    if (_advTimerInterval) { clearInterval(_advTimerInterval); _advTimerInterval = null; }
+
+    // 9. 显示结算 Modal
+    _openResultModal({
+      scene, egg, eggStory, fullStory,
+      allEffects, totalExp, growResult,
+      praiseText, earlyReturn,
+    });
+
+    // 10. 刷新 UI
+    renderActiveAdventure();
+    renderSceneList();
+    renderGrowthBar();
+    renderAdventureLog();
+    updateMailboxBadge();
+
+    if (growResult.leveledUp) {
+      showToast(`🎉 ${pet.name||'宠物'} 升级了！Lv.${growResult.newLevel} · ${growResult.stage.label}`, 'success', 4000);
+    }
+
+  } catch (err) {
+    logError('adventure', `Finish failed: ${err.message}`);
+    showToast(`结算出错：${err.message}`, 'error');
+    if (finishBtn) { finishBtn.disabled = false; finishBtn.textContent = '🎉 结算'; }
+    if (earlyBtn)  earlyBtn.disabled = false;
+  }
+}
+
+// ── 结算结果 Modal ────────────────────────────────────────────
+function _openResultModal({ scene, egg, eggStory, fullStory, allEffects, totalExp, growResult, praiseText, earlyReturn }) {
+  const overlay = document.getElementById('modal-overlay');
+  const pet     = runtime.pet || {};
+  const effectLabels = { mood:'心情', hunger:'饱食', health:'健康', clean:'清洁', bond:'亲密' };
+
+  const effectTagsHtml = [
+    ...Object.entries(allEffects)
+      .filter(([, v]) => v !== 0)
+      .map(([k, v]) => {
+        const sign = v > 0 ? '+' : '';
+        const cls  = v > 0 ? 'effect-pos' : 'effect-neg';
+        return `<span class="effect-tag ${cls}">${effectLabels[k]||k} ${sign}${v}</span>`;
+      }),
+    `<span class="effect-tag effect-exp">+${totalExp} EXP${earlyReturn ? ' (减半)' : ''}</span>`,
+    growResult.leveledUp
+      ? `<span class="effect-tag effect-levelup">🎉 升级！Lv.${growResult.newLevel} ${growResult.stage?.icon||''} ${growResult.stage?.label||''}</span>`
+      : '',
+  ].filter(Boolean).join('');
+
+  overlay.innerHTML = `
+    <div class="modal-box adv-modal">
+      <div class="modal-handle"></div>
+
+      <!-- 标题 -->
+      <div class="adv-modal-header">
+        <span class="adv-modal-icon">${scene.icon}</span>
+        <div>
+          <div class="modal-title">${scene.label}${earlyReturn ? ' · 提前回来' : ' · 完成！'}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">${scene.desc||''}</div>
+        </div>
+      </div>
+
+      <!-- 故事 -->
+      <div style="
+        background:var(--bg-card-alt); border-radius:var(--radius-sm);
+        padding:14px; font-size:14px; line-height:1.8;
+        color:var(--text-primary); margin:16px 0;">
+        ${fullStory}
+      </div>
+
+      <!-- 彩蛋 -->
+      ${egg ? `
+        <div style="
+          background:var(--accent-pink-soft); border-radius:var(--radius-sm);
+          padding:12px 14px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">
+            ${egg.icon} ${egg.title}
+          </div>
+          ${eggStory ? `<div style="font-size:13px; line-height:1.7; color:var(--text-secondary);">${eggStory}</div>` : ''}
+        </div>
+      ` : ''}
+
+      <!-- 宠物夸夸 -->
+      ${praiseText ? `
+        <div style="
+          background:var(--bg-card-alt); border-radius:var(--radius-sm);
+          padding:12px 14px; margin-bottom:16px;
+          display:flex; gap:10px; align-items:flex-start;">
+          <span style="font-size:20px; flex-shrink:0;">${pet.avatarUrl ? '' : '🐾'}</span>
+          <div style="font-size:14px; line-height:1.7; color:var(--text-primary); font-style:italic;">
+            ${praiseText}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- 结果标签 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary);
+                    text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">冒险结果</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">${effectTagsHtml}</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="result-close-btn">好的！</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('show');
+
+  document.getElementById('result-close-btn')?.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+  });
+}
+
+// ── 彩蛋抽取 ─────────────────────────────────────────────────
+function _rollEasterEgg(stageId) {
+  const candidates = EASTER_EGGS.filter(e => !e.stageReq || e.stageReq.includes(stageId));
+  for (const egg of candidates) {
+    if (Math.random() < egg.prob) return egg;
+  }
+  return null;
+}
+
+// ── 出发前 Modal（选择专注/游玩 + 确认时长）─────────────────
+function _openDepartModal(scene) {
+  const overlay = document.getElementById('modal-overlay');
+  const pet     = runtime.pet || {};
+
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="adv-modal-header" style="margin-bottom:16px;">
+        <span class="adv-modal-icon">${scene.icon}</span>
+        <div>
+          <div class="modal-title">${scene.label}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">${scene.desc||''}</div>
+        </div>
+      </div>
+
+      <!-- 模式选择 -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:8px;">选择模式</div>
+        <div style="display:flex; gap:8px;">
+          <label class="mode-radio-label" id="mode-label-play">
+            <input type="radio" name="adv-mode" value="play" checked />
+            <span class="mode-radio-card">
+              <span style="font-size:20px;">🎮</span>
+              <span style="font-size:13px; font-weight:600;">自由玩耍</span>
+              <span style="font-size:11px; color:var(--text-secondary);">正常冒险结算</span>
+            </span>
+          </label>
+          <label class="mode-radio-label" id="mode-label-focus">
+            <input type="radio" name="adv-mode" value="focus" />
+            <span class="mode-radio-card">
+              <span style="font-size:20px;">🎯</span>
+              <span style="font-size:13px; font-weight:600;">专注任务</span>
+              <span style="font-size:11px; color:var(--text-secondary);">完成后宠物夸你</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 任务名（专注模式才显示） -->
+      <div id="task-name-wrap" style="margin-bottom:16px; display:none;">
+        <label class="form-label">任务名称（选填）</label>
+        <input class="form-input" id="input-task-name"
+          placeholder="例：读书、写作业、健身..."
+          maxlength="30" />
+      </div>
+
+      <!-- 时长 -->
+      <div style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">冒险时长</span>
+          <span id="duration-display" style="font-size:14px; font-weight:700; color:var(--text-primary);">${scene.duration||20} 分钟</span>
+        </div>
+        <input type="range" id="duration-slider"
+          min="5" max="120" step="5" value="${scene.duration||20}"
+          style="width:100%;" />
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-tertiary); margin-top:4px;">
+          <span>5min</span><span>30min</span><span>60min</span><span>120min</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="depart-cancel-btn">取消</button>
+        <button class="btn btn-primary" id="depart-go-btn">出发！</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('show');
+
+  // 模式切换
+  overlay.querySelectorAll('input[name="adv-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const taskWrap = document.getElementById('task-name-wrap');
+      if (taskWrap) taskWrap.style.display = radio.value === 'focus' ? 'block' : 'none';
+    });
+  });
+
+  // 时长滑块
+  document.getElementById('duration-slider')?.addEventListener('input', (e) => {
+    const display = document.getElementById('duration-display');
+    if (display) display.textContent = `${e.target.value} 分钟`;
+  });
+
+  // 取消
+  document.getElementById('depart-cancel-btn')?.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+  });
+
+   // 出发
+  document.getElementById('depart-go-btn')?.addEventListener('click', async () => {
+    const mode     = overlay.querySelector('input[name="adv-mode"]:checked')?.value || 'play';
+    const taskName = document.getElementById('input-task-name')?.value.trim() || '';
+    const duration = parseInt(document.getElementById('duration-slider')?.value || '20');
+
+    const now    = Date.now();
+    const endAt  = now + duration * 60 * 1000;
+
+    const activeAdventure = {
+      sceneId:    scene.id,
+      sceneLabel: scene.label,
+      sceneIcon:  scene.icon,
+      startAt:    now,
+      endAt,
+      duration,
+      pomodoro:   mode === 'focus',
+      taskName:   mode === 'focus' ? taskName : '',
+    };
+
+    // 持久化到 settings
+    const newSettings = { ...runtime.settings, activeAdventure };
+    await dbSet('settings', newSettings);
+    runtime.settings = newSettings;
+
+    overlay.classList.remove('show');
+    overlay.innerHTML = '';
+
+    // 刷新冒险页
+    renderActiveAdventure();
+    renderSceneList();
+
+    const modeText = mode === 'focus'
+      ? `🎯 专注「${taskName || '任务'}」开始，${duration} 分钟后结算`
+      : `🎮 ${scene.label} 出发！${duration} 分钟后回来`;
+    showToast(modeText, 'success', 3000);
+
+    // 立即让 SW 知道有新冒险（下次 tick 时会检查）
+    navigator.serviceWorker?.controller?.postMessage({ type: 'CHECK_ADVENTURE' });
   });
 }
 
 // ── 自定义场景 Modal ──────────────────────────────────────────
 function _openCustomSceneModal() {
   const overlay = document.getElementById('modal-overlay');
+
   overlay.innerHTML = `
     <div class="modal-box">
       <div class="modal-handle"></div>
@@ -4097,29 +4295,42 @@ function _openCustomSceneModal() {
       <div style="display:flex; flex-direction:column; gap:12px; margin:16px 0;">
         <div>
           <label class="form-label">场景名称 *</label>
-          <input class="form-input" id="custom-scene-name" placeholder="例：去奶奶家" maxlength="20" />
+          <input class="form-input" id="custom-scene-name"
+            placeholder="例：去奶奶家" maxlength="20" />
         </div>
         <div>
           <label class="form-label">图标（单个 emoji）</label>
-          <input class="form-input" id="custom-scene-icon" placeholder="🏠" maxlength="4" />
+          <input class="form-input" id="custom-scene-icon"
+            placeholder="🏠" maxlength="4" />
         </div>
         <div>
           <label class="form-label">场景描述</label>
-          <input class="form-input" id="custom-scene-desc" placeholder="简单描述这个场景..." maxlength="50" />
+          <input class="form-input" id="custom-scene-desc"
+            placeholder="简单描述这个场景..." maxlength="50" />
         </div>
         <div>
-          <label class="form-label" style="margin-bottom:6px;">状态影响（拖动滑块）</label>
-          ${['mood:心情:+10', 'hunger:饱食:0', 'health:健康:0', 'clean:清洁:-5'].map(s => {
-            const [key, label, def] = s.split(':');
-            return `
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="font-size:12px; color:var(--text-secondary); width:32px;">${label}</span>
-                <input type="range" id="custom-effect-${key}"
-                  min="-30" max="30" step="5" value="${def}"
-                  style="flex:1;" />
-                <span id="custom-effect-${key}-val" style="font-size:12px; width:28px; text-align:right; color:var(--text-primary);">${def}</span>
-              </div>`;
-          }).join('')}
+          <label class="form-label">默认时长（分钟）</label>
+          <input class="form-input" type="number" id="custom-scene-duration"
+            min="5" max="120" step="5" value="20" />
+        </div>
+        <div>
+          <label class="form-label" style="margin-bottom:6px;">状态影响</label>
+          ${[
+            ['mood',   '心情',  10],
+            ['hunger', '饱食',   0],
+            ['health', '健康',   0],
+            ['clean',  '清洁',  -5],
+          ].map(([key, label, def]) => `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span style="font-size:12px; color:var(--text-secondary); width:32px;">${label}</span>
+              <input type="range" id="custom-effect-${key}"
+                min="-30" max="30" step="5" value="${def}" style="flex:1;" />
+              <span id="custom-effect-${key}-val"
+                style="font-size:12px; width:28px; text-align:right; color:var(--text-primary);">
+                ${def > 0 ? '+' : ''}${def}
+              </span>
+            </div>
+          `).join('')}
         </div>
       </div>
       <div class="modal-actions">
@@ -4149,9 +4360,10 @@ function _openCustomSceneModal() {
     const name = document.getElementById('custom-scene-name')?.value.trim();
     if (!name) { showToast('请填写场景名称', 'warn'); return; }
 
-    const icon = document.getElementById('custom-scene-icon')?.value.trim() || '🗺';
-    const desc = document.getElementById('custom-scene-desc')?.value.trim() || '';
-    const effects = {};
+    const icon     = document.getElementById('custom-scene-icon')?.value.trim()    || '🗺';
+    const desc     = document.getElementById('custom-scene-desc')?.value.trim()    || '';
+    const duration = parseInt(document.getElementById('custom-scene-duration')?.value || '20');
+    const effects  = {};
     ['mood', 'hunger', 'health', 'clean'].forEach(key => {
       effects[key] = parseInt(document.getElementById(`custom-effect-${key}`)?.value || '0');
     });
@@ -4164,6 +4376,7 @@ function _openCustomSceneModal() {
       stageReq:  null,
       effects,
       expReward: 20,
+      duration,
       isCustom:  true,
     };
 
@@ -4202,6 +4415,7 @@ async function _deleteCustomScene(sceneId) {
 
 // ── 绑定冒险页所有事件 ────────────────────────────────────────
 function bindAdventurePage() {
+
   // 永不成长切换
   document.getElementById('toggle-never-grow')?.addEventListener('change', async (e) => {
     const settings = runtime.settings || {};
@@ -4210,6 +4424,11 @@ function bindAdventurePage() {
     runtime.settings = patch;
     renderGrowthBar();
     showToast(e.target.checked ? '已开启永不成长模式' : '已关闭永不成长模式', 'info');
+  });
+
+  // 信箱
+  document.getElementById('btn-open-mailbox')?.addEventListener('click', () => {
+    openMailboxModal();
   });
 
   // 添加自定义场景
@@ -4223,13 +4442,13 @@ function bindAdventurePage() {
     const delBtn = e.target.closest('.scene-del-btn');
 
     if (goBtn) {
-      const sceneId = goBtn.dataset.sceneId;
+      const sceneId  = goBtn.dataset.sceneId;
       const allScenes = [
         ...PRESET_SCENES,
         ...(runtime.settings?.customScenes || []),
       ];
       const scene = allScenes.find(s => s.id === sceneId);
-      if (scene) await _runAdventure(scene);
+      if (scene) _openDepartModal(scene);
     }
 
     if (delBtn) {
@@ -4239,20 +4458,33 @@ function bindAdventurePage() {
 
   // 页面切换到冒险时刷新
   bus.on(EVENTS.PAGE_CHANGED, (page) => {
-    if (page === 'adventure') {
-      renderGrowthBar();
-      renderSceneList();
-      renderAdventureLog();
-    }
+    if (page !== 'adventure') return;
+    renderGrowthBar();
+    renderSceneList();
+    renderAdventureLog();
+    renderActiveAdventure();
+    updateMailboxBadge();
   });
 
-  // 初始渲染（如果当前就在冒险页）
+  // 初始渲染（如果启动时就在冒险页）
   if (runtime.currentPage === 'adventure') {
     renderGrowthBar();
     renderSceneList();
     renderAdventureLog();
+    renderActiveAdventure();
+    updateMailboxBadge();
   }
+
+  // 页面可见性恢复时重新检查冒险状态（后台回来）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && runtime.currentPage === 'adventure') {
+      renderActiveAdventure();
+      // 如果冒险已结束但计时器还在跑，_tick 会自动处理
+    }
+  });
 }
+
+
 
 
 // ══════════════════════════════════════════════════════════════
