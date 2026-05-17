@@ -9,6 +9,10 @@
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/pet.css" />
   <link rel="stylesheet" href="css/ui.css" />
+<script type="module">
+  import { registerSW, startNotifyScheduler } from './js/sw-register.js';
+  registerSW().then(() => startNotifyScheduler());
+</script>
 </head>
 <body>
 
@@ -2434,6 +2438,10 @@ function bindSettingsSave() {
         runtime.settings = patch;
         showToast('通知设置已保存 ✓', 'success');
         logInfo('app', 'Notify settings saved');
+        // 在保存通知设置成功后，立即触发一次 SW 检查（让新阈值马上生效）
+if (runtime.settings?.notifyEnabled && Notification.permission === 'granted') {
+  navigator.serviceWorker?.controller?.postMessage({ type: 'CHECK_PET_STATUS' });
+}
         checkSystemStatus();
       } catch (err) {
         showToast('保存失败：' + err.message, 'error');

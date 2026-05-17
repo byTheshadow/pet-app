@@ -156,11 +156,34 @@ export async function fetchModels(apiBase, apiKey) {
 }
 
 // ── 构建 System Prompt ───────────────────────────────────────
-// 顺序：全局提示词 → 角色专属 → 动态状态注入
-export async function buildSystemPrompt({ rolePrompt = '', statusContext = '' } = {}) {
+// 层级顺序：全局提示词 → 角色专属 → promptConfig 补充层 → 动态状态注入
+//
+// 参数：
+//   rolePrompt    — 角色核心描述（性格、身份）
+//   statusContext — 动态状态（饱食度/心情等）
+//   promptKeys    — 要从 promptConfig 注入的字段名数组
+//                   例：['petExtra', 'bubbleStyle']
+//                   留空则不注入任何 promptConfig 字段
+export async function buildSystemPrompt({
+  rolePrompt    = '',
+  statusContext = '',
+  promptKeys    = [],
+} = {}) {
   const settings = await dbGet('settings', 'singleton');
   const global   = settings?.globalPrompt || '';
+  const pc       = settings?.promptConfig || {};
 
-  const parts = [global, rolePrompt, statusContext].filter(Boolean);
+  // 按传入的 key 顺序收集 promptConfig 补充内容
+  const pcParts = promptKeys
+    .map(k => pc[k] || '')
+    .filter(Boolean);
+
+  const parts = [
+    global,
+    rolePrompt,
+    ...pcParts,
+    statusContext,
+  ].filter(Boolean);
+
   return parts.join('\n\n');
 }
