@@ -201,4 +201,43 @@ export async function triggerEmotionBubble() {
     return null;
   }
 }
+// ── 获得经验值（冒险结算后调用）────────────────────────────
+// returns: { leveledUp: bool, oldLevel, newLevel, stage }
+export async function gainExp(amount) {
+  const pet      = runtime.pet;
+  const settings = runtime.settings || await dbGet('settings', 'singleton') || {};
+
+  // 永不成长模式：只记录经验，不升级
+  if (settings.neverGrow) {
+    await savePet({ exp: (pet.exp || 0) + amount });
+    return { leveledUp: false, oldLevel: pet.level, newLevel: pet.level };
+  }
+
+  const { getExpForLevel, getGrowthStage } = await import('./state.js');
+
+  let exp   = (pet.exp   || 0) + amount;
+  let level = pet.level  || 1;
+  let leveledUp = false;
+
+  // 连续升级（一次冒险可能跨多级）
+  while (true) {
+    const needed = getExpForLevel(level);
+    if (exp >= needed && level < 99) {
+      exp -= needed;
+      level++;
+      leveledUp = true;
+    } else {
+      break;
+    }
+  }
+
+  const stage = getGrowthStage(level);
+  await savePet({ exp, level });
+
+  if (leveledUp) {
+    logInfo('pet', `Level up! ${pet.level} → ${level}, stage: ${stage.label}`);
+  }
+
+  return { leveledUp, oldLevel: pet.level, newLevel: level, stage };
+}
 

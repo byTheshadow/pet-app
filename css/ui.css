@@ -997,6 +997,286 @@
 #nav-parent-btn .nav-icon {
   font-size: 18px;
 }
+/* ============================================================
+   冒险页 & 成长系统
+   ============================================================ */
+
+/* 场景卡片 */
+.scene-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.scene-card:active {
+  transform: scale(0.98);
+}
+
+.scene-card-locked {
+  opacity: 0.5;
+}
+
+.scene-card-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.scene-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.scene-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.scene-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 7px;
+  line-height: 1.5;
+}
+
+.scene-card-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.scene-card-action {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.scene-locked-icon {
+  font-size: 18px;
+  opacity: 0.5;
+}
+
+/* 效果标签 */
+.effect-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.2px;
+}
+
+.effect-pos {
+  background: rgba(52, 199, 89, 0.15);
+  color: #1a8a3a;
+}
+
+.effect-neg {
+  background: rgba(255, 59, 48, 0.12);
+  color: #c0392b;
+}
+
+.effect-exp {
+  background: rgba(90, 120, 255, 0.12);
+  color: #3a5bd9;
+}
+
+.effect-levelup {
+  background: rgba(255, 180, 0, 0.18);
+  color: #a07000;
+  font-size: 11px;
+}
+
+/* 自定义 / 锁定 badge */
+.scene-custom-badge,
+.scene-locked-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  color: var(--text-tertiary);
+}
+
+/* 分隔线 */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.section-divider-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+
+/* 冒险记录条目 */
+.adv-log-entry {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.adv-log-entry:last-child {
+  border-bottom: none;
+}
+
+.adv-log-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+  padding-top: 1px;
+}
+
+.adv-log-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.adv-log-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.adv-egg-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 180, 0, 0.15);
+  color: #a07000;
+}
+
+.adv-log-story {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 4px;
+  /* 最多显示2行 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adv-log-meta {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* 冒险 Modal */
+.adv-modal {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.adv-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.adv-modal-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+/* 加载 spinner */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 成长栏 toggle */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border-color);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: var(--text-primary);
+}
+
+.toggle-switch input:checked + .toggle-track::after {
+  transform: translateX(16px);
+}
 
 
 
