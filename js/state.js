@@ -50,8 +50,10 @@ export const DEFAULT_AI_PARENT = {
   avatarUrl:    '',
   personality:  '温柔体贴，偶尔严格',
   customPrompt: '',
+  relation:     'parent-of-pet',   // 'parent-of-pet' | 'co-owner'
   lastVisitAt:  null,
 };
+
 
 // ── 性格预设 ─────────────────────────────────────────────────
 export const PERSONALITY_PRESETS = {

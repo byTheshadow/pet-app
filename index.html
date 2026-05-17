@@ -384,6 +384,27 @@
                 <textarea class="form-textarea" id="set-parent-prompt"
                   placeholder="描述 AI 家长的行为方式..."></textarea>
               </div>
+                            <div class="form-group">
+                <label class="form-label">家长与宠物的关系</label>
+                <div style="display:flex; gap:10px; padding:4px 0; flex-wrap:wrap;">
+                  <label style="display:flex; align-items:center; gap:8px;
+                                cursor:pointer; font-size:14px; color:var(--text-primary);">
+                    <input type="radio" name="parent-relation" value="parent-of-pet" checked
+                      style="accent-color:var(--text-primary); width:16px; height:16px;" />
+                    宠物的家长
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px;
+                                cursor:pointer; font-size:14px; color:var(--text-primary);">
+                    <input type="radio" name="parent-relation" value="co-owner"
+                      style="accent-color:var(--text-primary); width:16px; height:16px;" />
+                    共同抚养者
+                  </label>
+                </div>
+                <div class="form-hint">
+                  「宠物的家长」：家长是宠物的爸妈，宠物对家长撒娇依赖<br>
+                  「共同抚养者」：家长和你一起养宠物，是平等的铲屎官伙伴
+                </div>
+              </div>
               <div class="form-group">
                 <label class="form-label">触发模式</label>
                 <div style="display:flex; gap:10px; padding:4px 0;">
@@ -2157,6 +2178,9 @@ function fillSettingsForms() {
   document.querySelectorAll('input[name="parent-mode"]').forEach(r => {
     r.checked = r.value === (s.aiParentMode || 'timer');
   });
+    document.querySelectorAll('input[name="parent-relation"]').forEach(r => {
+    r.checked = r.value === (a.relation || 'parent-of-pet');
+  });
 
   // 通知
   const notifyEl = document.getElementById('set-notify-enabled');
@@ -2313,12 +2337,13 @@ function bindSettingsSave() {
       btn.disabled = true;
       btn.textContent = '保存中...';
       try {
-        const parentPatch = {
+          const parentPatch = {
           id:           'singleton',
           name:         document.getElementById('set-parent-name')?.value.trim()        || '妈妈',
           avatarUrl:    document.getElementById('set-parent-avatar')?.value.trim()      || '',
           personality:  document.getElementById('set-parent-personality')?.value.trim() || '',
           customPrompt: document.getElementById('set-parent-prompt')?.value.trim()      || '',
+          relation:     document.querySelector('input[name="parent-relation"]:checked')?.value || 'parent-of-pet',
         };
         await dbSet('aiParent', parentPatch);
         runtime.aiParent = parentPatch;
@@ -3725,26 +3750,37 @@ function _setParentInputDisabled(disabled) {
   if (input)   input.disabled   = disabled;
   if (sendBtn) sendBtn.disabled = disabled;
 }
-
 // ── Prompt 构建 ───────────────────────────────────────────────
-
 function _buildParentSystemPrompt(scene = '') {
-  const parent = runtime.aiParent || {};
-  const pet    = runtime.pet     || {};
-  const s      = runtime.settings || {};
-  const pc     = s.promptConfig  || {};
-  const u      = s.userInfo      || {};
+  const parent   = runtime.aiParent  || {};
+  const pet      = runtime.pet       || {};
+  const s        = runtime.settings  || {};
+  const pc       = s.promptConfig    || {};
+  const u        = s.userInfo        || {};
+  const relation = parent.relation   || 'parent-of-pet';
+
+  const petName    = pet.name    || '宠物';
+  const parentName = parent.name || '家长';
+  const userName   = u.realName  || '主人';
+
+  const relationDesc = relation === 'co-owner'
+    ? [
+        `你叫「${parentName}」，和主人「${userName}」共同抚养电子宠物「${petName}」。`,
+        `你们是平等的铲屎官伙伴，一起关心「${petName}」的状态，也会互相聊宠物的近况。`,
+        `你对「${petName}」很疼爱，也很在意主人有没有好好照顾它。`,
+      ]
+    : [
+        `你叫「${parentName}」，是电子宠物「${petName}」的家长（爸爸/妈妈）。`,
+        `「${petName}」是你的孩子，你非常疼爱它。`,
+        `主人「${userName}」是负责日常照顾「${petName}」的人，你信任并感谢主人。`,
+      ];
 
   const parts = [
     s.globalPrompt || '',
-    // 明确：家长是宠物的家长，不是 user 的家长
-    `你是电子宠物「${pet.name || '宠物'}」的家长，名叫「${parent.name || '妈妈'}」。`,
-    `「${pet.name || '宠物'}」是你的孩子，你非常疼爱它。`,
-    `主人（user）是负责照顾「${pet.name || '宠物'}」的人，你和主人的关系是宠物家长与铲屎官的关系。`,
+    ...relationDesc,
     parent.personality ? `你的性格：${parent.personality}` : '',
     parent.customPrompt || '',
     pc.parentExtra || '',
-    u.realName ? `主人的名字是「${u.realName}」。` : '',
     scene,
     '用符合你性格的语气说话，回复简短（40字以内），可以用颜文字。只输出这句话本身。',
   ].filter(Boolean);
@@ -3753,28 +3789,44 @@ function _buildParentSystemPrompt(scene = '') {
 }
 
 function _buildPetSystemPromptForParent(scene = '') {
-  const pet    = runtime.pet     || {};
-  const parent = runtime.aiParent || {};
-  const s      = runtime.settings || {};
-  const pc     = s.promptConfig  || {};
+  const pet      = runtime.pet       || {};
+  const parent   = runtime.aiParent  || {};
+  const s        = runtime.settings  || {};
+  const pc       = s.promptConfig    || {};
+  const u        = s.userInfo        || {};
+  const relation = parent.relation   || 'parent-of-pet';
   const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+
+  const petName    = pet.name    || '宠物';
+  const parentName = parent.name || '家长';
+  const userName   = u.realName  || '主人';
+
+  const relationDesc = relation === 'co-owner'
+    ? [
+        `你有两个主人：「${userName}」和「${parentName}」，他们一起抚养你。`,
+        `你对两位主人都很依赖和喜爱，见到他们都会开心撒娇。`,
+      ]
+    : [
+        `「${parentName}」是你的家长（爸爸/妈妈），你对它撒娇、依赖，像孩子对父母一样。`,
+        `「${userName}」是你的主人，负责日常照顾你。`,
+      ];
 
   const parts = [
     s.globalPrompt || '',
-    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
-    // 明确：家长是你的家长，不是你的孩子，不是主人
-    `「${parent.name || '妈妈'}」是你的家长，你对它撒娇、依赖，像孩子对父母一样。`,
-    `主人（user）是照顾你的人，家长来了你会很开心。`,
+    `你是一只名叫「${petName}」的电子宠物。`,
+    ...relationDesc,
     getPersonalityPrompt ? getPersonalityPrompt(pet) : '',
     pc.petExtra || '',
     getPetStatusContext ? getPetStatusContext(pet) : '',
     scene,
-    // 明确禁止说出家长才会说的话
-    '你是宠物，说话要符合宠物孩子的视角，不要说出像家长叮嘱人的话。回复简短（30字以内），可以用颜文字。只输出这句话本身。',
+    relation === 'co-owner'
+      ? '你是宠物，说话符合你的性格，对两位主人都撒娇。回复简短（30字以内），可以用颜文字。只输出这句话本身。'
+      : '你是宠物孩子，说话符合你的性格，对家长撒娇依赖。不要说出像家长叮嘱人的话。回复简短（30字以内），可以用颜文字。只输出这句话本身。',
   ].filter(Boolean);
 
   return parts.join('\n');
 }
+
 
 // ── 家长开场白（房间1：家长×你）────────────────────────────
 async function _parentGreet() {
