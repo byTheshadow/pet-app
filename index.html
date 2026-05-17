@@ -709,6 +709,48 @@
       <span class="nav-label">设置</span>
     </button>
   </nav>
+  <!-- ====================================================
+     好友串门 Modal
+     ==================================================== -->
+<div id="visit-modal-overlay">
+  <div class="visit-panel">
+
+    <!-- 顶栏 -->
+    <div class="visit-header">
+      <div class="visit-header-avatars">
+        <div class="visit-header-avatar" id="visit-header-pet-avatar">🐱</div>
+        <div class="visit-header-avatar" id="visit-header-friend-avatar">🐾</div>
+      </div>
+      <div class="visit-header-info">
+        <div class="visit-header-title" id="visit-header-title">串门中...</div>
+        <div class="visit-header-sub" id="visit-header-sub">三方对话</div>
+      </div>
+      <button class="visit-close-btn" id="visit-close-btn" aria-label="关闭串门">✕</button>
+    </div>
+
+    <!-- 对话区 -->
+    <div class="visit-chat-area" id="visit-chat-area"></div>
+
+    <!-- 底部 -->
+    <div class="visit-footer">
+      <div class="visit-status-bar">
+        <span id="visit-intimacy-badge" class="visit-intimacy-badge">亲密度 0</span>
+        <span id="visit-status-text" style="flex:1;"></span>
+      </div>
+      <div class="visit-input-row">
+        <input
+          type="text"
+          id="visit-input"
+          placeholder="插话..."
+          maxlength="100"
+          autocomplete="off"
+        />
+        <button class="visit-send-btn" id="visit-send-btn" aria-label="发送">↑</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /visit-modal-overlay -->
 
 </div><!-- /app-shell -->
 
@@ -812,6 +854,15 @@ async function init() {
   bindFriendsPage();
   bindPromptTab();
   fillPromptForms();
+  
+  // 暴露 pet helpers 给串门系统使用
+import('./js/pet.js').then(m => {
+  window._petHelpers = {
+    getPersonalityPrompt: m.getPersonalityPrompt,
+    getPetStatusContext:  m.getPetStatusContext,
+  };
+});
+
 
   // 监听宠物更新
   bus.on(EVENTS.PET_UPDATED, (pet) => {
@@ -2507,6 +2558,15 @@ async function renderFriendsList() {
         logError('app', 'Delete friend failed', { stack: err.stack });
       }
     });
+    const visitBtn = document.createElement('button');
+visitBtn.className = 'visit-btn';
+visitBtn.textContent = '串门';
+visitBtn.title = '邀请好友来串门';
+visitBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openVisitModal(f);
+});
+actions.appendChild(visitBtn);
 
     actions.appendChild(delBtn);
 
@@ -2678,6 +2738,590 @@ function bindFriendsPage() {
       }
     });
 }
+// ══════════════════════════════════════════════════════════════
+// 好友串门系统
+// ══════════════════════════════════════════════════════════════
+
+// 当前串门状态
+const visitState = {
+  friend:       null,   // 当前串门的好友对象
+  isAIBusy:     false,  // AI 是否正在生成
+  abortCtrl:    null,   // AbortController
+  intimacyGain: 0,      // 本次串门亲密度增量
+  turnCount:    0,      // 对话轮数
+};
+
+/**
+ * 打开串门 Modal
+ * @param {object} friend  petFriend 对象
+ */
+async function openVisitModal(friend) {
+  const overlay = document.getElementById('visit-modal-overlay');
+  if (!overlay) return;
+
+  // 初始化状态
+  visitState.friend       = friend;
+  visitState.isAIBusy     = false;
+  visitState.abortCtrl    = null;
+  visitState.intimacyGain = 0;
+  visitState.turnCount    = 0;
+
+  // 填充顶栏
+  const pet = runtime.pet || {};
+  _setVisitHeaderAvatar('visit-header-pet-avatar',    pet.avatarUrl,    '🐱');
+  _setVisitHeaderAvatar('visit-header-friend-avatar', friend.avatarUrl, '🐾');
+
+  const titleEl = document.getElementById('visit-header-title');
+  const subEl   = document.getElementById('visit-header-sub');
+  if (titleEl) titleEl.textContent = `${friend.name} 来串门了！`;
+  if (subEl)   subEl.textContent   = `${pet.name || '宠物'} × ${friend.name}`;
+
+  // 更新亲密度徽章
+  _updateIntimacyBadge(friend.intimacy || 0, 0);
+
+  // 清空对话区
+  const chatArea = document.getElementById('visit-chat-area');
+  if (chatArea) chatArea.innerHTML = '';
+
+  // 清空输入框
+  const inputEl = document.getElementById('visit-input');
+  if (inputEl) inputEl.value = '';
+
+  // 显示 Modal
+  overlay.classList.add('show');
+
+  // 绑定关闭
+  _bindVisitClose();
+
+  // 绑定输入发送
+  _bindVisitInput();
+
+  // 开场白：好友到来
+  await _visitArrival();
+}
+
+/** 设置顶栏头像 */
+function _setVisitHeaderAvatar(elId, avatarUrl, fallbackEmoji) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  if (avatarUrl) {
+    const img = document.createElement('img');
+    img.src = avatarUrl;
+    img.alt = '';
+    img.onerror = () => { el.textContent = fallbackEmoji; };
+    el.appendChild(img);
+  } else {
+    el.textContent = fallbackEmoji;
+  }
+}
+
+/** 更新亲密度徽章 */
+function _updateIntimacyBadge(base, gain) {
+  const badge = document.getElementById('visit-intimacy-badge');
+  if (!badge) return;
+  const total = Math.min(100, base + gain);
+  badge.textContent = gain > 0
+    ? `亲密度 ${total} (+${gain})`
+    : `亲密度 ${total}`;
+  badge.classList.toggle('up', gain > 0);
+}
+
+/** 绑定关闭按钮 */
+function _bindVisitClose() {
+  const overlay  = document.getElementById('visit-modal-overlay');
+  const closeBtn = document.getElementById('visit-close-btn');
+
+  const doClose = async () => {
+    // 取消正在进行的 AI 请求
+    if (visitState.abortCtrl) {
+      visitState.abortCtrl.abort();
+      visitState.abortCtrl = null;
+    }
+
+    // 保存亲密度增量 & lastVisitAt & memoryContext
+    if (visitState.friend && visitState.intimacyGain > 0) {
+      try {
+        const f = visitState.friend;
+        const newIntimacy = Math.min(100, (f.intimacy || 0) + visitState.intimacyGain);
+
+        // 收集本次对话摘要（取最后几条非系统消息）
+        const chatArea = document.getElementById('visit-chat-area');
+        const lines = chatArea
+          ? Array.from(chatArea.querySelectorAll('.visit-line:not(.system)'))
+              .slice(-6)
+              .map(el => el.querySelector('.visit-bubble')?.textContent || '')
+              .filter(Boolean)
+          : [];
+        const memorySnippet = lines.join(' | ').slice(0, 200);
+
+        const updated = {
+          ...f,
+          intimacy:      newIntimacy,
+          lastVisitAt:   Date.now(),
+          memoryContext: memorySnippet,
+        };
+        await dbSet('petFriends', updated);
+        visitState.friend = updated;
+
+        logInfo('app', `Visit ended: ${f.name}, intimacy +${visitState.intimacyGain} → ${newIntimacy}`);
+        await dbAppend('actionLog', {
+          id:      Date.now() + Math.random(),
+          type:    'VISIT',
+          source:  'friends',
+          message: `${f.name} 来串门，亲密度 +${visitState.intimacyGain}，当前 ${newIntimacy}`,
+        });
+
+        // 刷新好友列表
+        await renderFriendsList();
+      } catch (err) {
+        logError('app', 'Save visit result failed', { stack: err.stack });
+      }
+    }
+
+    overlay?.classList.remove('show');
+    visitState.friend = null;
+  };
+
+  // 关闭按钮
+  closeBtn?.replaceWith(closeBtn.cloneNode(true)); // 移除旧监听
+  document.getElementById('visit-close-btn')
+    ?.addEventListener('click', doClose);
+
+  // 点击遮罩关闭
+  const onOverlayClick = (e) => {
+    if (e.target === overlay) {
+      doClose();
+      overlay.removeEventListener('click', onOverlayClick);
+    }
+  };
+  overlay?.addEventListener('click', onOverlayClick);
+}
+
+/** 绑定输入框发送 */
+function _bindVisitInput() {
+  const inputEl  = document.getElementById('visit-input');
+  const sendBtn  = document.getElementById('visit-send-btn');
+
+  // 移除旧监听（替换节点）
+  const newInput = inputEl?.cloneNode(true);
+  const newSend  = sendBtn?.cloneNode(true);
+  inputEl?.replaceWith(newInput);
+  sendBtn?.replaceWith(newSend);
+
+  const doSend = async () => {
+    const input = document.getElementById('visit-input');
+    const text  = input?.value?.trim();
+    if (!text || visitState.isAIBusy) return;
+    if (input) input.value = '';
+
+    // 显示用户消息
+    _appendVisitLine('user', text, '你');
+
+    // AI 回应（宠物先回，然后好友回）
+    await _visitUserTurn(text);
+  };
+
+  document.getElementById('visit-send-btn')
+    ?.addEventListener('click', doSend);
+  document.getElementById('visit-input')
+    ?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+    });
+}
+
+/**
+ * 好友到来开场白
+ * 好友先说一句，宠物回应一句
+ */
+async function _visitArrival() {
+  const friend = visitState.friend;
+  const pet    = runtime.pet || {};
+
+  // 系统提示
+  _appendVisitLine('system', `✨ ${friend.name} 来串门了`);
+
+  // 好友开场白（AI）
+  await _visitSpeak('friend', _buildFriendArrivalPrompt(friend, pet));
+
+  // 宠物回应（AI）
+  await _visitSpeak('pet', _buildPetResponsePrompt(pet, friend, 'arrival'));
+
+  // 亲密度 +1（到来）
+  visitState.intimacyGain += 1;
+  _updateIntimacyBadge(friend.intimacy || 0, visitState.intimacyGain);
+}
+
+/**
+ * 用户插话后，宠物和好友各回应一次
+ */
+async function _visitUserTurn(userText) {
+  const friend = visitState.friend;
+  const pet    = runtime.pet || {};
+
+  // 宠物回应用户
+  await _visitSpeak('pet', _buildPetUserResponsePrompt(pet, friend, userText));
+
+  // 好友也回应
+  await _visitSpeak('friend', _buildFriendUserResponsePrompt(friend, pet, userText));
+
+  // 亲密度 +1（互动）
+  visitState.intimacyGain += 1;
+  visitState.turnCount    += 1;
+  _updateIntimacyBadge(friend.intimacy || 0, visitState.intimacyGain);
+
+  // 每 3 轮触发一次自由对话（宠物和好友自己聊）
+  if (visitState.turnCount % 3 === 0) {
+    await _visitFreeChat();
+  }
+}
+
+/**
+ * 宠物和好友自由对话一轮（无需用户参与）
+ */
+async function _visitFreeChat() {
+  const friend = visitState.friend;
+  const pet    = runtime.pet || {};
+
+  _appendVisitLine('system', '— 它们开始自由聊天 —');
+
+  await _visitSpeak('pet',    _buildPetFreeChatPrompt(pet, friend));
+  await _visitSpeak('friend', _buildFriendFreeChatPrompt(friend, pet));
+
+  visitState.intimacyGain += 1;
+  _updateIntimacyBadge(friend.intimacy || 0, visitState.intimacyGain);
+}
+
+/**
+ * 让指定角色说一句话（流式输出到对话区）
+ * @param {'pet'|'friend'} role
+ * @param {Array} messages  AI messages 数组
+ */
+async function _visitSpeak(role, messages) {
+  if (visitState.isAIBusy) return;
+
+  const friend  = visitState.friend;
+  const pet     = runtime.pet || {};
+  const speaker = role === 'pet' ? (pet.name || '宠物') : (friend?.name || '好友');
+
+  // 检查 API 配置
+  const s = runtime.settings || {};
+  if (!s.apiBase || !s.apiKey) {
+    // 无 API：用本地台词兜底
+    const fallback = _getVisitFallback(role);
+    _appendVisitLine(role, fallback, speaker);
+    return;
+  }
+
+  visitState.isAIBusy = true;
+  _setVisitInputDisabled(true);
+
+  // 打字动画
+  const typingLine = _appendVisitLine(role, null, speaker, true);
+
+  visitState.abortCtrl = new AbortController();
+  let replyText = '';
+
+  try {
+    const { callAI } = await import('./js/ai.js');
+    await callAI({
+      messages,
+      stream:  true,
+      signal:  visitState.abortCtrl.signal,
+      onChunk: (delta) => {
+        replyText += delta;
+        if (typingLine) {
+          const bubble = typingLine.querySelector('.visit-bubble');
+          if (bubble) bubble.textContent = replyText;
+        }
+      },
+    });
+
+    if (!replyText && typingLine) {
+      const bubble = typingLine.querySelector('.visit-bubble');
+      if (bubble) bubble.textContent = _getVisitFallback(role);
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      typingLine?.remove();
+      return;
+    }
+    // AI 失败：本地兜底
+    if (typingLine) {
+      const bubble = typingLine.querySelector('.visit-bubble');
+      if (bubble) bubble.textContent = _getVisitFallback(role);
+    }
+    logWarn('app', `Visit AI speak failed (${role}): ${err.message}`);
+  } finally {
+    visitState.isAIBusy  = false;
+    visitState.abortCtrl = null;
+    _setVisitInputDisabled(false);
+    // 移除 typing 样式
+    typingLine?.classList.remove('typing');
+  }
+}
+
+/** 禁用/启用输入区 */
+function _setVisitInputDisabled(disabled) {
+  const input   = document.getElementById('visit-input');
+  const sendBtn = document.getElementById('visit-send-btn');
+  if (input)   input.disabled   = disabled;
+  if (sendBtn) sendBtn.disabled = disabled;
+}
+
+/**
+ * 向串门对话区追加一条消息
+ * @param {'pet'|'friend'|'user'|'system'} role
+ * @param {string|null} text  null 表示打字中
+ * @param {string} speakerName
+ * @param {boolean} isTyping
+ * @returns {HTMLElement} 消息行元素
+ */
+function _appendVisitLine(role, text, speakerName = '', isTyping = false) {
+  const chatArea = document.getElementById('visit-chat-area');
+  if (!chatArea) return null;
+
+  const line = document.createElement('div');
+  line.className = `visit-line ${role}${isTyping ? ' typing' : ''}`;
+
+  if (role === 'system') {
+    const bubble = document.createElement('div');
+    bubble.className = 'visit-bubble';
+    bubble.textContent = text || '';
+    line.appendChild(bubble);
+  } else {
+    // 头像
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'visit-avatar-sm';
+
+    if (role === 'pet') {
+      const pet = runtime.pet || {};
+      if (pet.avatarUrl) {
+        const img = document.createElement('img');
+        img.src = pet.avatarUrl;
+        img.alt = '';
+        img.onerror = () => { avatarEl.textContent = '🐱'; };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = '🐱';
+      }
+    } else if (role === 'friend') {
+      const f = visitState.friend;
+      if (f?.avatarUrl) {
+        const img = document.createElement('img');
+                img.src = f.avatarUrl;
+        img.alt = '';
+        img.onerror = () => { avatarEl.textContent = '🐾'; };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = '🐾';
+      }
+    } else {
+      // user
+      avatarEl.textContent = '👤';
+    }
+
+    // 气泡包裹
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.className = 'visit-bubble-wrap';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'visit-bubble-name';
+    nameEl.textContent = speakerName;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'visit-bubble';
+
+    if (isTyping) {
+      bubble.appendChild(createTypingIndicator());
+    } else {
+      bubble.textContent = text || '';
+    }
+
+    bubbleWrap.appendChild(nameEl);
+    bubbleWrap.appendChild(bubble);
+
+    line.appendChild(avatarEl);
+    line.appendChild(bubbleWrap);
+  }
+
+  chatArea.appendChild(line);
+
+  // 最多保留 80 条，防止内存膨胀
+  const allLines = chatArea.querySelectorAll('.visit-line');
+  if (allLines.length > 80) allLines[0].remove();
+
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return line;
+}
+
+// ── 本地兜底台词 ─────────────────────────────────────────────
+const VISIT_FALLBACKS = {
+  pet: [
+    '（开心地摇尾巴）',
+    '哇，你来了！',
+    '嗯嗯！',
+    '（好奇地看着）',
+    '一起玩吧！',
+    '（蹭了蹭）',
+  ],
+  friend: [
+    '你好你好！',
+    '（友好地打招呼）',
+    '嗯！',
+    '好有趣哦！',
+    '（开心地转圈）',
+    '我们做朋友吧！',
+  ],
+};
+
+function _getVisitFallback(role) {
+  const pool = VISIT_FALLBACKS[role] || VISIT_FALLBACKS.friend;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Prompt 构建函数 ───────────────────────────────────────────
+
+/** 获取 promptConfig 里的好友互动规则 */
+function _getInteractionRule() {
+  const pc = runtime.settings?.promptConfig || {};
+  return pc.friendInteraction || pc.interaction || '';
+}
+
+/** 好友到来开场白 prompt */
+function _buildFriendArrivalPrompt(friend, pet) {
+  const interactionRule = _getInteractionRule();
+  const userCallName    = getUserCallName('friend');
+
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物，正在去好友家串门。`,
+    friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
+    `你的好友叫「${pet.name || '宠物'}」，你刚刚到达它家门口。`,
+    userCallName ? `主人叫你「${userCallName}」。` : '',
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '用一句话（20字以内）打招呼，活泼自然，可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: '你刚到好友家，说一句开场白。' },
+  ];
+}
+
+/** 宠物回应好友到来 prompt */
+function _buildPetResponsePrompt(pet, friend, scene = 'arrival') {
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const personalityPrompt = getPersonalityPrompt ? getPersonalityPrompt(pet) : '';
+  const statusContext     = getPetStatusContext   ? getPetStatusContext(pet)  : '';
+  const interactionRule   = _getInteractionRule();
+  const pc                = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    personalityPrompt,
+    pc.petExtra || '',
+    statusContext,
+    `你的好友「${friend.name}」（${friend.personality || '活泼可爱'}）刚刚来串门了。`,
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '用一句话（20字以内）回应好友到来，符合你的性格，可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: `${friend.name} 来串门了，你怎么回应？` },
+  ];
+}
+
+/** 宠物回应用户插话 prompt */
+function _buildPetUserResponsePrompt(pet, friend, userText) {
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const personalityPrompt = getPersonalityPrompt ? getPersonalityPrompt(pet) : '';
+  const statusContext     = getPetStatusContext   ? getPetStatusContext(pet)  : '';
+  const interactionRule   = _getInteractionRule();
+  const pc                = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    personalityPrompt,
+    pc.petExtra || '',
+    statusContext,
+    `你的好友「${friend.name}」也在场。`,
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '用一句话（25字以内）回应主人说的话，符合你的性格，可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: userText },
+  ];
+}
+
+/** 好友回应用户插话 prompt */
+function _buildFriendUserResponsePrompt(friend, pet, userText) {
+  const interactionRule = _getInteractionRule();
+  const userCallName    = getUserCallName('friend');
+  const pc              = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物，正在好友「${pet.name || '宠物'}」家串门。`,
+    friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
+    pc.friendInteraction || '',
+    userCallName ? `主人叫你「${userCallName}」。` : '',
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '用一句话（25字以内）回应主人说的话，符合你的性格，可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: userText },
+  ];
+}
+
+/** 宠物自由聊天 prompt */
+function _buildPetFreeChatPrompt(pet, friend) {
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const personalityPrompt = getPersonalityPrompt ? getPersonalityPrompt(pet) : '';
+  const statusContext     = getPetStatusContext   ? getPetStatusContext(pet)  : '';
+  const interactionRule   = _getInteractionRule();
+  const pc                = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    personalityPrompt,
+    pc.petExtra || '',
+    statusContext,
+    `你正在和好友「${friend.name}」（${friend.personality || '活泼可爱'}）聊天。`,
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '主动说一句话（20字以内）和好友聊天，话题随意，符合你的性格。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: '和好友随便聊一句。' },
+  ];
+}
+
+/** 好友自由聊天 prompt */
+function _buildFriendFreeChatPrompt(friend, pet) {
+  const interactionRule = _getInteractionRule();
+  const pc              = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物，正在好友「${pet.name || '宠物'}」家串门。`,
+    friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
+    pc.friendInteraction || '',
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '主动说一句话（20字以内）和好友聊天，话题随意，符合你的性格。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: '和好友随便聊一句。' },
+  ];
+}
+
+
 // ── 系统状态 Banner ───────────────────────────────────────
 /**
  * 检查所有系统状态，把需要用户关注的问题以 banner 形式显示在界面上。
