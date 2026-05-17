@@ -1244,4 +1244,15 @@ html, body {
 .prompt-save-bar {
   padding: 4px 0 8px;
 }
+/* ============================================================
+   表单提示文字
+   ============================================================ */
+.form-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 5px;
+  line-height: 1.5;
+  padding-left: 2px;
+}
+
 
