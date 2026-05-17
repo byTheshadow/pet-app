@@ -28,8 +28,12 @@
     </div>
   </div>
 
-  <!-- Offline Banner -->
+    <!-- Offline Banner -->
   <div id="offline-banner">⚠ 网络已断开</div>
+
+  <!-- System Banner Stack（API未配置、其他系统级通知） -->
+  <div id="system-banner-stack"></div>
+
 
   <!-- Screen -->
   <div id="screen">
@@ -224,6 +228,7 @@
           <button class="tab-item" data-tab="tab-notify">通知</button>
           <button class="tab-item" data-tab="tab-data">数据</button>
           <button class="tab-item" data-tab="tab-logs">日志</button>
+          <button class="tab-item" data-tab="tab-prompt">提示词</button>
         </div>
 
         <div class="page-content" style="flex:1; overflow-y:auto;">
@@ -507,6 +512,157 @@
               </div>
             </div>
           </div>
+                    <!-- ── Tab: 提示词控制中心 ── -->
+          <div id="tab-prompt" class="tab-content">
+            <div class="settings-section">
+              <div class="settings-section-title">提示词控制中心</div>
+
+              <!-- 模式切换器 -->
+              <div class="prompt-mode-switcher">
+                <button class="prompt-mode-btn active" data-prompt-mode="simple">简单</button>
+                <button class="prompt-mode-btn" data-prompt-mode="detail">详细</button>
+              </div>
+
+              <!-- ── 简单模式 ── -->
+              <div id="prompt-simple-panel">
+                <div class="prompt-interaction-section">
+                  <div class="prompt-interaction-header">
+                    <div class="prompt-interaction-title">🤝 宠物互动规则</div>
+                    <div class="prompt-interaction-subtitle">
+                      描述宠物之间相遇时的通用行为，适用于好友串门和三方对话
+                    </div>
+                  </div>
+                  <div class="prompt-interaction-body">
+                    <div class="form-group" style="margin-bottom:8px;">
+                      <textarea class="form-textarea" id="set-prompt-interaction"
+                        placeholder="例：宠物见面会互相打招呼，性格相近的会更亲密，傲娇的宠物表面冷淡但内心开心..."
+                        style="min-height:90px;"></textarea>
+                      <div class="prompt-char-hint" id="hint-interaction">0 / 300</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="prompt-save-bar">
+                  <button class="btn btn-primary" id="btn-save-prompt-simple" style="width:100%;">
+                    保存互动规则
+                  </button>
+                </div>
+              </div>
+
+              <!-- ── 详细模式 ── -->
+              <div id="prompt-detail-panel" class="prompt-detail-panel">
+
+                <!-- 宠物角色补充 -->
+                <div class="prompt-role-card">
+                  <div class="prompt-role-header">
+                    <div class="prompt-role-icon">🐱</div>
+                    <div>
+                      <div class="prompt-role-title">宠物角色补充</div>
+                      <div class="prompt-role-subtitle">叠加在宠物设置的性格提示词之上</div>
+                    </div>
+                  </div>
+                  <div class="prompt-role-body">
+                    <textarea class="form-textarea" id="set-prompt-pet-extra"
+                      placeholder="例：说话时偶尔用第三人称，喜欢在句尾加「喵」，对食物话题特别兴奋..."
+                      maxlength="500"></textarea>
+                    <div class="prompt-char-hint" id="hint-pet-extra">0 / 500</div>
+                  </div>
+                </div>
+
+                <!-- 家长角色补充 -->
+                <div class="prompt-role-card">
+                  <div class="prompt-role-header">
+                    <div class="prompt-role-icon">👨‍👩‍👧</div>
+                    <div>
+                      <div class="prompt-role-title">家长角色补充</div>
+                      <div class="prompt-role-subtitle">叠加在家长设置的专属提示词之上</div>
+                    </div>
+                  </div>
+                  <div class="prompt-role-body">
+                    <textarea class="form-textarea" id="set-prompt-parent-extra"
+                      placeholder="例：家长会用温柔但坚定的语气，关心宠物的健康状态，偶尔会带来小礼物..."
+                      maxlength="500"></textarea>
+                    <div class="prompt-char-hint" id="hint-parent-extra">0 / 500</div>
+                  </div>
+                </div>
+
+                <!-- 好友互动规则 -->
+                <div class="prompt-role-card">
+                  <div class="prompt-role-header">
+                    <div class="prompt-role-icon">🐾</div>
+                    <div>
+                      <div class="prompt-role-title">好友互动规则</div>
+                      <div class="prompt-role-subtitle">宠物与好友相遇时的行为模板</div>
+                    </div>
+                  </div>
+                  <div class="prompt-role-body">
+                    <textarea class="form-textarea" id="set-prompt-friend-interaction"
+                      placeholder="例：好友来访时宠物会先介绍自己，亲密度高的好友会一起玩游戏，性格冲突的宠物会斗嘴但不会真的生气..."
+                      maxlength="500"></textarea>
+                    <div class="prompt-char-hint" id="hint-friend-interaction">0 / 500</div>
+                  </div>
+                </div>
+
+                <!-- 场景冒险叙事风格 -->
+                <div class="prompt-role-card">
+                  <div class="prompt-role-header">
+                    <div class="prompt-role-icon">🗺</div>
+                    <div>
+                      <div class="prompt-role-title">冒险叙事风格</div>
+                      <div class="prompt-role-subtitle">AI 描述冒险场景时的口吻和风格</div>
+                    </div>
+                  </div>
+                  <div class="prompt-role-body">
+                    <textarea class="form-textarea" id="set-prompt-adventure-style"
+                      placeholder="例：用童话故事的口吻叙述，充满想象力，结局总是温馨的，偶尔加入悬念..."
+                      maxlength="500"></textarea>
+                    <div class="prompt-char-hint" id="hint-adventure-style">0 / 500</div>
+                  </div>
+                </div>
+
+                <!-- 情绪气泡风格 -->
+                <div class="prompt-role-card">
+                  <div class="prompt-role-header">
+                    <div class="prompt-role-icon">💬</div>
+                    <div>
+                      <div class="prompt-role-title">情绪气泡风格</div>
+                      <div class="prompt-role-subtitle">点击宠物时弹出气泡的语气和内容倾向</div>
+                    </div>
+                  </div>
+                  <div class="prompt-role-body">
+                    <textarea class="form-textarea" id="set-prompt-bubble-style"
+                      placeholder="例：气泡内容要简短可爱，多用颜文字，心情好时活泼，心情差时撒娇..."
+                      maxlength="300"></textarea>
+                    <div class="prompt-char-hint" id="hint-bubble-style">0 / 300</div>
+                  </div>
+                </div>
+
+                <!-- 互动规则（详细模式也保留） -->
+                <div class="prompt-interaction-section">
+                  <div class="prompt-interaction-header">
+                    <div class="prompt-interaction-title">🤝 通用互动规则</div>
+                    <div class="prompt-interaction-subtitle">
+                      所有角色互动时的基础行为准则（与简单模式共用同一字段）
+                    </div>
+                  </div>
+                  <div class="prompt-interaction-body">
+                    <textarea class="form-textarea" id="set-prompt-interaction-detail"
+                      placeholder="例：宠物见面会互相打招呼，性格相近的会更亲密..."
+                      style="min-height:80px;" maxlength="300"></textarea>
+                    <div class="prompt-char-hint" id="hint-interaction-detail">0 / 300</div>
+                  </div>
+                </div>
+
+                <div class="prompt-save-bar">
+                  <button class="btn btn-primary" id="btn-save-prompt-detail" style="width:100%;">
+                    保存所有提示词设置
+                  </button>
+                </div>
+
+              </div><!-- /prompt-detail-panel -->
+
+            </div><!-- /settings-section -->
+          </div><!-- /tab-prompt -->
 
         </div><!-- /page-content -->
       </section><!-- /page-settings -->
@@ -634,6 +790,8 @@ async function init() {
   bindSettingsSave();
   bindDataManagement();
   bindFriendsPage();
+  bindPromptTab();
+  fillPromptForms();
 
   // 监听宠物更新
   bus.on(EVENTS.PET_UPDATED, (pet) => {
@@ -641,9 +799,13 @@ async function init() {
     renderPetAvatar(pet);
     updateMoodCard(pet);
   });
+    // 设置保存后重新检查系统状态
+  bus.on(EVENTS.SETTINGS_UPDATED, () => checkSystemStatus());
 
   // 定时衰减
   setInterval(async () => { await applyDecay(); }, 5 * 60 * 1000);
+    // ── 系统状态检测 & 界面通知 ──────────────────────────────
+  checkSystemStatus();
 
   logInfo('app', 'PetOS initialized');
   showToast('PetOS 已启动 ✨', 'success', 2000);
@@ -1242,6 +1404,8 @@ function fillSettingsForms() {
   set('set-thresh-mood',   s.notifyThresholds?.mood   ?? 20);
   set('set-thresh-health', s.notifyThresholds?.health ?? 20);
   set('set-thresh-clean',  s.notifyThresholds?.clean  ?? 20);
+    // 表单填充完成后刷新系统状态
+  checkSystemStatus();
 }
 
 // ── 设置保存 ─────────────────────────────────────────────────
@@ -1276,6 +1440,7 @@ function bindSettingsSave() {
         renderPetUI();
         showToast('宠物设置已保存 ✓', 'success');
         logInfo('app', 'Pet settings saved');
+        checkSystemStatus();
       } catch (err) {
         showToast('保存失败：' + err.message, 'error');
         logError('app', 'Save pet settings failed', { stack: err.stack });
@@ -1362,6 +1527,7 @@ function bindSettingsSave() {
         runtime.settings = patch;
         showToast('API 设置已保存 ✓', 'success');
         logInfo('app', 'API settings saved');
+        checkSystemStatus();
       } catch (err) {
         showToast('保存失败：' + err.message, 'error');
         logError('app', 'Save API settings failed', { stack: err.stack });
@@ -1398,6 +1564,7 @@ function bindSettingsSave() {
 
         showToast('家长设置已保存 ✓', 'success');
         logInfo('app', 'Parent settings saved');
+        checkSystemStatus();
       } catch (err) {
         showToast('保存失败：' + err.message, 'error');
         logError('app', 'Save parent settings failed', { stack: err.stack });
@@ -1435,6 +1602,7 @@ function bindSettingsSave() {
         runtime.settings = patch;
         showToast('通知设置已保存 ✓', 'success');
         logInfo('app', 'Notify settings saved');
+        checkSystemStatus();
       } catch (err) {
         showToast('保存失败：' + err.message, 'error');
         logError('app', 'Save notify settings failed', { stack: err.stack });
@@ -1848,6 +2016,280 @@ function bindFriendsPage() {
         if (btn) { btn.disabled = false; btn.textContent = '🎲'; }
       }
     });
+}
+// ── 系统状态 Banner ───────────────────────────────────────
+/**
+ * 检查所有系统状态，把需要用户关注的问题以 banner 形式显示在界面上。
+ * 每次调用会重新计算并刷新整个 banner 栈。
+ */
+function checkSystemStatus() {
+  const stack = document.getElementById('system-banner-stack');
+  if (!stack) return;
+
+  stack.innerHTML = '';
+
+  const banners = [];
+
+  // 1. API 未配置
+  const s = runtime.settings || {};
+  if (!s.apiBase || !s.apiKey) {
+    banners.push({
+      type: 'warn',
+      icon: '⚙️',
+      text: 'API 未配置，AI 功能暂不可用',
+      action: () => { navigateTo('settings'); switchSettingsTab('tab-api'); },
+    });
+  } else if (!s.selectedModel) {
+    banners.push({
+      type: 'warn',
+      icon: '🤖',
+      text: '未选择 AI 模型，请前往 API 设置获取模型列表',
+      action: () => { navigateTo('settings'); switchSettingsTab('tab-api'); },
+    });
+  }
+
+  // 2. 宠物名字未设置（还是默认值且没有自定义）
+  const pet = runtime.pet || {};
+  if (!pet.name || pet.name === '小幽') {
+    // 只在第一次启动时提示（没有 customPrompt 且是默认名）
+    if (!pet.customPrompt && !pet.avatarUrl) {
+      banners.push({
+        type: 'info',
+        icon: '🐾',
+        text: '还没有自定义宠物，去宠物设置给它起个名字吧',
+        action: () => { navigateTo('settings'); switchSettingsTab('tab-pet'); },
+      });
+    }
+  }
+
+  // 3. 通知权限被拒绝（用户开启了通知但权限被拒）
+  if (s.notifyEnabled && 'Notification' in window && Notification.permission === 'denied') {
+    banners.push({
+      type: 'error',
+      icon: '🔔',
+      text: '通知权限被拒绝，请在浏览器设置中手动开启',
+      action: () => { navigateTo('settings'); switchSettingsTab('tab-notify'); },
+    });
+  }
+
+  // 4. 离线状态（补充 banner，offline-banner 已有条状提示，这里不重复）
+
+  // 渲染
+  banners.forEach(({ type, icon, text, action }) => {
+    const el = document.createElement('div');
+    el.className = 'system-banner ' + type;
+    el.setAttribute('role', 'alert');
+
+    const iconEl = document.createElement('span');
+    iconEl.className = 'system-banner-icon';
+    iconEl.textContent = icon;
+
+    const textEl = document.createElement('span');
+    textEl.className = 'system-banner-text';
+    textEl.textContent = text;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'system-banner-arrow';
+    arrow.textContent = '›';
+
+    el.appendChild(iconEl);
+    el.appendChild(textEl);
+    el.appendChild(arrow);
+
+    if (action) {
+      el.addEventListener('click', () => {
+        action();
+        // 点击后关闭这条 banner（用户已知晓）
+        el.style.animation = 'toast-out 0.2s ease forwards';
+        setTimeout(() => el.remove(), 200);
+      });
+    }
+
+    stack.appendChild(el);
+  });
+}
+
+/**
+ * 切换设置页到指定 Tab（供 banner 点击跳转使用）
+ */
+function switchSettingsTab(tabId) {
+  // 等路由切换完成后再切 tab
+  setTimeout(() => {
+    const tabBar      = document.querySelector('#page-settings .tab-bar');
+    const pageContent = document.querySelector('#page-settings .page-content');
+    if (!tabBar || !pageContent) return;
+
+    tabBar.querySelectorAll('.tab-item').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tabId);
+    });
+    pageContent.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === tabId);
+    });
+  }, 80);
+}
+
+// ── 提示词 Tab 逻辑 ───────────────────────────────────────
+function bindPromptTab() {
+
+  // ── 模式切换 ──
+  const switcher = document.querySelector('#tab-prompt .prompt-mode-switcher');
+  const simplePanel = document.getElementById('prompt-simple-panel');
+  const detailPanel = document.getElementById('prompt-detail-panel');
+
+  switcher?.querySelectorAll('.prompt-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.promptMode;
+      switcher.querySelectorAll('.prompt-mode-btn').forEach(b => {
+        b.classList.toggle('active', b === btn);
+      });
+      if (mode === 'simple') {
+        simplePanel?.style && (simplePanel.style.display = '');
+        if (detailPanel) detailPanel.classList.remove('active');
+      } else {
+        simplePanel?.style && (simplePanel.style.display = 'none');
+        if (detailPanel) detailPanel.classList.add('active');
+        // 详细模式：把简单模式的互动规则同步过来
+        const simpleVal = document.getElementById('set-prompt-interaction')?.value || '';
+        const detailEl  = document.getElementById('set-prompt-interaction-detail');
+        if (detailEl && !detailEl.value) detailEl.value = simpleVal;
+      }
+    });
+  });
+
+  // ── 字数计数器 ──
+  const charCountPairs = [
+    ['set-prompt-interaction',        'hint-interaction',        300],
+    ['set-prompt-pet-extra',          'hint-pet-extra',          500],
+    ['set-prompt-parent-extra',       'hint-parent-extra',       500],
+    ['set-prompt-friend-interaction', 'hint-friend-interaction', 500],
+    ['set-prompt-adventure-style',    'hint-adventure-style',    500],
+    ['set-prompt-bubble-style',       'hint-bubble-style',       300],
+    ['set-prompt-interaction-detail', 'hint-interaction-detail', 300],
+  ];
+
+  charCountPairs.forEach(([inputId, hintId, max]) => {
+    const input = document.getElementById(inputId);
+    const hint  = document.getElementById(hintId);
+    if (!input || !hint) return;
+
+    const update = () => {
+      const len = input.value.length;
+      hint.textContent = `${len} / ${max}`;
+      hint.style.color = len > max * 0.9
+        ? '#ff6b6b'
+        : 'var(--text-tertiary)';
+    };
+    input.addEventListener('input', update);
+    update();
+  });
+
+  // 简单模式互动规则 → 同步到详细模式的对应字段
+  document.getElementById('set-prompt-interaction')
+    ?.addEventListener('input', () => {
+      const val = document.getElementById('set-prompt-interaction')?.value || '';
+      const detailEl = document.getElementById('set-prompt-interaction-detail');
+      if (detailEl) detailEl.value = val;
+      // 触发详细模式字数更新
+      detailEl?.dispatchEvent(new Event('input'));
+    });
+
+  // 详细模式互动规则 → 同步回简单模式
+  document.getElementById('set-prompt-interaction-detail')
+    ?.addEventListener('input', () => {
+      const val = document.getElementById('set-prompt-interaction-detail')?.value || '';
+      const simpleEl = document.getElementById('set-prompt-interaction');
+      if (simpleEl) simpleEl.value = val;
+      simpleEl?.dispatchEvent(new Event('input'));
+    });
+
+  // ── 简单模式保存 ──
+  document.getElementById('btn-save-prompt-simple')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        const patch = {
+          ...runtime.settings,
+          promptConfig: {
+            ...(runtime.settings?.promptConfig || {}),
+            interaction: document.getElementById('set-prompt-interaction')?.value.trim() || '',
+          },
+        };
+        await dbSet('settings', patch);
+        runtime.settings = patch;
+        showToast('互动规则已保存 ✓', 'success');
+        logInfo('app', 'Prompt simple saved');
+        // 保存后重新检查系统状态
+        checkSystemStatus();
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save prompt simple failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存互动规则';
+      }
+    });
+
+  // ── 详细模式保存 ──
+  document.getElementById('btn-save-prompt-detail')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      try {
+        const patch = {
+          ...runtime.settings,
+          promptConfig: {
+            interaction:        document.getElementById('set-prompt-interaction-detail')?.value.trim() || '',
+            petExtra:           document.getElementById('set-prompt-pet-extra')?.value.trim()          || '',
+            parentExtra:        document.getElementById('set-prompt-parent-extra')?.value.trim()       || '',
+            friendInteraction:  document.getElementById('set-prompt-friend-interaction')?.value.trim() || '',
+            adventureStyle:     document.getElementById('set-prompt-adventure-style')?.value.trim()    || '',
+            bubbleStyle:        document.getElementById('set-prompt-bubble-style')?.value.trim()       || '',
+          },
+        };
+        await dbSet('settings', patch);
+        runtime.settings = patch;
+
+        // 同步简单模式的互动规则字段
+        const simpleEl = document.getElementById('set-prompt-interaction');
+        if (simpleEl) simpleEl.value = patch.promptConfig.interaction;
+        simpleEl?.dispatchEvent(new Event('input'));
+
+        showToast('所有提示词设置已保存 ✓', 'success');
+        logInfo('app', 'Prompt detail saved');
+        checkSystemStatus();
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Save prompt detail failed', { stack: err.stack });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '保存所有提示词设置';
+      }
+    });
+}
+
+// ── 提示词 Tab 表单填充 ───────────────────────────────────
+function fillPromptForms() {
+  const pc = runtime.settings?.promptConfig || {};
+
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = val || '';
+      // 触发字数更新
+      el.dispatchEvent(new Event('input'));
+    }
+  };
+
+  set('set-prompt-interaction',        pc.interaction       || '');
+  set('set-prompt-interaction-detail', pc.interaction       || '');
+  set('set-prompt-pet-extra',          pc.petExtra          || '');
+  set('set-prompt-parent-extra',       pc.parentExtra       || '');
+  set('set-prompt-friend-interaction', pc.friendInteraction || '');
+  set('set-prompt-adventure-style',    pc.adventureStyle    || '');
+  set('set-prompt-bubble-style',       pc.bubbleStyle       || '');
 }
 
 // ── 启动 ─────────────────────────────────────────────────────
