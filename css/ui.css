@@ -1014,6 +1014,47 @@
   flex-shrink: 0;
   transition: all 0.15s;
 }
+/* ====== 家长对话消息操作按钮 ====== */
+.parent-msg-actions {
+  display: none;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.parent-line:hover .parent-msg-actions {
+  display: flex;
+}
+
+.parent-line.user .parent-msg-actions {
+  justify-content: flex-end;
+}
+
+.parent-msg-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-alt);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.parent-msg-btn:hover {
+  background: var(--text-primary);
+  color: var(--bg-shell);
+  border-color: var(--text-primary);
+}
+
+.parent-msg-btn.danger:hover {
+  background: #e53e3e;
+  color: #fff;
+  border-color: #e53e3e;
+}
+/* ====== END: 家长对话消息操作按钮 ====== */
 
 .parent-send-btn:active { transform: scale(0.9); }
 .parent-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }

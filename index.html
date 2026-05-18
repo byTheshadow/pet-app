@@ -5275,6 +5275,91 @@ function _bindParentModal() {
     });
   }
 }
+/**
+ * 重roll：替换指定消息行，重新让 AI 生成
+ * @param {HTMLElement} line  要替换的 .parent-line 元素
+ * @param {string}      room  'parent-user' | 'parent-trio'
+ * @param {string}      role  'parent' | 'pet'
+ */
+async function _rerollParentLine(line, room, role) {
+  if (parentState.isAIBusy) {
+    showToast('AI 正在说话，请稍候…', 'info');
+    return;
+  }
+
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+
+  let messages;
+  let fallbackKey;
+
+  if (role === 'parent') {
+    const scene = room === 'parent-trio'
+      ? `你和孩子「${pet.name || '宠物'}」以及主人在一起，重新说一句话。`
+      : `你来看望孩子「${pet.name || '宠物'}」，重新说一句话。`;
+    messages = [
+      { role: 'system', content: _buildParentSystemPrompt(scene) },
+      { role: 'user',   content: '请重新说一句话。' },
+    ];
+    fallbackKey = 'reply';
+  } else {
+    const scene = room === 'parent-trio'
+      ? `家长「${parent.name || '家长'}」和主人都在场，你作为宠物重新回应一句。` +
+        `用宠物的方式：撒娇、蹭过去、用颜文字表达情绪。不能说出像大人叮嘱别人的话。`
+      : `你作为宠物重新说一句话，用宠物的方式表达。`;
+    messages = [
+      { role: 'system', content: _buildPetSystemPromptForParent(scene) },
+      { role: 'user',   content: '请重新说一句话。' },
+    ];
+    fallbackKey = 'pet_reply';
+  }
+
+  const bubble = line.querySelector('.parent-bubble');
+  if (bubble) {
+    bubble.innerHTML = '';
+    bubble.appendChild(createTypingIndicator());
+  }
+  line.classList.add('typing');
+
+  const actions = line.querySelector('.parent-msg-actions');
+  if (actions) actions.style.display = 'none';
+
+  parentState.isAIBusy  = true;
+  _setParentInputDisabled(true);
+  parentState.abortCtrl = new AbortController();
+
+  let replyText = '';
+
+  try {
+    await callAI({
+      messages,
+      stream:  true,
+      signal:  parentState.abortCtrl.signal,
+      onChunk: (delta) => {
+        replyText += delta;
+        if (bubble) bubble.textContent = replyText;
+      },
+    });
+
+    if (!replyText && bubble) {
+      bubble.textContent = _pickParentFallback(fallbackKey);
+    }
+
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    if (bubble) bubble.textContent = _pickParentFallback(fallbackKey);
+    logWarn('app', `Reroll failed (${role}): ${err.message}`);
+    showToast('重roll 失败，已用本地台词替代', 'warning');
+  } finally {
+    parentState.isAIBusy  = false;
+    parentState.abortCtrl = null;
+    line.classList.remove('typing');
+    _setParentInputDisabled(false);
+    if (actions) actions.style.display = '';
+  }
+}
+
+
 
 // ── 切换聊天室 ────────────────────────────────────────────────
 function _switchParentRoom(roomKey) {
@@ -5370,6 +5455,36 @@ function _appendParentLine(room, role, text, speakerName = '', isTyping = false)
 
     bubbleWrap.appendChild(nameEl);
     bubbleWrap.appendChild(bubble);
+
+    // ── 操作按钮（非 typing 状态才加）──────────────────────
+    if (!isTyping) {
+      const actions = document.createElement('div');
+      actions.className = 'parent-msg-actions';
+
+      // AI 消息（parent / pet）才有重roll
+      if (role === 'parent' || role === 'pet') {
+        const rerollBtn = document.createElement('button');
+        rerollBtn.className = 'parent-msg-btn';
+        rerollBtn.textContent = '🎲 重roll';
+        rerollBtn.addEventListener('click', () => {
+          _rerollParentLine(line, room, role);
+        });
+        actions.appendChild(rerollBtn);
+      }
+
+      // 所有消息都有删除
+      const delBtn = document.createElement('button');
+      delBtn.className = 'parent-msg-btn danger';
+      delBtn.textContent = '🗑 删除';
+      delBtn.addEventListener('click', () => {
+        line.remove();
+      });
+      actions.appendChild(delBtn);
+
+      bubbleWrap.appendChild(actions);
+    }
+    // ── 操作按钮结束 ────────────────────────────────────────
+
     line.appendChild(avatarEl);
     line.appendChild(bubbleWrap);
   }
@@ -5383,7 +5498,6 @@ function _appendParentLine(room, role, text, speakerName = '', isTyping = false)
   area.scrollTop = area.scrollHeight;
   return line;
 }
-
 // ── AI 发言（流式）───────────────────────────────────────────
 async function _parentSpeak(room, role, messages, fallbackKey = 'reply') {
   if (parentState.isAIBusy) return;
