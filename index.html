@@ -1090,14 +1090,6 @@ async function init() {
   bindPromptTab();
   fillPromptForms();
 
-  // 暴露 pet helpers 给串门系统使用
-import('./js/pet.js').then(m => {
-  window._petHelpers = {
-    getPersonalityPrompt: m.getPersonalityPrompt,
-    getPetStatusContext:  m.getPetStatusContext,
-  };
-});
-
 
 
  // 监听宠物更新
@@ -1666,39 +1658,37 @@ const GREETINGS = {
  * @param {'feed'|'play'|'clean'|'heal'} action
  * @returns {string}
  */
-function getLocalReaction(action) {
+  // 先检查极端状态，优先触发
+  function getLocalReaction(action) {
   const pet         = runtime.pet || {};
   const personality = pet.personality || 'genki';
-  const stats       = pet.stats || {};
-  // 先检查极端状态，优先触发
+  // ↓ 改这里，直接读 pet 而不是 pet.stats
   const sr = STATE_REACTIONS[action] || {};
   if (action === 'feed') {
-    if ((stats.hunger ?? 80) < 20 && sr.veryHungry)
+    if ((pet.hunger ?? 80) < 20 && sr.veryHungry)
       return injectName(pick(sr.veryHungry), 'pet');
-    if ((stats.hunger ?? 80) > 95 && sr.veryFull)
+    if ((pet.hunger ?? 80) > 95 && sr.veryFull)
       return injectName(pick(sr.veryFull), 'pet');
   }
   if (action === 'play') {
-    if ((stats.mood ?? 80) < 20 && sr.veryLowMood)
+    if ((pet.mood ?? 80) < 20 && sr.veryLowMood)
       return injectName(pick(sr.veryLowMood), 'pet');
-    if ((stats.mood ?? 80) > 90 && sr.veryHighMood)
+    if ((pet.mood ?? 80) > 90 && sr.veryHighMood)
       return injectName(pick(sr.veryHighMood), 'pet');
   }
   if (action === 'clean') {
-    if ((stats.clean ?? 80) < 20 && sr.veryDirty)
+    if ((pet.clean ?? 80) < 20 && sr.veryDirty)
       return injectName(pick(sr.veryDirty), 'pet');
   }
   if (action === 'heal') {
-    if ((stats.health ?? 80) < 20 && sr.veryLowHealth)
+    if ((pet.health ?? 80) < 20 && sr.veryLowHealth)
       return injectName(pick(sr.veryLowHealth), 'pet');
   }
 
-
-  // 按性格取台词，找不到就用 genki 兜底
   const pool = (LOCAL_REACTIONS[action] || {})[personality]
             || (LOCAL_REACTIONS[action] || {}).genki
             || ['……（看着你）'];
-    return injectName(pick(pool), 'pet');
+  return injectName(pick(pool), 'pet');
 }
 
 /** 从数组随机取一个元素 */
@@ -2063,7 +2053,7 @@ async function _rerollChatMsg(msgEl, userText) {
     if (err.message === 'AI 请求已取消') return;
     bubble.textContent = getLocalGreeting();
     showToast('重roll 失败，已用本地台词替代', 'warning');
-    logWarn('app', `Chat reroll failed: ${err.message}`);
+    logError('app', `Chat reroll failed: ${err.message}`);
   } finally {
     chatModalState.isAIBusy  = false;
     chatModalState.abortCtrl = null;
@@ -2177,7 +2167,7 @@ function bindPetActions() {
       try {
         await fn();
         showToast(msg, 'success');
-        appendChatLine('system', log);
+        _appendChatMsg('system', log);
         // 本地台词反应（无需 API，立即显示）
         showLocalReaction(actionKey);
       } catch (err) {
@@ -2189,66 +2179,12 @@ function bindPetActions() {
     });
   });
 
+// 绑定聊天入口按钮
+document.getElementById('btn-open-chat')?.addEventListener('click', openChatModal);
 
-  // 发送对话
-  const chatPetNameEl = document.getElementById('chat-open-petname');
+const chatPetNameEl = document.getElementById('chat-open-petname');
 if (chatPetNameEl) chatPetNameEl.textContent = runtime.pet?.name || '宠物';
-  let abortCtrl = null;
 
-  const doSend = async () => {
-    const text = inputEl?.value?.trim();
-    if (!text) return;
-    if (runtime.isAIBusy) { showToast('宠物正在思考...', 'warn'); return; }
-
-    inputEl.value = '';
-    runtime.isAIBusy = true;
-    if (sendBtn) sendBtn.disabled = true;
-
-    appendChatLine('user', text);
-    const typingLine = appendChatLine('pet', null, true);
-
-    abortCtrl = new AbortController();
-    let replyText = '';
-
-    try {
-      await petChat({
-        userText: text,
-        signal:   abortCtrl.signal,
-        onChunk: (delta) => {
-          replyText += delta;
-          if (typingLine) typingLine.textContent =
-            `${runtime.pet?.name || '宠物'}：${replyText}`;
-        },
-      });
-      if (typingLine && !replyText)
-        typingLine.textContent = `${runtime.pet?.name || '宠物'}：(´-ω-\`)`;
-
-      await dbAppend('chatHistory', {
-        id: Date.now() + Math.random(),
-        role: 'assistant',
-        content: replyText,
-        petName: runtime.pet?.name,
-        createdAt: Date.now(),
-      });
-    } catch (err) {
-      if (typingLine) typingLine.remove();
-      if (err.message !== 'AI 请求已取消') {
-        showToast('回复失败：' + err.message, 'error');
-        logError('app', 'petChat failed', { stack: err.stack });
-        appendChatLine('system', '⚠ 回复失败，请检查 API 设置');
-      }
-    } finally {
-      runtime.isAIBusy = false;
-      if (sendBtn) sendBtn.disabled = false;
-      abortCtrl = null;
-    }
-  };
-
-  sendBtn?.addEventListener('click', doSend);
-  inputEl?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
-  });
-}
 
 // ── 聊天区追加消息 ───────────────────────────────────────────
 function appendChatLine(role, text, isTyping = false) {
