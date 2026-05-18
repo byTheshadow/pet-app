@@ -417,6 +417,31 @@
   flex-shrink: 0;
   transition: background 0.15s;
 }
+/* ====== 结束串门按钮 ====== */
+.visit-end-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.visit-end-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.visit-end-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* ====== END: 结束串门按钮 ====== */
 
 .visit-close-btn:active {
   background: var(--border-subtle);

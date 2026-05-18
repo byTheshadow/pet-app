@@ -879,6 +879,9 @@
         <div class="visit-header-title" id="visit-header-title">串门中...</div>
         <div class="visit-header-sub" id="visit-header-sub">三方对话</div>
       </div>
+  <button class="visit-end-btn" id="visit-end-btn" aria-label="结束串门">
+    结束串门
+  </button>
       <button class="visit-close-btn" id="visit-close-btn" aria-label="关闭串门">✕</button>
     </div>
 
@@ -3485,6 +3488,19 @@ function _bindVisitClose() {
     }
   };
   overlay?.addEventListener('click', onOverlayClick);
+// ── 结束串门按钮 ──────────────────────────────────────────────
+const endBtn = document.getElementById('visit-end-btn');
+// 移除旧监听
+endBtn?.replaceWith(endBtn.cloneNode(true));
+document.getElementById('visit-end-btn')
+  ?.addEventListener('click', () => {
+    if (visitState.isAIBusy) {
+      showToast('AI 正在说话，请稍候…', 'info');
+      return;
+    }
+    _visitFarewell();
+  });
+
 }
 
 /** 绑定输入框发送 */
@@ -3564,6 +3580,46 @@ async function _visitUserTurn(userText) {
     await _visitFreeChat();
   }
 }
+/**
+ * 结束串门：好友告别 + 宠物送别 + 亲密度 +5 + 关闭 Modal
+ */
+async function _visitFarewell() {
+  const friend = visitState.friend;
+  const pet    = runtime.pet || {};
+
+  if (!friend) return;
+
+  // 禁用结束按钮和输入区，防止重复触发
+  const endBtn = document.getElementById('visit-end-btn');
+  if (endBtn) {
+    endBtn.disabled    = true;
+    endBtn.textContent = '告别中…';
+  }
+  _setVisitInputDisabled(true);
+
+  // 系统提示
+  _appendVisitLine('system', '— 今天的串门要结束了 —');
+
+  // 好友先说告别
+  await _visitSpeak('friend', _buildFriendFarewellPrompt(friend, pet, visitState.turnCount));
+
+  // 宠物送别
+  await _visitSpeak('pet', _buildPetFarewellPrompt(pet, friend, visitState.turnCount));
+
+  // 亲密度 +5（告别奖励）
+  visitState.intimacyGain += 5;
+  _updateIntimacyBadge(friend.intimacy || 0, visitState.intimacyGain);
+
+  // 系统提示
+  _appendVisitLine('system', `✨ 串门结束，亲密度 +${visitState.intimacyGain}`);
+
+  // 等 1.5 秒让用户看到告别语，再关闭
+  await new Promise(r => setTimeout(r, 1500));
+
+  // 触发关闭（复用 doClose 逻辑，保存亲密度）
+  document.getElementById('visit-close-btn')?.click();
+}
+
 
 /**
  * 宠物和好友自由对话一轮（无需用户参与）
@@ -3754,6 +3810,8 @@ const VISIT_FALLBACKS = {
     '（好奇地看着）',
     '一起玩吧！',
     '（蹭了蹭）',
+    '下次还要来玩哦！(´▽`)',   // ← 新增告别兜底
+    '今天好开心，拜拜～',       // ← 新增
   ],
   friend: [
     '你好你好！',
@@ -3762,6 +3820,8 @@ const VISIT_FALLBACKS = {
     '好有趣哦！',
     '（开心地转圈）',
     '我们做朋友吧！',
+    '今天玩得好开心，下次再来！(≧▽≦)', // ← 新增告别兜底
+    '拜拜～记得想我哦！',               // ← 新增
   ],
 };
 
@@ -3909,6 +3969,49 @@ function _buildFriendFreeChatPrompt(friend, pet) {
     { role: 'user',   content: '和好友随便聊一句。' },
   ];
 }
+/** 好友告别 prompt */
+function _buildFriendFarewellPrompt(friend, pet, turnCount) {
+  const interactionRule = _getInteractionRule();
+  const pc              = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物，在好友「${pet.name || '宠物'}」家玩了一段时间（共互动了 ${turnCount} 轮）。`,
+    friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
+    pc.friendInteraction || '',
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '现在要回家了，说一句温暖的告别语（30字以内），表达今天玩得很开心，下次还要来。可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: '你要回家了，说一句告别的话。' },
+  ];
+}
+
+/** 宠物送别 prompt */
+function _buildPetFarewellPrompt(pet, friend, turnCount) {
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const personalityPrompt = getPersonalityPrompt ? getPersonalityPrompt(pet) : '';
+  const statusContext     = getPetStatusContext   ? getPetStatusContext(pet)  : '';
+  const interactionRule   = _getInteractionRule();
+  const pc                = runtime.settings?.promptConfig || {};
+
+  const system = [
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    personalityPrompt,
+    pc.petExtra || '',
+    statusContext,
+    `你的好友「${friend.name}」今天来串门，玩了 ${turnCount} 轮对话，现在要回家了。`,
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '说一句依依不舍的送别语（30字以内），表达今天很开心，欢迎下次再来。可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user',   content: `${friend.name} 要回家了，你怎么送别？` },
+  ];
+}
+
 // ══════════════════════════════════════════════════════════════
 // 冒险页 + 成长系统
 // ══════════════════════════════════════════════════════════════
