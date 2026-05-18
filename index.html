@@ -5113,6 +5113,20 @@ const PARENT_FALLBACKS = {
     '想你们了，来看看。',
     '有没有好好照顾自己？',
   ],
+  pet_greet: [
+    '（飞奔过来蹭腿）汪！',
+    '（扑过去）呜呜～抱抱！',
+    '（摇尾巴）来啦来啦！(≧▽≦)',
+    '（蹭了蹭）喵～',
+    '（兴奋地转圈）！！！',
+  ],
+  pet_reply: [
+    '（歪头看着）？',
+    '（蹭过去）嗯～',
+    '（摇尾巴）(´▽`)',
+    '（开心地叫了一声）',
+    '（撒娇）抱抱～',
+  ],
   care_feed: [
     '看你饿成这样，快来吃点东西。',
     '肚子饿了吧，我来喂你。',
@@ -5505,7 +5519,7 @@ function _buildPetSystemPromptForParent(scene = '') {
 
   // 直接内联状态描述
   const statusContext = pet.hunger !== undefined
-    ? `【当前状态】饱食度：th.round(pet.hunger)}/100，心情:${Math.round(pet.mood)}/100，健康:${Math.round(pet.health)}/100，清洁:${Math.round(pet.clean)}/100，亲密度:${Math.round(pet.bond)}/100。`
+    ? `【当前状态】饱食度：${Math.round(pet.hunger)}/100，心情：${Math.round(pet.mood)}/100，健康：${Math.round(pet.health)}/100，清洁：${Math.round(pet.clean)}/100，亲密度：${Math.round(pet.bond)}/100。`
     : '';
 
   const relationDesc = relation === 'co-owner'
@@ -5565,7 +5579,7 @@ async function _parentTrioGreet() {
 
   _appendParentLine('parent-trio', 'system', `✨ 三方对话开始`);
 
-  // 家长先说
+  // 家长先说（不变）
   await _parentSpeak('parent-trio', 'parent', [
     {
       role: 'system',
@@ -5576,18 +5590,21 @@ async function _parentTrioGreet() {
     { role: 'user', content: '你来看孩子了，说一句开场白。' },
   ], 'greet');
 
-  // 宠物回应
-await _parentSpeak('parent-trio', 'pet', [
-  {
-    role: 'system',
-    content: _buildPetSystemPromptForParent(
-      `你的家长「${parent.name || '家长'}」刚来了，你很开心，用宠物的方式表达欢迎，比如蹭过去、叫一声、撒娇等。`
-    ),
-  },
-  { role: 'user', content: '家长来了，你作为宠物怎么反应？用宠物的方式回应。' },
-], 'greet');
+  // 宠物回应（改动在这里）
+  await _parentSpeak('parent-trio', 'pet', [
+    {
+      role: 'system',
+      content: _buildPetSystemPromptForParent(
+        // ↓ 改动：明确宠物身份 + 禁止家长口吻 + 给出具体反应方向
+        `你的家长「${parent.name || '家长'}」刚走进来，你作为宠物非常开心激动。` +
+        `请用宠物的方式表达：可以扑过去、蹭腿、叫一声、撒娇求抱抱等。` +
+        `绝对不能说"想你了""来看看你"这类家长才会说的话。` +
+        `你只是一只开心的宠物，用动作和简短的叫声/撒娇语表达喜悦。`
+      ),
+    },
+    { role: 'user', content: `${parent.name || '家长'}走进来了，你作为宠物怎么反应？` },
+  ], 'pet_greet');
 }
-
 // ── 用户发言后，家长和宠物各回应一次 ────────────────────────
 async function _parentUserTurn(userText) {
   const room   = parentState.room;
@@ -5616,18 +5633,19 @@ async function _parentUserTurn(userText) {
       },
       { role: 'user', content: userText },
     ], 'reply');
+    // 宠物也回应（改动在这里）
+await _parentSpeak('parent-trio', 'pet', [
+  {
+    role: 'system',
+    content: _buildPetSystemPromptForParent(
+      `家长「${parent.name || '妈妈'}」和主人都在场，主人刚说了话。` +
+      `你作为宠物孩子，用宠物的方式回应：可以撒娇、蹭过去、用颜文字表达情绪。` +
+      `不能说出像大人叮嘱别人的话，你只是一只宠物。`
+    ),
+  },
+  { role: 'user', content: userText },
+], 'pet_reply');}
 
-    // 宠物也回应
-    await _parentSpeak('parent-trio', 'pet', [
-      {
-        role: 'system',
-        content: _buildPetSystemPromptForParent(
-          `家长「${parent.name || '妈妈'}」和主人都在，主人说了话，你作为宠物孩子也回应一句。`
-        ),
-      },
-      { role: 'user', content: userText },
-    ], 'reply');
-  }
 }
 
 
