@@ -2054,6 +2054,30 @@
 /* ====================================================
    END: 聊天全屏 Modal
    ==================================================== */
+/* ====== 设置页水印 ====== */
+.settings-watermark {
+  padding: 24px 0 32px;
+  text-align: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.settings-watermark-brand {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.settings-watermark-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+}
+/* ====== END: 设置页水印 ====== */
 
 
 

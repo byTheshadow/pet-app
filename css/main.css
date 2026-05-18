@@ -457,6 +457,7 @@ html, body {
   justify-content: center;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+   touch-action: pan-y;
 }
 
 #modal-overlay.show { display: flex; }

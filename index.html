@@ -799,6 +799,11 @@
                     保存所有提示词设置
                   </button>
                 </div>
+                <!-- ── 设置页水印 ── -->
+<div class="settings-watermark">
+  <div class="settings-watermark-brand">PETOS-S</div>
+  <div class="settings-watermark-sub">made by shadow 玉元一</div>
+</div>
 
               </div><!-- /prompt-detail-panel -->
 
@@ -3377,57 +3382,60 @@ async function openPetCardModal() {
   const overlay = document.getElementById('modal-overlay');
 
   overlay.innerHTML = `
-    <div class="modal-box" style="
-      max-height: 92vh;
-      height: 92vh;
-      display: flex;
-      flex-direction: column;
-      padding-bottom: 0;
-      overflow: hidden;
+  <div class="modal-box" style="
+    max-height: 92vh;
+    height: 92vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+  ">
+    <div class="modal-handle" style="flex-shrink:0; padding-top:8px;"></div>
+
+    <!-- ── 固定顶部：标题 + 主题选择 ── -->
+    <div style="flex-shrink:0; padding: 0 16px 8px;">
+      <div class="modal-title" style="margin-bottom:4px;">🪪 宠物名片</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+        生成一张可分享的宠物信息卡
+      </div>
+      <div id="card-theme-row"></div>
+    </div>
+
+    <!-- ── 可滚动的名片预览区 ── -->
+    <div id="pet-card-preview-wrap" style="
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 16px 12px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     ">
-      <div class="modal-handle"></div>
+      <div id="pet-card"></div>
+    </div>
 
-      <!-- ── 固定顶部：标题 + 主题选择 ── -->
-      <div style="flex-shrink:0; padding: 0 4px 8px;">
-        <div class="modal-title" style="margin-bottom:4px;">🪪 宠物名片</div>
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
-          生成一张可分享的宠物信息卡
-        </div>
-        <div id="card-theme-row"></div>
-      </div>
-
-      <!-- ── 可滚动的名片预览区 ── -->
-      <div id="pet-card-preview-wrap" style="
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 4px 4px 12px;
-        -webkit-overflow-scrolling: touch;
-      ">
-        <div id="pet-card"></div>
-      </div>
-
-      <!-- ── 固定底部：操作按钮 ── -->
-      <div style="
-        flex-shrink: 0;
-        padding: 12px 4px 16px;
-        border-top: 1px solid var(--border-color, rgba(0,0,0,0.08));
-        background: var(--bg-card, #fff);
-      ">
-        <div style="display:flex; gap:8px; margin-bottom:8px;">
-          <button class="btn btn-ghost" id="card-copy-btn" style="flex:1;">
-            📋 复制图片
-          </button>
-          <button class="btn btn-primary" id="card-download-btn" style="flex:1;">
-            ⬇️ 下载 PNG
-          </button>
-        </div>
-        <button class="btn btn-ghost" id="card-close-btn" style="width:100%;">
-          关闭
+    <!-- ── 固定底部：操作按钮 ── -->
+    <div style="
+      flex-shrink: 0;
+      padding: 12px 16px 20px;
+      border-top: 1px solid var(--border-color, rgba(0,0,0,0.08));
+      background: var(--bg-card, #fff);
+    ">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <button class="btn btn-ghost" id="card-copy-btn" style="flex:1;">
+          📋 复制图片
+        </button>
+        <button class="btn btn-primary" id="card-download-btn" style="flex:1;">
+          ⬇️ 下载 PNG
         </button>
       </div>
+      <button class="btn btn-ghost" id="card-close-btn" style="width:100%;">
+        关闭
+      </button>
     </div>
-  `;
+  </div>
+`;
   overlay.classList.add('show');
 
   // 以下逻辑完全不变
