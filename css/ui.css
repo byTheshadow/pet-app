@@ -1628,6 +1628,17 @@
 .adv-log-detail {
   margin-top: 4px;
 }
+/* ====== form-label-hint ====== */
+.form-label-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+/* ====== END: form-label-hint ====== */
+
 
 
 

@@ -320,6 +320,16 @@
                   <option value="calm">冷静</option>
                 </select>
               </div>
+              <!-- ↓ 新增：自定义性格补充 -->
+<div class="form-group">
+  <label class="form-label">
+    自定义性格补充
+    <span class="form-label-hint">在预设性格基础上追加，留空则只用预设</span>
+  </label>
+  <textarea class="form-textarea" id="set-custom-prompt"
+    placeholder="例：特别喜欢吃甜食，遇到猫咪会兴奋，说话时偶尔夹杂英文…"
+    style="min-height:80px;"></textarea>
+</div>
               <div class="form-group">
                 <label class="form-label">自定义性格提示词</label>
                 <textarea class="form-textarea" id="set-pet-custom-prompt"
@@ -378,49 +388,61 @@
             </div>
           </div>
 
-          <!-- ── Tab: API ── -->
-          <div id="tab-api" class="tab-content">
-            <div class="settings-section">
-              <div class="settings-section-title">API 配置</div>
-              <div class="form-group">
-                <label class="form-label">Base URL</label>
-                <input type="url" class="form-input" id="set-api-base"
-                  placeholder="https://api.openai.com" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">API Key</label>
-                <input type="password" class="form-input" id="set-api-key"
-                  placeholder="sk-..." autocomplete="off" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">模型选择</label>
-                <div style="display:flex; gap:8px;">
-                  <select class="form-select" id="set-model-select" style="flex:1;">
-                    <option value="">— 先获取模型列表 —</option>
-                  </select>
-                  <button class="btn btn-ghost" id="btn-fetch-models"
-                    style="flex:0 0 auto; padding:11px 16px; border-radius:var(--radius-sm);">
-                    获取
-                  </button>
-                </div>
-                <div class="form-error-text" id="model-fetch-error"></div>
-              </div>
-            </div>
+    <!-- ── Tab: API ── -->
+<div id="tab-api" class="tab-content">
+  <div class="settings-section">
+    <div class="settings-section-title">API 配置</div>
+    <div class="form-group">
+      <label class="form-label">Base URL</label>
+      <input type="url" class="form-input" id="set-api-base"
+        placeholder="https://api.openai.com" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">API Key</label>
+      <input type="password" class="form-input" id="set-api-key"
+        placeholder="sk-..." autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">模型选择</label>
+      <div style="display:flex; gap:8px;">
+        <select class="form-select" id="set-model-select" style="flex:1;">
+          <option value="">— 先获取模型列表 —</option>
+        </select>
+        <button class="btn btn-ghost" id="btn-fetch-models"
+          style="flex:0 0 auto; padding:11px 16px; border-radius:var(--radius-sm);">
+          获取
+        </button>
+      </div>
+      <div class="form-error-text" id="model-fetch-error"></div>
+    </div>
 
-            <div class="settings-section">
-              <div class="settings-section-title">全局提示词</div>
-              <div class="form-group">
-                <label class="form-label">控制所有 AI 的基础言行</label>
-                <textarea class="form-textarea" id="set-global-prompt"
-                  placeholder="你是一只可爱的电子宠物..."
-                  style="min-height:100px;"></textarea>
-              </div>
-              <button class="btn btn-primary" id="btn-save-api-settings"
-                style="width:100%; margin-top:4px;">
-                保存 API 设置
-              </button>
-            </div>
-          </div>
+    <!-- ↓ 新增：max_tokens 配置 -->
+    <div class="form-group">
+      <label class="form-label">
+        Max Tokens
+        <span class="form-label-hint">AI 单次回复最大长度，默认 100000。部分 API 不支持过大值时可调小（如 4096、8192）</span>
+      </label>
+      <input type="number" class="form-input" id="set-max-tokens"
+        min="256" max="200000" step="256"
+        placeholder="100000" />
+    </div>
+    <!-- ↑ 新增结束 -->
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">全局提示词</div>
+    <div class="form-group">
+      <label class="form-label">控制所有 AI 的基础言行</label>
+      <textarea class="form-textarea" id="set-global-prompt"
+        placeholder="你是一只可爱的电子宠物..."
+        style="min-height:100px;"></textarea>
+    </div>
+    <button class="btn btn-primary" id="btn-save-api-settings"
+      style="width:100%; margin-top:4px;">
+      保存 API 设置
+    </button>
+  </div>
+</div>
 
           <!-- ── Tab: AI 家长 ── -->
           <div id="tab-parent" class="tab-content">
@@ -2237,6 +2259,7 @@ function fillSettingsForms() {
   const p = runtime.pet      || {};
   const a = runtime.aiParent || {};
 
+
   const set = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.value = val ?? '';
@@ -2261,6 +2284,8 @@ function fillSettingsForms() {
   set('set-api-base',      s.apiBase      || '');
   set('set-api-key',       s.apiKey       || '');
   set('set-global-prompt', s.globalPrompt || '');
+  const maxTokensEl = document.getElementById('set-max-tokens');
+if (maxTokensEl) maxTokensEl.value = s.maxTokens ?? 100000;
 
   if (s.selectedModel) {
     const sel = document.getElementById('set-model-select');
@@ -2413,6 +2438,8 @@ function bindSettingsSave() {
   document.getElementById('btn-save-api-settings')
     ?.addEventListener('click', async (e) => {
       const btn = e.currentTarget;
+      const rawMaxTokens = parseInt(document.getElementById('set-max-tokens')?.value, 10);
+const maxTokens = (!isNaN(rawMaxTokens) && rawMaxTokens >= 256) ? rawMaxTokens : 100000;
       btn.disabled = true;
       btn.textContent = '保存中...';
       try {
@@ -2422,6 +2449,7 @@ function bindSettingsSave() {
           apiKey:        document.getElementById('set-api-key')?.value.trim()       || '',
           selectedModel: document.getElementById('set-model-select')?.value         || '',
           globalPrompt:  document.getElementById('set-global-prompt')?.value.trim() || '',
+          maxTokens,
         };
         await dbSet('settings', patch);
         runtime.settings = patch;

@@ -1,11 +1,8 @@
 // js/ai.js
 // AI 调用统一封装 —— fetch + 流式 + 错误捕获
-// max_tokens 固定 100000，防止截断
 
 import { dbGet } from './db.js';
 import { logError, logInfo, logDebug } from './logger.js';
-
-const MAX_TOKENS = 100000;
 
 // ── 获取当前 API 配置 ────────────────────────────────────────
 async function getConfig() {
@@ -14,17 +11,14 @@ async function getConfig() {
     throw new Error('未配置 API Key，请先前往设置页填写');
   }
   return {
-    base:  (settings.apiBase || 'https://api.openai.com').replace(/\/$/, ''),
-    key:   settings.apiKey,
-    model: settings.selectedModel || 'gpt-4o',
+    base:      (settings.apiBase || 'https://api.openai.com').replace(/\/$/, ''),
+    key:       settings.apiKey,
+    model:     settings.selectedModel || 'gpt-4o',
+    maxTokens: settings.maxTokens ?? 100000,   // ← 读用户配置，默认 100000
   };
 }
 
 // ── 主调用入口 ───────────────────────────────────────────────
-// messages: [{role, content}]
-// stream:   是否流式输出
-// onChunk:  流式回调 (deltaText) => void
-// returns:  完整回复文本
 export async function callAI({ messages, stream = false, onChunk = null, signal = null }) {
   const cfg = await getConfig();
 
@@ -32,11 +26,11 @@ export async function callAI({ messages, stream = false, onChunk = null, signal 
   const body = JSON.stringify({
     model:      cfg.model,
     messages,
-    max_tokens: MAX_TOKENS,
+    max_tokens: cfg.maxTokens,    // ← 使用配置值
     stream,
   });
 
-  logDebug('ai', `Calling ${cfg.model}, stream=${stream}, msgs=${messages.length}`);
+  logDebug('ai', `Calling ${cfg.model}, stream=${stream}, msgs=${messages.length}, max_tokens=${cfg.maxTokens}`);
 
   let resp;
   try {
@@ -67,12 +61,10 @@ export async function callAI({ messages, stream = false, onChunk = null, signal 
     throw new Error(errMsg);
   }
 
-  // ── 流式处理 ──────────────────────────────────────────────
   if (stream) {
     return _handleStream(resp, onChunk);
   }
 
-  // ── 非流式处理 ────────────────────────────────────────────
   const data = await resp.json();
   const text = data?.choices?.[0]?.message?.content || '';
   logInfo('ai', `Response received, length=${text.length}`);
@@ -92,7 +84,7 @@ async function _handleStream(resp, onChunk) {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // 最后一行可能不完整，留到下次
+      buffer = lines.pop();
 
       for (const line of lines) {
         const trimmed = line.trim();
@@ -107,7 +99,6 @@ async function _handleStream(resp, onChunk) {
             onChunk?.(delta);
           }
         } catch (_) {
-          // 单行解析失败不中断整体流
           logDebug('ai', `Stream parse skip: ${trimmed.slice(0, 40)}`);
         }
       }
@@ -145,7 +136,6 @@ export async function fetchModels(apiBase, apiKey) {
   }
 
   const data = await resp.json();
-  // 兼容 OpenAI 格式和部分兼容 API
   const models = (data?.data || data?.models || [])
     .map(m => m.id || m.name || '')
     .filter(Boolean)
@@ -156,14 +146,6 @@ export async function fetchModels(apiBase, apiKey) {
 }
 
 // ── 构建 System Prompt ───────────────────────────────────────
-// 层级顺序：全局提示词 → 角色专属 → promptConfig 补充层 → 动态状态注入
-//
-// 参数：
-//   rolePrompt    — 角色核心描述（性格、身份）
-//   statusContext — 动态状态（饱食度/心情等）
-//   promptKeys    — 要从 promptConfig 注入的字段名数组
-//                   例：['petExtra', 'bubbleStyle']
-//                   留空则不注入任何 promptConfig 字段
 export async function buildSystemPrompt({
   rolePrompt    = '',
   statusContext = '',
@@ -173,7 +155,6 @@ export async function buildSystemPrompt({
   const global   = settings?.globalPrompt || '';
   const pc       = settings?.promptConfig || {};
 
-  // 按传入的 key 顺序收集 promptConfig 补充内容
   const pcParts = promptKeys
     .map(k => pc[k] || '')
     .filter(Boolean);
@@ -187,3 +168,4 @@ export async function buildSystemPrompt({
 
   return parts.join('\n\n');
 }
+

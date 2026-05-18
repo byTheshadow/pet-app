@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS = {
   apiBase:         'https://api.openai.com',
   apiKey:          '',
   selectedModel:   'gpt-4o',
+  maxTokens:       100000, 
   globalPrompt:    '你是一只可爱的电子宠物，用简短活泼的语气说话，喜欢用颜文字。',
   notifyEnabled:   false,
   aiParentMode:    'timer',
