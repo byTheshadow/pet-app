@@ -544,6 +544,27 @@
                     min="0" max="100" step="5" value="20" />
                 </div>
               </div>
+              
+    <!-- ↓ 新增：好友来信配置 -->
+    <div class="settings-section-title" style="margin-top:16px;">好友来信</div>
+    <div class="card card-sm" style="margin-bottom:12px; padding:4px 16px;">
+      <div class="toggle-row">
+        <span class="toggle-label">启用好友来信</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="set-letter-enabled" />
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        来信间隔（小时）
+        <span class="form-label-hint">好友随机来信的最短间隔，建议 4～24 小时</span>
+      </label>
+      <input type="number" class="form-input" id="set-letter-interval"
+        min="1" max="168" step="1" placeholder="8" />
+    </div>
+    <!-- ↑ 新增结束 -->
               <button class="btn btn-primary" id="btn-save-notify-settings"
                 style="width:100%; margin-top:4px;">
                 保存通知设置
@@ -1106,6 +1127,16 @@ bus.on(EVENTS.PET_UPDATED, (pet) => {
 
   // 定时衰减
   setInterval(async () => { await applyDecay(); }, 5 * 60 * 1000);
+  // 好友来信定时检查（每 30 分钟）
+setInterval(async () => {
+  await checkFriendLetter();
+}, 30 * 60 * 1000);
+
+// 启动时也检查一次（延迟 5 秒，等数据加载完）
+setTimeout(async () => {
+  await checkFriendLetter();
+}, 5000);
+
     // ── 系统状态检测 & 界面通知 ──────────────────────────────
   checkSystemStatus();
 
@@ -2641,6 +2672,10 @@ if (maxTokensEl) maxTokensEl.value = s.maxTokens ?? 100000;
   set('set-thresh-mood',   s.notifyThresholds?.mood   ?? 20);
   set('set-thresh-health', s.notifyThresholds?.health ?? 20);
   set('set-thresh-clean',  s.notifyThresholds?.clean  ?? 20);
+  document.getElementById('set-letter-enabled')?.checked !== undefined &&
+  (document.getElementById('set-letter-enabled').checked = s.letterEnabled ?? false);
+const letterIntervalEl = document.getElementById('set-letter-interval');
+if (letterIntervalEl) letterIntervalEl.value = s.letterInterval ?? 8;
     // 表单填充完成后刷新系统状态
   checkSystemStatus();
 }
@@ -2846,6 +2881,8 @@ const maxTokens = (!isNaN(rawMaxTokens) && rawMaxTokens >= 256) ? rawMaxTokens :
             health: parseInt(document.getElementById('set-thresh-health')?.value) || 20,
             clean:  parseInt(document.getElementById('set-thresh-clean')?.value)  || 20,
           },
+          letterEnabled:  document.getElementById('set-letter-enabled')?.checked ?? false,  // ← 新增
+        letterInterval: (!isNaN(rawLetterInterval) && rawLetterInterval >= 1) ? rawLetterInterval : 8, // ← 新增
         };
         await dbSet('settings', patch);
         runtime.settings = patch;
@@ -4582,6 +4619,136 @@ async function updateMailboxBadge() {
   const letters = await dbQuery('sceneHistory', r => r.isLetter && !r.letterRead);
   badge.style.display = letters.length > 0 ? 'block' : 'none';
 }
+// ══════════════════════════════════════════════════════════════
+// 好友来信系统
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * 检查是否需要触发好友来信
+ * 由 setInterval 每 30 分钟调用一次
+ */
+async function checkFriendLetter() {
+  const settings = runtime.settings || {};
+  if (!settings.letterEnabled) return;
+
+  // 没有好友，跳过
+  const friends = await dbList('petFriends', { limit: 100 });
+  if (!friends.length) return;
+
+  // 检查上次来信时间
+  const intervalMs = (settings.letterInterval ?? 8) * 60 * 60 * 1000;
+  const lastLetterAt = settings.lastLetterAt || 0;
+  if (Date.now() - lastLetterAt < intervalMs) return;
+
+  // 随机选一个好友
+  const friend = friends[Math.floor(Math.random() * friends.length)];
+
+  // 生成来信
+  await _generateFriendLetter(friend);
+}
+
+/**
+ * AI 生成好友来信，存入 sceneHistory
+ */
+async function _generateFriendLetter(friend) {
+  const pet      = runtime.pet      || {};
+  const settings = runtime.settings || {};
+  const pc       = settings.promptConfig || {};
+
+  // 构建 prompt
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物，性格：${friend.personality || '活泼可爱'}。`,
+    friend.customPrompt || '',
+    pc.friendInteraction || '',
+    `你要给你的好朋友「${pet.name || '宠物'}」写一封短信。`,
+    `信的内容要温暖有趣，可以分享你最近发生的小事、想念对方、或者邀请对方一起玩。`,
+    `字数在 80～150 字之间，语气活泼，可以用颜文字。`,
+    `直接输出信的正文，不需要"亲爱的xxx"这种开头格式，就像发消息一样自然。`,
+  ].filter(Boolean).join('\n');
+
+  let letterText = '';
+
+  try {
+    letterText = await callAI({
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: '请写这封信。' },
+      ],
+      stream: false,
+    });
+  } catch (err) {
+    // AI 失败用本地兜底
+    letterText = _getFriendLetterFallback(friend.name, pet.name);
+    logError('app', `Friend letter AI failed: ${err.message}`);
+  }
+
+  if (!letterText) letterText = _getFriendLetterFallback(friend.name, pet.name);
+
+  // 存入 sceneHistory
+  const record = {
+    id:          Date.now() + Math.random(),
+    isLetter:    true,
+    letterFrom:  'friend',
+    letterRead:  false,
+    friendId:    friend.id,
+    friendName:  friend.name,
+    friendAvatar: friend.avatarUrl || '',
+    eggIcon:     '📬',
+    eggLabel:    `${friend.name} 的来信`,
+    eggLetter:   letterText,
+    sceneLabel:  '好友来信',
+    sceneIcon:   '📬',
+    story:       letterText,
+    createdAt:   Date.now(),
+  };
+
+  await dbAppend('sceneHistory', record);
+
+  // 更新上次来信时间
+  const updatedSettings = { ...runtime.settings, lastLetterAt: Date.now() };
+  await dbSet('settings', updatedSettings);
+  runtime.settings = updatedSettings;
+
+  // 更新信箱红点
+  await updateMailboxBadge();
+
+  // 推送通知（如果启用）
+  if (settings.notifyEnabled && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(`📬 ${friend.name} 给你写信了！`, {
+        body:    letterText.slice(0, 60) + (letterText.length > 60 ? '…' : ''),
+        icon:    friend.avatarUrl || '/icon-192.png',
+        badge:   '/icon-192.png',
+        tag:     'friend-letter',
+        renotify: true,
+        data:    { url: '/', type: 'letter' },
+      });
+    }).catch(() => {});
+  }
+
+  // 如果用户当前在冒险页，刷新冒险记录
+  if (runtime.currentPage === 'adventure') {
+    await renderAdventureLog();
+  }
+
+  logInfo('app', `Friend letter generated from ${friend.name}`);
+  showToast(`📬 ${friend.name} 给你写了一封信！`, 'success', 4000);
+}
+
+/**
+ * 本地兜底台词
+ */
+function _getFriendLetterFallback(friendName, petName) {
+  const lines = [
+    `嘿${petName || ''}！最近过得怎么样？我超级想你的！(´▽\`)ﾉ 上次一起玩真的好开心，下次还要一起！`,
+    `${petName || ''}你好！我今天遇到了一件超有趣的事，就是……算了你来了我再告诉你！总之快来找我玩！`,
+    `好久不见！我最近学了一个新游戏，感觉你一定会喜欢的！等你来找我哦～ (≧▽≦)`,
+    `${petName || ''}！我昨天梦到我们一起去玩了，醒来发现是梦好失落……什么时候再串门呀？`,
+    `最近天气好好，好想出去玩！你有空吗？我们约一下吧！我等你的消息哦 ♪`,
+  ];
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
 
 // ── 信箱 Modal ────────────────────────────────────────────────
 async function openMailboxModal() {
@@ -4607,26 +4774,39 @@ async function openMailboxModal() {
                <div class="empty-state-icon">📭</div>
                <div class="empty-state-text">信箱是空的</div>
              </div>`
-          : letters.map(r => `
-              <div class="letter-card" data-letter-id="${r.id}">
-                <div class="letter-card-header">
-                  <span class="letter-card-icon">${r.eggIcon || '📄'}</span>
-                  <div class="letter-card-meta">
-                    <div class="letter-card-title">${r.eggLabel || '信件'}</div>
-                    <div class="letter-card-date">
-                      ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
-                      · ${r.sceneLabel || ''}
-                    </div>
-                  </div>
-                  <button class="btn btn-ghost btn-sm letter-del-btn"
-                    data-letter-id="${r.id}"
-                    style="flex-shrink:0; padding:6px 10px; color:#ff6b6b;">
-                    删除
-                  </button>
-                </div>
-                <div class="letter-card-body">${r.eggLetter || ''}</div>
-              </div>
-            `).join('')
+          :letters.map(r => `
+  <div class="letter-card" data-letter-id="${r.id}">
+    <div class="letter-card-header">
+      <span class="letter-card-icon">${r.eggIcon || '📄'}</span>
+      <div class="letter-card-meta">
+        <div class="letter-card-title">
+          ${r.eggLabel || '信件'}
+          ${r.letterFrom === 'friend'
+            ? `<span style="font-size:10px; font-weight:600; padding:1px 6px;
+                border-radius:var(--radius-full);
+                background:rgba(255,180,0,0.15); color:#a07000;
+                margin-left:4px;">好友来信</span>`
+            : `<span style="font-size:10px; font-weight:600; padding:1px 6px;
+                border-radius:var(--radius-full);
+                background:rgba(90,120,255,0.12); color:#3a5bd9;
+                margin-left:4px;">冒险彩蛋</span>`
+          }
+        </div>
+        <div class="letter-card-date">
+          ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+          ${r.letterFrom === 'friend' ? `· 来自 ${r.friendName || '好友'}` : `· ${r.sceneLabel || ''}`}
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm letter-del-btn"
+        data-letter-id="${r.id}"
+        style="flex-shrink:0; padding:6px 10px; color:#ff6b6b;">
+        删除
+      </button>
+    </div>
+    <div class="letter-card-body">${r.eggLetter || ''}</div>
+  </div>
+`).join('')
+
         }
       </div>
 

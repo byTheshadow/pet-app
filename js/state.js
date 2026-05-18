@@ -30,6 +30,8 @@ export const DEFAULT_SETTINGS = {
   notifyEnabled:   false,
   aiParentMode:    'timer',
   aiParentInterval: 4,
+  letterEnabled:  false,   // ← 新增
+  letterInterval: 8,       // ← 新增，单位小时
   decayRates: {
     hunger: 2,    // 每小时衰减值
     mood:   1.5,
