@@ -3020,59 +3020,71 @@ async function openPetCardModal() {
   const overlay = document.getElementById('modal-overlay');
 
   overlay.innerHTML = `
-    <div class="modal-box" style="max-height:92vh; display:flex; flex-direction:column; padding-bottom:24px;">
+    <div class="modal-box" style="
+      max-height: 92vh;
+      height: 92vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 0;
+      overflow: hidden;
+    ">
       <div class="modal-handle"></div>
-      <div class="modal-title" style="margin-bottom:4px;">🪪 宠物名片</div>
-      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
-        生成一张可分享的宠物信息卡
-      </div>
 
-      <!-- 主题色选择 -->
-      <div id="card-theme-row"></div>
-
-      <!-- 名片预览 -->
-      <div id="pet-card-preview-wrap">
-        <div id="pet-card">
-          <!-- 由 JS 填充 -->
+      <!-- ── 固定顶部：标题 + 主题选择 ── -->
+      <div style="flex-shrink:0; padding: 0 4px 8px;">
+        <div class="modal-title" style="margin-bottom:4px;">🪪 宠物名片</div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+          生成一张可分享的宠物信息卡
         </div>
+        <div id="card-theme-row"></div>
       </div>
 
-      <!-- 操作按钮 -->
-      <div style="display:flex; gap:8px; padding:0 4px;">
-        <button class="btn btn-ghost" id="card-copy-btn" style="flex:1;">
-          📋 复制图片
-        </button>
-        <button class="btn btn-primary" id="card-download-btn" style="flex:1;">
-          ⬇️ 下载 PNG
+      <!-- ── 可滚动的名片预览区 ── -->
+      <div id="pet-card-preview-wrap" style="
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 4px 4px 12px;
+        -webkit-overflow-scrolling: touch;
+      ">
+        <div id="pet-card"></div>
+      </div>
+
+      <!-- ── 固定底部：操作按钮 ── -->
+      <div style="
+        flex-shrink: 0;
+        padding: 12px 4px 16px;
+        border-top: 1px solid var(--border-color, rgba(0,0,0,0.08));
+        background: var(--bg-card, #fff);
+      ">
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <button class="btn btn-ghost" id="card-copy-btn" style="flex:1;">
+            📋 复制图片
+          </button>
+          <button class="btn btn-primary" id="card-download-btn" style="flex:1;">
+            ⬇️ 下载 PNG
+          </button>
+        </div>
+        <button class="btn btn-ghost" id="card-close-btn" style="width:100%;">
+          关闭
         </button>
       </div>
-      <button class="btn btn-ghost" id="card-close-btn"
-        style="margin-top:8px; width:100%;">关闭</button>
     </div>
   `;
   overlay.classList.add('show');
 
-  // 渲染主题点
+  // 以下逻辑完全不变
   _renderThemeDots();
-
-  // 生成自我介绍（首次打开时生成，切换主题不重新生成）
   _cardIntroText = '';
   await _generateCardIntro();
-
-  // 渲染名片
   _renderCard();
 
-  // 下载
   document.getElementById('card-download-btn')?.addEventListener('click', () => {
     _exportCard('download');
   });
-
-  // 复制
   document.getElementById('card-copy-btn')?.addEventListener('click', () => {
     _exportCard('copy');
   });
-
-  // 关闭
   document.getElementById('card-close-btn')?.addEventListener('click', () => {
     overlay.classList.remove('show');
     overlay.innerHTML = '';
