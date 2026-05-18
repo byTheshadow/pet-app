@@ -1704,6 +1704,356 @@
   line-height: 1.4;
 }
 /* ====== END: form-label-hint ====== */
+/* ====================================================
+   聊天全屏 Modal
+   ==================================================== */
+#chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#chat-modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-modal-panel {
+  width: 100%;
+  max-width: 390px;
+  height: 92dvh;
+  background: var(--bg-shell);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+  overflow: hidden;
+}
+
+#chat-modal-overlay.show .chat-modal-panel {
+  transform: translateY(0);
+}
+
+/* 顶栏 */
+.chat-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.chat-modal-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.chat-modal-header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-modal-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-modal-header-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.chat-modal-header-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.chat-modal-clear-btn,
+.chat-modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card-alt);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.chat-modal-clear-btn:active,
+.chat-modal-close-btn:active {
+  background: var(--border-subtle);
+}
+
+/* 对话区 */
+.chat-modal-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 消息行 */
+.chat-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 14px;
+  animation: chat-msg-in 0.18s ease;
+}
+
+@keyframes chat-msg-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.chat-msg.user {
+  flex-direction: row-reverse;
+}
+
+.chat-msg.system {
+  justify-content: center;
+  padding: 4px 20px;
+}
+
+.chat-msg.system .chat-bubble {
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-style: italic;
+  padding: 0;
+  box-shadow: none;
+  max-width: 100%;
+}
+
+.chat-msg-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-card-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.chat-msg-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-msg-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 74%;
+}
+
+.chat-msg-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  padding: 0 4px;
+}
+
+.chat-msg.user .chat-msg-name {
+  text-align: right;
+}
+
+.chat-bubble {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 9px 13px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+  word-break: break-word;
+}
+
+.chat-msg.pet .chat-bubble {
+  border-bottom-left-radius: 4px;
+}
+
+.chat-msg.user .chat-bubble {
+  background: var(--text-primary);
+  color: var(--bg-shell);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.typing .chat-bubble {
+  padding: 11px 14px;
+}
+
+/* 消息操作按钮 */
+.chat-msg-actions {
+  display: none;
+  gap: 4px;
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+.chat-msg:hover .chat-msg-actions {
+  display: flex;
+}
+
+.chat-msg.user .chat-msg-actions {
+  justify-content: flex-end;
+}
+
+.chat-msg-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-alt);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.chat-msg-btn:hover {
+  background: var(--text-primary);
+  color: var(--bg-shell);
+  border-color: var(--text-primary);
+}
+
+.chat-msg-btn.danger:hover {
+  background: #e53e3e;
+  color: #fff;
+  border-color: #e53e3e;
+}
+
+/* 底部输入 */
+.chat-modal-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-shell);
+  padding: 8px 12px 16px;
+}
+
+.chat-modal-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-modal-input-row input {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-card-alt);
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.chat-modal-input-row input:focus {
+  border-color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+.chat-modal-input-row input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.chat-modal-send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  color: var(--bg-shell);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.chat-modal-send-btn:active { transform: scale(0.9); }
+.chat-modal-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 聊天入口按钮（宠物主页） */
+.chat-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 32px);
+  margin: 8px 16px 0;
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.chat-open-btn:active {
+  background: var(--bg-card-alt);
+}
+
+.chat-open-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.chat-open-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chat-open-arrow {
+  font-size: 18px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+/* ====================================================
+   END: 聊天全屏 Modal
+   ==================================================== */
 
 
 

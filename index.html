@@ -140,23 +140,12 @@
             <span class="btn-label">Heal</span>
           </button>
         </div>
-
-        <!-- 对话区 -->
-        <div id="pet-chat-area">
-                    <div class="chat-line system">— 点击宠物或发送消息开始互动 —</div>
-        </div>
-
-        <!-- 输入行 -->
-        <div id="pet-input-row">
-          <input
-            type="text"
-            id="pet-input"
-            placeholder="和宠物说说话..."
-            maxlength="200"
-            autocomplete="off"
-          />
-          <button id="pet-send-btn">发送</button>
-        </div>
+<!-- 聊天入口（替换原来的 pet-chat-area + pet-input-row） -->
+<button class="chat-open-btn" id="btn-open-chat">
+  <span class="chat-open-icon">💬</span>
+  <span class="chat-open-label">和 <span id="chat-open-petname">小幽</span> 聊天</span>
+  <span class="chat-open-arrow">›</span>
+</button>
 
       </section>
 
@@ -861,6 +850,43 @@
       <span class="nav-label">家长</span>
     </button>
   </nav>
+  <!-- ====================================================
+     聊天全屏 Modal
+     ==================================================== -->
+<div id="chat-modal-overlay">
+  <div class="chat-modal-panel">
+
+    <!-- 顶栏 -->
+    <div class="chat-modal-header">
+      <div class="chat-modal-header-avatar" id="chat-modal-avatar">🐱</div>
+      <div class="chat-modal-header-info">
+        <div class="chat-modal-header-name" id="chat-modal-name">小幽</div>
+        <div class="chat-modal-header-sub" id="chat-modal-sub">和宠物聊天</div>
+      </div>
+      <button class="chat-modal-clear-btn" id="chat-modal-clear-btn" aria-label="清空记录">🗑</button>
+      <button class="chat-modal-close-btn" id="chat-modal-close-btn" aria-label="关闭">✕</button>
+    </div>
+
+    <!-- 对话区 -->
+    <div class="chat-modal-area" id="chat-modal-area"></div>
+
+    <!-- 底部输入 -->
+    <div class="chat-modal-footer">
+      <div class="chat-modal-input-row">
+        <input
+          type="text"
+          id="chat-modal-input"
+          placeholder="和宠物说说话..."
+          maxlength="200"
+          autocomplete="off"
+        />
+        <button class="chat-modal-send-btn" id="chat-modal-send-btn" aria-label="发送">↑</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /chat-modal-overlay -->
+
 
 
   <!-- ====================================================
@@ -1074,12 +1100,15 @@ import('./js/pet.js').then(m => {
 
 
 
-  // 监听宠物更新
-  bus.on(EVENTS.PET_UPDATED, (pet) => {
-    updateAllStatusBars(pet);
-    renderPetAvatar(pet);
-    updateMoodCard(pet);
-  });
+ // 监听宠物更新
+bus.on(EVENTS.PET_UPDATED, (pet) => {
+  updateAllStatusBars(pet);
+  renderPetAvatar(pet);
+  updateMoodCard(pet);
+  const chatPetNameEl = document.getElementById('chat-open-petname');
+  if (chatPetNameEl) chatPetNameEl.textContent = pet?.name || '宠物';
+});
+
     // 设置保存后重新检查系统状态
   bus.on(EVENTS.SETTINGS_UPDATED, () => checkSystemStatus());
 
@@ -1683,12 +1712,11 @@ function pick(arr) {
  */
 function showLocalReaction(action) {
   const line = getLocalReaction(action);
-  const name = runtime.pet?.name || '宠物';
 
-  // 写入对话区
-  appendChatLine('pet', `${name}：${line}`);
+  // 写入聊天 Modal（如果 Modal 已打开就直接追加，没打开也追加进去，下次打开能看到）
+  _appendChatMsg('pet', line);
 
-  // 情绪气泡
+  // 情绪气泡（不变）
   const bubble = document.getElementById('emotion-bubble');
   if (bubble) {
     bubble.textContent = line;
@@ -1696,6 +1724,358 @@ function showLocalReaction(action) {
     setTimeout(() => bubble.classList.remove('show'), 4000);
   }
 }
+// ══════════════════════════════════════════════════════════════
+// 聊天全屏 Modal
+// ══════════════════════════════════════════════════════════════
+
+const chatModalState = {
+  isAIBusy:  false,
+  abortCtrl: null,
+};
+
+/** 打开聊天 Modal */
+function openChatModal() {
+  const overlay = document.getElementById('chat-modal-overlay');
+  if (!overlay) return;
+
+  const pet = runtime.pet || {};
+
+  // 填充顶栏头像和名字
+  const avatarEl = document.getElementById('chat-modal-avatar');
+  if (avatarEl) {
+    avatarEl.innerHTML = '';
+    if (pet.avatarUrl) {
+      const img = document.createElement('img');
+      img.src = pet.avatarUrl;
+      img.alt = '';
+      img.onerror = () => { avatarEl.textContent = '🐱'; };
+      avatarEl.appendChild(img);
+    } else {
+      avatarEl.textContent = '🐱';
+    }
+  }
+  const nameEl = document.getElementById('chat-modal-name');
+  if (nameEl) nameEl.textContent = pet.name || '宠物';
+
+  const subEl = document.getElementById('chat-modal-sub');
+  if (subEl) subEl.textContent = `Lv.${pet.level || 1} · ${pet.name || '宠物'}`;
+
+  overlay.classList.add('show');
+  _bindChatModal();
+
+  // 如果对话区是空的，加一条欢迎提示
+  const area = document.getElementById('chat-modal-area');
+  if (area && !area.querySelector('.chat-msg')) {
+    _appendChatMsg('system', '— 点击发送开始和宠物聊天 —');
+  }
+
+  // 聚焦输入框
+  setTimeout(() => {
+    document.getElementById('chat-modal-input')?.focus();
+  }, 350);
+}
+
+/** 关闭聊天 Modal */
+function closeChatModal() {
+  const overlay = document.getElementById('chat-modal-overlay');
+  overlay?.classList.remove('show');
+  if (chatModalState.abortCtrl) {
+    chatModalState.abortCtrl.abort();
+    chatModalState.abortCtrl = null;
+  }
+}
+
+/** 绑定 Modal 内部事件 */
+function _bindChatModal() {
+  // 关闭按钮
+  const closeBtn = document.getElementById('chat-modal-close-btn');
+  closeBtn?.replaceWith(closeBtn.cloneNode(true));
+  document.getElementById('chat-modal-close-btn')
+    ?.addEventListener('click', closeChatModal);
+
+  // 清空按钮
+  const clearBtn = document.getElementById('chat-modal-clear-btn');
+  clearBtn?.replaceWith(clearBtn.cloneNode(true));
+  document.getElementById('chat-modal-clear-btn')
+    ?.addEventListener('click', () => {
+      if (chatModalState.isAIBusy) {
+        showToast('AI 正在回复，请稍候…', 'info');
+        return;
+      }
+      const area = document.getElementById('chat-modal-area');
+      if (area) {
+        area.innerHTML = '';
+        _appendChatMsg('system', '— 对话已清空 —');
+      }
+      showToast('对话已清空', 'success');
+    });
+
+  // 点击遮罩关闭
+  const overlay = document.getElementById('chat-modal-overlay');
+  const onOverlay = (e) => {
+    if (e.target === overlay) {
+      closeChatModal();
+      overlay.removeEventListener('click', onOverlay);
+    }
+  };
+  overlay?.addEventListener('click', onOverlay);
+
+  // 输入发送
+  const inputEl  = document.getElementById('chat-modal-input');
+  const sendBtn  = document.getElementById('chat-modal-send-btn');
+  inputEl?.replaceWith(inputEl.cloneNode(true));
+  sendBtn?.replaceWith(sendBtn.cloneNode(true));
+
+  const newInput = document.getElementById('chat-modal-input');
+  const newSend  = document.getElementById('chat-modal-send-btn');
+
+  const doSend = async () => {
+    const text = newInput?.value?.trim();
+    if (!text) return;
+    if (chatModalState.isAIBusy) { showToast('宠物正在思考…', 'warn'); return; }
+
+    newInput.value = '';
+    chatModalState.isAIBusy = true;
+    if (newSend) newSend.disabled = true;
+
+    _appendChatMsg('user', text);
+    const typingMsg = _appendChatMsg('pet', null, true);
+
+    chatModalState.abortCtrl = new AbortController();
+    let replyText = '';
+
+    try {
+      await petChat({
+        userText: text,
+        signal:   chatModalState.abortCtrl.signal,
+        onChunk: (delta) => {
+          replyText += delta;
+          const bubble = typingMsg?.querySelector('.chat-bubble');
+          if (bubble) bubble.textContent = replyText;
+        },
+      });
+
+      // 生成完毕：把 typing 状态转为正式消息（加操作按钮）
+      if (typingMsg) {
+        typingMsg.classList.remove('typing');
+        const bubble = typingMsg.querySelector('.chat-bubble');
+        if (bubble && !replyText) bubble.textContent = '(´-ω-`)';
+        _attachChatMsgActions(typingMsg, 'pet', text);
+      }
+
+      await dbAppend('chatHistory', {
+        id:        Date.now() + Math.random(),
+        role:      'assistant',
+        content:   replyText || '(´-ω-`)',
+        petName:   runtime.pet?.name,
+        createdAt: Date.now(),
+      });
+
+    } catch (err) {
+      typingMsg?.remove();
+      if (err.message !== 'AI 请求已取消') {
+        showToast('回复失败：' + err.message, 'error');
+        logError('app', 'petChat failed', { stack: err.stack });
+        _appendChatMsg('system', '⚠ 回复失败，请检查 API 设置');
+      }
+    } finally {
+      chatModalState.isAIBusy  = false;
+      chatModalState.abortCtrl = null;
+      if (newSend) newSend.disabled = false;
+    }
+  };
+
+  newSend?.addEventListener('click', doSend);
+  newInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+  });
+}
+
+/**
+ * 追加一条消息到聊天 Modal
+ * @param {'pet'|'user'|'system'} role
+ * @param {string|null} text  null = typing 状态
+ * @param {boolean} isTyping
+ * @returns {HTMLElement} 消息行元素
+ */
+function _appendChatMsg(role, text, isTyping = false) {
+  const area = document.getElementById('chat-modal-area');
+  if (!area) return null;
+
+  const pet = runtime.pet || {};
+
+  const msg = document.createElement('div');
+  msg.className = `chat-msg ${role}${isTyping ? ' typing' : ''}`;
+
+  if (role === 'system') {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = text || '';
+    msg.appendChild(bubble);
+  } else {
+    // 头像
+    const avatarEl = document.createElement('div');
+    avatarEl.className = 'chat-msg-avatar';
+    if (role === 'pet') {
+      if (pet.avatarUrl) {
+        const img = document.createElement('img');
+        img.src = pet.avatarUrl;
+        img.alt = '';
+        img.onerror = () => { avatarEl.textContent = '🐱'; };
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = '🐱';
+      }
+    } else {
+      avatarEl.textContent = '👤';
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg-wrap';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'chat-msg-name';
+    nameEl.textContent = role === 'pet' ? (pet.name || '宠物') : '你';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+
+    if (isTyping) {
+      bubble.appendChild(createTypingIndicator());
+    } else {
+      bubble.textContent = text || '';
+    }
+
+    wrap.appendChild(nameEl);
+    wrap.appendChild(bubble);
+
+    // 操作按钮（非 typing 才加）
+    if (!isTyping) {
+      _attachChatMsgActions(msg, role, null);
+    }
+
+    msg.appendChild(avatarEl);
+    msg.appendChild(wrap);
+  }
+
+  area.appendChild(msg);
+
+  // 最多保留 80 条
+  const all = area.querySelectorAll('.chat-msg');
+  if (all.length > 80) all[0].remove();
+
+  area.scrollTop = area.scrollHeight;
+  return msg;
+}
+
+/**
+ * 给消息行附加操作按钮（重roll / 删除）
+ * @param {HTMLElement} msgEl   .chat-msg 元素
+ * @param {'pet'|'user'} role
+ * @param {string|null} userText  触发这条 AI 回复的用户输入（用于重roll）
+ */
+function _attachChatMsgActions(msgEl, role, userText) {
+  const wrap = msgEl.querySelector('.chat-msg-wrap');
+  if (!wrap) return;
+
+  // 移除旧的操作按钮（重roll 后重新附加时用）
+  wrap.querySelector('.chat-msg-actions')?.remove();
+
+  const actions = document.createElement('div');
+  actions.className = 'chat-msg-actions';
+
+  // 重roll（只对 pet 消息）
+  if (role === 'pet') {
+    const rerollBtn = document.createElement('button');
+    rerollBtn.className = 'chat-msg-btn';
+    rerollBtn.textContent = '🎲 重roll';
+    rerollBtn.addEventListener('click', () => {
+      _rerollChatMsg(msgEl, userText);
+    });
+    actions.appendChild(rerollBtn);
+  }
+
+  // 删除（所有消息）
+  const delBtn = document.createElement('button');
+  delBtn.className = 'chat-msg-btn danger';
+  delBtn.textContent = '🗑 删除';
+  delBtn.addEventListener('click', () => msgEl.remove());
+  actions.appendChild(delBtn);
+
+  wrap.appendChild(actions);
+}
+
+/**
+ * 重roll：重新生成这条 AI 消息
+ * @param {HTMLElement} msgEl   .chat-msg 元素
+ * @param {string|null} userText  原始用户输入
+ */
+async function _rerollChatMsg(msgEl, userText) {
+  if (chatModalState.isAIBusy) {
+    showToast('宠物正在思考…', 'info');
+    return;
+  }
+
+  const bubble = msgEl.querySelector('.chat-bubble');
+  if (!bubble) return;
+
+  // 如果没有 userText，从上一条 user 消息里取
+  if (!userText) {
+    let prev = msgEl.previousElementSibling;
+    while (prev) {
+      if (prev.classList.contains('user')) {
+        userText = prev.querySelector('.chat-bubble')?.textContent || '';
+        break;
+      }
+      prev = prev.previousElementSibling;
+    }
+  }
+
+  // 变成 typing 状态
+  bubble.innerHTML = '';
+  bubble.appendChild(createTypingIndicator());
+  msgEl.classList.add('typing');
+
+  const actions = msgEl.querySelector('.chat-msg-actions');
+  if (actions) actions.style.display = 'none';
+
+  chatModalState.isAIBusy  = true;
+  chatModalState.abortCtrl = new AbortController();
+
+  const sendBtn = document.getElementById('chat-modal-send-btn');
+  if (sendBtn) sendBtn.disabled = true;
+
+  let replyText = '';
+
+  try {
+    await petChat({
+      userText: userText || '随便说点什么吧',
+      signal:   chatModalState.abortCtrl.signal,
+      onChunk: (delta) => {
+        replyText += delta;
+        bubble.textContent = replyText;
+      },
+    });
+
+    if (!replyText) bubble.textContent = '(´-ω-`)';
+
+  } catch (err) {
+    if (err.message === 'AI 请求已取消') return;
+    bubble.textContent = getLocalGreeting();
+    showToast('重roll 失败，已用本地台词替代', 'warning');
+    logWarn('app', `Chat reroll failed: ${err.message}`);
+  } finally {
+    chatModalState.isAIBusy  = false;
+    chatModalState.abortCtrl = null;
+    msgEl.classList.remove('typing');
+    if (sendBtn) sendBtn.disabled = false;
+    if (actions) actions.style.display = '';
+    // 重新绑定操作按钮（userText 可能已更新）
+    _attachChatMsgActions(msgEl, 'pet', userText);
+  }
+}
+
+
 /**
  * 获取宠物叫 user 的称呼，没设置就返回空字符串
  * @param {'pet'|'friend'} caller  谁在叫
@@ -1811,8 +2191,8 @@ function bindPetActions() {
 
 
   // 发送对话
-  const sendBtn = document.getElementById('pet-send-btn');
-  const inputEl = document.getElementById('pet-input');
+  const chatPetNameEl = document.getElementById('chat-open-petname');
+if (chatPetNameEl) chatPetNameEl.textContent = runtime.pet?.name || '宠物';
   let abortCtrl = null;
 
   const doSend = async () => {
