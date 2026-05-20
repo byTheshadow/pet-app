@@ -123,23 +123,33 @@
 
         <!-- 操作按钮 2×2 -->
         <div id="pet-actions">
-          <button class="action-btn feed" id="btn-feed">
-            <div class="btn-icon-wrap">🍖</div>
-            <span class="btn-label">Feed</span>
-          </button>
-          <button class="action-btn play" id="btn-play">
-            <div class="btn-icon-wrap">🎮</div>
-            <span class="btn-label">Play</span>
-          </button>
-          <button class="action-btn clean" id="btn-clean">
-            <div class="btn-icon-wrap">🚿</div>
-            <span class="btn-label">Clean</span>
-          </button>
-          <button class="action-btn heal" id="btn-heal">
-            <div class="btn-icon-wrap">💊</div>
-            <span class="btn-label">Heal</span>
-          </button>
-        </div>
+  <button class="action-btn feed" id="btn-feed">
+    <div class="btn-icon-wrap">🍖</div>
+    <span class="btn-label">Feed</span>
+  </button>
+  <button class="action-btn play" id="btn-play">
+    <div class="btn-icon-wrap">🎮</div>
+    <span class="btn-label">Play</span>
+  </button>
+  <button class="action-btn clean" id="btn-clean">
+    <div class="btn-icon-wrap">🚿</div>
+    <span class="btn-label">Clean</span>
+  </button>
+  <button class="action-btn heal" id="btn-heal" title="生病时才使用">
+    <div class="btn-icon-wrap">💊</div>
+    <span class="btn-label">Heal</span>
+  </button>
+</div>
+
+<!-- 食物选择面板（默认隐藏） -->
+<div id="food-panel" class="food-panel">
+  <div class="food-panel-header">
+    <span class="food-panel-title">选择食物</span>
+    <button class="food-panel-close" id="food-panel-close">✕</button>
+  </div>
+  <div class="food-panel-list" id="food-panel-list"></div>
+</div>
+
 <!-- 聊天入口（替换原来的 pet-chat-area + pet-input-row） -->
 <button class="chat-open-btn" id="btn-open-chat">
   <span class="chat-open-icon">💬</span>
@@ -1026,7 +1036,7 @@ import {
 import {
   loadPet, savePet, applyDecay,
   feedPet, playWithPet, cleanPet, healPet,
-  petChat, triggerEmotionBubble
+  petChat, triggerEmotionBubble,FOOD_LIST, canUseFood, getFoodCooldownRemaining, feedWithFood,
 } from './js/pet.js';
 import { fetchModels } from './js/ai.js';
 
@@ -1127,6 +1137,45 @@ bus.on(EVENTS.PET_UPDATED, (pet) => {
   const chatPetNameEl = document.getElementById('chat-open-petname');
   if (chatPetNameEl) chatPetNameEl.textContent = pet?.name || '宠物';
 });
+  bus.on(EVENTS.PET_SICK, ({ damage, reason, health }) => {
+    // 情绪气泡
+    const bubble = document.getElementById('emotion-bubble');
+    if (bubble) {
+      const sickLines = [
+        '好难受...呜呜 🤒',
+        '身体不舒服... 😢',
+        '头晕晕的...需要主人... 🤕',
+        '不想动...好累... 😷',
+      ];
+      bubble.textContent = sickLines[Math.floor(Math.random() * sickLines.length)];
+      bubble.classList.add('show');
+      setTimeout(() => bubble.classList.remove('show'), 6000);
+    }
+
+    // Toast通知
+    showToast(`⚠️ 宠物生病了！（${reason}）健康 -${damage}`, 'error', 5000);
+
+    // 聊天记录
+    _appendChatMsg('system', `⚠️ 宠物因为${reason}生病了，健康值下降了 ${damage} 点`);
+
+    // 推送通知
+    const s = runtime.settings || {};
+    if (s.notifyEnabled &&'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(`🤒 ${runtime.pet?.name || '宠物'} 生病了！`, {
+          body: `因为${reason}，健康值下降了 ${damage} 点，快来照顾它！`,
+          tag:  'pet-sick',
+          renotify: true,
+        });
+      }).catch(() => {});
+    }
+
+    // 更新治疗按钮状态
+    _updateHealButton();
+
+    logInfo('app', `Pet sick event: damage=${damage}, reason=${reason}, health=${health}`);
+  });
+
 
     // 设置保存后重新检查系统状态
   bus.on(EVENTS.SETTINGS_UPDATED, () => checkSystemStatus());
@@ -2230,40 +2279,185 @@ function bindPetActions() {
   document.getElementById('pet-css-body')?.addEventListener('click', onPetClick);
   document.getElementById('pet-avatar-img')?.addEventListener('click', onPetClick);
 
-  const actions = [
-    { id: 'btn-feed',  fn: feedPet,      msg: '喂食成功 🍖 +25',  log: '你喂了宠物食物 🍖' },
-    { id: 'btn-play',  fn: playWithPet,  msg: '玩耍成功 🎮 +20',  log: '你和宠物玩耍了 🎮' },
-    { id: 'btn-clean', fn: cleanPet,     msg: '洗澡完成 🚿 +30',  log: '你帮宠物洗澡了 🚿' },
-    { id: 'btn-heal',  fn: healPet,      msg: '治疗完成 💊 +20',  log: '你给宠物治疗了 💊' },
-  ];
-
-    actions.forEach(({ id, fn, msg, log }) => {
-    // 从 id 提取 action key：'btn-feed' → 'feed'
-    const actionKey = id.replace('btn-', '');
-
-    document.getElementById(id)?.addEventListener('click', async (e) => {
-      const btn = e.currentTarget;
-      btn.disabled = true;
-      try {
-        await fn();
-        showToast(msg, 'success');
-        _appendChatMsg('system', log);
-        // 本地台词反应（无需 API，立即显示）
-        showLocalReaction(actionKey);
-      } catch (err) {
-        showToast('操作失败：' + err.message, 'error');
-        logError('app', `${id} failed`, { stack: err.stack });
-      } finally {
-        btn.disabled = false;
-      }
-    });
+  //── 喂食按钮 → 打开食物面板 ──
+  document.getElementById('btn-feed')?.addEventListener('click', () => {
+    _openFoodPanel();
   });
 
-// 绑定聊天入口按钮
-document.getElementById('btn-open-chat')?.addEventListener('click', openChatModal);
+  // ── 食物面板关闭 ──
+  document.getElementById('food-panel-close')?.addEventListener('click', () => {
+    _closeFoodPanel();
+  });
 
-const chatPetNameEl = document.getElementById('chat-open-petname');
-if (chatPetNameEl) chatPetNameEl.textContent = runtime.pet?.name || '宠物';
+  // ── 玩耍 ──
+  document.getElementById('btn-play')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      await playWithPet();
+      showToast('玩耍成功 🎮+20 心情', 'success');
+      _appendChatMsg('system', '你和宠物玩耍了 🎮');showLocalReaction('play');
+    } catch (err) {
+      showToast('操作失败：' + err.message, 'error');
+      logError('app', 'btn-play failed', { stack: err.stack });
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── 洗澡 ──
+  document.getElementById('btn-clean')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      await cleanPet();
+      showToast('洗澡完成 🚿 +30 清洁', 'success');
+      _appendChatMsg('system', '你帮宠物洗澡了 🚿');
+      showLocalReaction('clean');
+    } catch (err) {
+      showToast('操作失败：' + err.message, 'error');
+      logError('app', 'btn-clean failed', { stack: err.stack });
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── 治疗（营养剂）──
+  document.getElementById('btn-heal')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const pet = runtime.pet || {};
+
+    // 没生病时不能用
+    if ((pet.health ?? 100) >= 80) {
+      showToast('宠物很健康，不需要吃药😊', 'info');
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      await healPet();
+      showToast('营养剂生效 💊 +50 健康', 'success');
+      _appendChatMsg('system', '你给宠物吃了营养剂 💊');
+      showLocalReaction('heal');
+      _updateHealButton();
+    } catch (err) {
+      if (err.message === '该食物当前不可用') {
+        showToast('营养剂冷却中，请明天再用', 'warning');
+      } else {
+        showToast('操作失败：' + err.message, 'error');
+        logError('app', 'btn-heal failed', { stack: err.stack });
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // 绑定聊天入口按钮
+  document.getElementById('btn-open-chat')?.addEventListener('click', openChatModal);
+
+  const chatPetNameEl = document.getElementById('chat-open-petname');
+  if (chatPetNameEl) chatPetNameEl.textContent = runtime.pet?.name || '宠物';
+
+  // 初始化治疗按钮状态
+  _updateHealButton();
+
+  // 监听宠物状态变化，更新治疗按钮
+  bus.on(EVENTS.PET_UPDATED, () => _updateHealButton());
+}
+
+// ── 治疗按钮状态更新 ─────────────────────────────────────────
+function _updateHealButton() {
+  const btn = document.getElementById('btn-heal');
+  if (!btn) return;
+  const pet = runtime.pet || {};
+  const isSick = (pet.health ?? 100) < 80;
+  const canHeal = canUseFood('medicine');
+
+  btn.classList.toggle('disabled-look', !isSick);
+  btn.title = !isSick
+    ? '宠物很健康'
+    : !canHeal
+      ? '营养剂冷却中'
+      : '给宠物吃营养剂';
+}
+
+// ── 食物面板 ─────────────────────────────────────────────────
+function _openFoodPanel() {
+  const panel = document.getElementById('food-panel');
+  const list= document.getElementById('food-panel-list');
+  if (!panel || !list) return;
+
+  list.innerHTML = '';FOOD_LIST.forEach(food => {
+    // 营养剂不在食物面板里显示（用专门的 Heal 按钮）
+    if (food.sickOnly) return;
+
+    const available = canUseFood(food.id);
+    const cdRemain= getFoodCooldownRemaining(food.id);
+
+    const item = document.createElement('div');
+    item.className = `food-item${available ? '' : ' food-item-disabled'}`;
+
+    //冷却倒计时文字
+    let cdText = '';
+    if (cdRemain > 0) {
+      const hours = Math.floor(cdRemain / 3600000);
+      const mins= Math.floor((cdRemain % 3600000) / 60000);
+      cdText = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+    }
+
+    // 效果标签
+    const effectLabels = { hunger: '饱食', mood: '心情', health: '健康', bond: '亲密' };
+    const effectTags = Object.entries(food.effects)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `<span class="food-effect-tag">+${v} ${effectLabels[k] || k}</span>`)
+      .join('');
+
+    item.innerHTML = `
+      <div class="food-item-icon">${food.icon}</div>
+      <div class="food-item-info">
+        <div class="food-item-name">${food.label}</div>
+        <div class="food-item-desc">${food.desc}</div>
+        <div class="food-item-effects">${effectTags}</div>
+      </div>
+      <div class="food-item-action">
+        ${available
+          ? `<button class="btn btn-primary btn-sm food-use-btn" data-food-id="${food.id}">喂</button>`
+          : `<span class="food-cd-text">⏳ ${cdText}</span>`
+        }
+      </div>
+    `;
+
+    list.appendChild(item);
+  });
+
+  // 事件委托：点击喂食按钮
+  list.addEventListener('click', async (e) => {
+    const useBtn = e.target.closest('.food-use-btn');
+    if (!useBtn) return;
+
+    const foodId = useBtn.dataset.foodId;
+    useBtn.disabled = true;
+    useBtn.textContent = '···';
+
+    try {
+      const food = await feedWithFood(foodId);
+      showToast(`${food.icon} ${food.label} 喂食成功！`, 'success');
+      _appendChatMsg('system', `你喂了宠物 ${food.icon} ${food.label}`);
+      showLocalReaction('feed');
+      _closeFoodPanel();
+    } catch (err) {
+      showToast('喂食失败：' + err.message, 'error');
+      logError('app', `feedWithFood(${foodId}) failed`, { stack: err.stack });
+      useBtn.disabled = false;
+      useBtn.textContent = '喂';
+    }
+  });
+
+  panel.classList.add('show');
+}
+
+function _closeFoodPanel() {
+  document.getElementById('food-panel')?.classList.remove('show');
 }
 
 

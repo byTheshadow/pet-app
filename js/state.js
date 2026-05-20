@@ -104,6 +104,7 @@ export const EVENTS = {
   PAGE_CHANGED:     'page:changed',
   TOAST:            'ui:toast',
   MODAL_CONFIRM:    'ui:modal:confirm',
+  PET_SICK: 'pet:sick',
 };
 // ── 成长阶段定义 ─────────────────────────────────────────────
 // neverGrow: true 时宠物永远停在 baby 阶段
