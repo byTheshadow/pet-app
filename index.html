@@ -2175,20 +2175,21 @@ function injectName(line, caller = 'pet') {
 function getLocalGreeting() {
   const pet         = runtime.pet || {};
   const personality = pet.personality || 'genki';
-  const stats       = pet.stats || {};
   const hour        = new Date().getHours();
 
   const pool = GREETINGS[personality] || GREETINGS.genki;
 
   let line;
-  if ((stats.mood   ?? 80) < 25 && pool.lowMood)  line = pick(pool.lowMood);
-  else if ((stats.hunger ?? 80) < 25 && pool.lowHunger) line = pick(pool.lowHunger);
+  // ★ 修复：直接读 pet.mood / pet.hunger，原来错误地读了 pet.stats
+  if ((pet.mood   ?? 80) < 25 && pool.lowMood)    line = pick(pool.lowMood);
+  else if ((pet.hunger ?? 80) < 25 && pool.lowHunger) line = pick(pool.lowHunger);
   else if (hour >= 5  && hour < 12) line = pick(pool.morning);
   else if (hour >= 12 && hour < 19) line = pick(pool.afternoon);
-  else line = pick(pool.night);
+  else                               line = pick(pool.night);
 
   return injectName(line, 'pet');
 }
+
 
 
 // ── 宠物点击 → 情绪气泡 ─────────────────────────────────────
@@ -2304,10 +2305,34 @@ function bindNavigation() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const page = btn.dataset.page;
-      if (page) navigateTo(page);
+      if (!page) return;
+      navigateTo(page);
+
+      // ★ 切换到宠物页时，延迟 600ms 自动显示本地问候气泡
+      // 600ms 是等页面切换动画结束后再出现，体验更自然
+      if (page === 'pet') {
+        setTimeout(() => _autoGreetOnEnter(), 600);
+      }
     });
   });
 }
+
+// ── 进入宠物页自动问候（纯本地，无需 API）────────────────────
+function _autoGreetOnEnter() {
+  const bubble = document.getElementById('emotion-bubble');
+  if (!bubble) return;
+
+  // 如果气泡已经在显示中（比如用户刚点击了宠物），不重复触发
+  if (bubble.classList.contains('show')) return;
+
+  const line = getLocalGreeting();
+  bubble.textContent = line;
+  bubble.classList.add('show');
+
+  // 5 秒后淡出（比点击触发的 4 秒稍长，因为是自动出现的）
+  setTimeout(() => bubble.classList.remove('show'), 5000);
+}
+
 
 // ── 设置页 Tab 切换 ──────────────────────────────────────────
 function bindSettingsTabs() {
