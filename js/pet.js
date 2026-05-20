@@ -42,15 +42,29 @@ export async function applyDecay() {
 
   const clamp = v => Math.max(0, Math.min(100, v));
 
+  // ★ 修复：hunger / mood / clean 正常衰减
+  //         health 不自然衰减，只在 hunger 或 clean 极低时才掉
+  //         hunger > 80 且 clean > 80 时 health 缓慢恢复
+  let newHealth = pet.health;
+
+  if (pet.hunger < 15 || pet.clean < 15) {
+    // 极度饥饿或极脏：每小时掉 1 点 health
+    newHealth = clamp(newHealth - gapHours * 1.0);
+  } else if (pet.hunger > 80 && pet.clean > 80) {
+    // 状态很好：每小时恢复 0.3 点 health（上限 100）
+    newHealth = clamp(newHealth + gapHours * 0.3);
+  }
+  // 其他情况 health 不变
+
   const patch = {
-    hunger:       clamp(pet.hunger  - gapHours * rates.hunger),
-    mood:         clamp(pet.mood    - gapHours * rates.mood),
-    health:       clamp(pet.health  - gapHours * rates.health),
-    clean:        clamp(pet.clean   - gapHours * rates.clean),
+    hunger:       clamp(pet.hunger - gapHours * rates.hunger),
+    mood:         clamp(pet.mood   - gapHours * rates.mood),
+    health:       newHealth,
+    clean:        clamp(pet.clean  - gapHours * rates.clean),
     lastOnlineAt: now,
   };
 
-  logInfo('pet', `Decay applied: gap=${gapHours.toFixed(2)}h, hunger-=${(gapHours * rates.hunger).toFixed(1)}`);
+  logInfo('pet', `Decay applied: gap=${gapHours.toFixed(2)}h, hunger-=${(gapHours * rates.hunger).toFixed(1)}, health=${newHealth.toFixed(1)}`);
 
   await savePet(patch);
 }
@@ -62,8 +76,9 @@ export async function feedPet() {
   await savePet({
     hunger: clamp(pet.hunger + 25),
     mood:   clamp(pet.mood   + 5),
+    bond:   clamp(pet.bond   + 3),  // ★ 喂食增加亲密度
   });
-  logInfo('pet', 'Fed pet +25 hunger');
+  logInfo('pet', 'Fed pet +25 hunger +3 bond');
 }
 
 // ── 玩耍 ─────────────────────────────────────────────────────
@@ -73,28 +88,32 @@ export async function playWithPet() {
   await savePet({
     mood:   clamp(pet.mood   + 20),
     hunger: Math.max(0, pet.hunger - 5),
-    bond:   clamp(pet.bond   + 3),
+    bond:   clamp(pet.bond   + 6),  // ★ 玩耍是最主要的亲密度来源
   });
-  logInfo('pet', 'Played with pet +20 mood');
+  logInfo('pet', 'Played with pet +20 mood +6 bond');
 }
 
 // ── 洗澡 ─────────────────────────────────────────────────────
 export async function cleanPet() {
   const pet = runtime.pet;
+  const clamp = v => Math.min(100, v);
   await savePet({
-    clean: Math.min(100, pet.clean + 30),
-    mood:  Math.min(100, pet.mood  + 5),
+    clean: clamp(pet.clean + 30),
+    mood:  clamp(pet.mood  + 5),
+    bond:  clamp(pet.bond  + 3),  // ★ 洗澡增加亲密度
   });
-  logInfo('pet', 'Cleaned pet +30 clean');
+  logInfo('pet', 'Cleaned pet +30 clean +3 bond');
 }
 
 // ── 治疗 ─────────────────────────────────────────────────────
 export async function healPet() {
   const pet = runtime.pet;
+  const clamp = v => Math.min(100, v);
   await savePet({
-    health: Math.min(100, pet.health + 20),
+    health: clamp(pet.health + 20),
+    bond:   clamp(pet.bond   + 2),  // ★ 治疗也增加一点亲密度
   });
-  logInfo('pet', 'Healed pet +20 health');
+  logInfo('pet', 'Healed pet +20 health +2 bond');
 }
 
 // ── 获取宠物当前状态描述（注入 AI prompt）────────────────────
@@ -125,7 +144,6 @@ export function getPersonalityPrompt(pet) {
 }
 
 // ── AI 对话（宠物回复）───────────────────────────────────────
-// promptKeys 注入：petExtra（宠物角色补充）
 export async function petChat({ userText, onChunk, signal }) {
   const pet = runtime.pet;
   if (!pet) throw new Error('宠物数据未加载');
@@ -139,7 +157,6 @@ export async function petChat({ userText, onChunk, signal }) {
     '回复要简短自然，不超过80字，可以用颜文字。',
   ].join('\n');
 
-  // 注入 petExtra（宠物角色补充），statusContext 由 buildSystemPrompt 末尾追加
   const systemPrompt = await buildSystemPrompt({
     rolePrompt,
     statusContext,
@@ -160,14 +177,13 @@ export async function petChat({ userText, onChunk, signal }) {
     signal,
   });
 
-  // 对话增加亲密度
-  await savePet({ bond: Math.min(100, pet.bond + 1) });
+  // ★ 修复：聊天增加亲密度从 +1 提升到 +2
+  await savePet({ bond: Math.min(100, pet.bond + 2) });
 
   return reply;
 }
 
 // ── 随机情绪气泡 ─────────────────────────────────────────────
-// promptKeys 注入：petExtra（宠物角色补充）+ bubbleStyle（气泡语气风格）
 export async function triggerEmotionBubble() {
   const pet = runtime.pet;
   if (!pet) return;
@@ -180,7 +196,6 @@ export async function triggerEmotionBubble() {
     personalityPrompt,
   ].join('\n');
 
-  // 注入 petExtra + bubbleStyle，让气泡语气也受提示词控制中心控制
   const systemPrompt = await buildSystemPrompt({
     rolePrompt,
     statusContext,
@@ -201,13 +216,12 @@ export async function triggerEmotionBubble() {
     return null;
   }
 }
+
 // ── 获得经验值（冒险结算后调用）────────────────────────────
-// returns: { leveledUp: bool, oldLevel, newLevel, stage }
 export async function gainExp(amount) {
   const pet      = runtime.pet;
   const settings = runtime.settings || await dbGet('settings', 'singleton') || {};
 
-  // 永不成长模式：只记录经验，不升级
   if (settings.neverGrow) {
     await savePet({ exp: (pet.exp || 0) + amount });
     return { leveledUp: false, oldLevel: pet.level, newLevel: pet.level };
@@ -219,7 +233,6 @@ export async function gainExp(amount) {
   let level = pet.level  || 1;
   let leveledUp = false;
 
-  // 连续升级（一次冒险可能跨多级）
   while (true) {
     const needed = getExpForLevel(level);
     if (exp >= needed && level < 99) {

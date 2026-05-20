@@ -2078,6 +2078,24 @@
   letter-spacing: 0.5px;
 }
 /* ====== END: 设置页水印 ====== */
+/* ── 手机端消息操作按钮：点击显示 ── */
+
+/* 触屏设备：默认隐藏，靠 .mobile-show 控制 */
+@media (hover: none) and (pointer: coarse) {
+  .chat-msg-actions,
+  .parent-msg-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .chat-msg-actions.mobile-show,
+  .parent-msg-actions.mobile-show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 
 
 

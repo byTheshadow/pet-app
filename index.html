@@ -2032,6 +2032,7 @@ function _attachChatMsgActions(msgEl, role, userText) {
   wrap.appendChild(actions);
 }
 
+
 /**
  * 重roll：重新生成这条 AI 消息
  * @param {HTMLElement} msgEl   .chat-msg 元素
@@ -2102,6 +2103,47 @@ async function _rerollChatMsg(msgEl, userText) {
   }
 }
 
+// ── 手机端：点击消息切换操作按钮显示 ────────────────────────
+(function initMobileMsgTap() {
+  // 用事件委托，等 DOM 稳定后绑定
+  document.addEventListener('click', function(e) {
+    // 如果点击的是操作按钮本身，不做切换（让按钮自己的 click 处理）
+    if (e.target.closest('.chat-msg-btn') || e.target.closest('.parent-msg-btn')) return;
+
+    // ── 聊天 Modal 消息 ──
+    const chatMsg = e.target.closest('#chat-modal-area .chat-msg');
+    if (chatMsg && !chatMsg.classList.contains('system') && !chatMsg.classList.contains('typing')) {
+      const actions = chatMsg.querySelector('.chat-msg-actions');
+      if (actions) {
+        const isShowing = actions.classList.contains('mobile-show');
+        // 关闭同区域其他消息的操作面板
+        document.querySelectorAll('#chat-modal-area .chat-msg-actions.mobile-show')
+          .forEach(a => a.classList.remove('mobile-show'));
+        if (!isShowing) actions.classList.add('mobile-show');
+      }
+      return;
+    }
+
+    // ── 家长 Modal 消息 ──
+    const parentLine = e.target.closest('#parent-modal-overlay .parent-line');
+    if (parentLine && !parentLine.classList.contains('system') && !parentLine.classList.contains('typing')) {
+      const actions = parentLine.querySelector('.parent-msg-actions');
+      if (actions) {
+        const isShowing = actions.classList.contains('mobile-show');
+        // 关闭同区域其他消息的操作面板
+        const area = parentLine.closest('.parent-chat-area');
+        area?.querySelectorAll('.parent-msg-actions.mobile-show')
+          .forEach(a => a.classList.remove('mobile-show'));
+        if (!isShowing) actions.classList.add('mobile-show');
+      }
+      return;
+    }
+
+    // 点击其他地方，关闭所有操作面板
+    document.querySelectorAll('.chat-msg-actions.mobile-show, .parent-msg-actions.mobile-show')
+      .forEach(a => a.classList.remove('mobile-show'));
+  }, true); // useCapture=true 确保在按钮 click 之前触发
+})();
 
 /**
  * 获取宠物叫 user 的称呼，没设置就返回空字符串
@@ -2878,18 +2920,21 @@ const maxTokens = (!isNaN(rawMaxTokens) && rawMaxTokens >= 256) ? rawMaxTokens :
             showToast('通知权限被拒绝，请在浏览器设置中允许', 'warn');
           }
         }
-        const patch = {
-          ...runtime.settings,
-          notifyEnabled,
-          notifyThresholds: {
-            hunger: parseInt(document.getElementById('set-thresh-hunger')?.value) || 20,
-            mood:   parseInt(document.getElementById('set-thresh-mood')?.value)   || 20,
-            health: parseInt(document.getElementById('set-thresh-health')?.value) || 20,
-            clean:  parseInt(document.getElementById('set-thresh-clean')?.value)  || 20,
-          },
-          letterEnabled:  document.getElementById('set-letter-enabled')?.checked ?? false,  // ← 新增
-        letterInterval: (!isNaN(rawLetterInterval) && rawLetterInterval >= 1) ? rawLetterInterval : 8, // ← 新增
-        };
+        // ★ 修复：在 patch 之前先解析 rawLetterInterval
+const rawLetterInterval = parseInt(document.getElementById('set-letter-interval')?.value, 10);
+
+const patch = {
+  ...runtime.settings,
+  notifyEnabled,
+  notifyThresholds: {
+    hunger: parseInt(document.getElementById('set-thresh-hunger')?.value) || 20,
+    mood:   parseInt(document.getElementById('set-thresh-mood')?.value)   || 20,
+    health: parseInt(document.getElementById('set-thresh-health')?.value) || 20,
+    clean:  parseInt(document.getElementById('set-thresh-clean')?.value)  || 20,
+  },
+  letterEnabled:  document.getElementById('set-letter-enabled')?.checked ?? false,
+  letterInterval: (!isNaN(rawLetterInterval) && rawLetterInterval >= 1) ? rawLetterInterval : 8,
+};
         await dbSet('settings', patch);
         runtime.settings = patch;
         showToast('通知设置已保存 ✓', 'success');
