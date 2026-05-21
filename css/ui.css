@@ -2536,11 +2536,9 @@
 }
 
 .parent-diary-content::before {
-  content: '📋' !important;
-  font-size: 18px !important;
-  top: 12px !important;
-  left: 12px !important;
+  content: '' !important;  /* 清掉引号装饰 */
 }
+
 
 /* 家长日志按钮（顶栏） */
 .parent-diary-btn {
