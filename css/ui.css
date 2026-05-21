@@ -2261,6 +2261,238 @@
   background: rgba(0, 0, 0, 0.2);
   z-index: -1;
 }
+/* ============================================================
+   宠物日记系统
+   ============================================================ */
+
+/* 宠物页快捷按钮行 */
+.pet-quick-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+  flex-shrink: 0;
+}
+
+.pet-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: var(--shadow-card);
+}
+
+.pet-quick-btn:active {
+  transform: scale(0.95);
+  background: var(--bg-card-alt);
+}
+
+.pet-quick-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.pet-quick-label {
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+/* 日记 Modal 覆盖层 */
+#diary-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#diary-modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 日记面板（从底部滑入） */
+.diary-panel {
+  width: 100%;
+  max-width: 390px;
+  height: 72dvh;
+  background: var(--bg-shell);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+  overflow: hidden;
+}
+
+#diary-modal-overlay.show .diary-panel {
+  transform: translateY(0);
+}
+
+/* 顶栏 */
+.diary-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.diary-header-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.diary-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.diary-header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.diary-header-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.diary-edit-btn,
+.diary-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card-alt);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.diary-edit-btn:active,
+.diary-close-btn:active {
+  background: var(--border-subtle);
+}
+
+/* 内容区 */
+.diary-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  padding: 20px 20px 8px;
+}
+
+/* 日记正文 */
+.diary-content {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  /* 手写感装饰 */
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+.diary-content::before {
+  content: '"';
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 32px;
+  color: var(--border-subtle);
+  font-family: Georgia, serif;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* 编辑 textarea */
+.diary-textarea {
+  width: 100%;
+  min-height: 180px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-card);
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.diary-textarea:focus {
+  border-color: var(--text-primary);
+}
+
+/* 生成中状态 */
+.diary-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.diary-loading-icon {
+  font-size: 36px;
+  animation: diary-bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes diary-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+.diary-loading-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* 底部操作区 */
+.diary-footer {
+  flex-shrink: 0;
+  padding: 12px 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-shell);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 
 
 

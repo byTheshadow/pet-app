@@ -149,6 +149,17 @@
   </div>
   <div class="food-panel-list" id="food-panel-list"></div>
 </div>
+<!-- 日记 & 来信快捷按钮行 -->
+<div class="pet-quick-actions" id="pet-quick-actions">
+  <button class="pet-quick-btn" id="btn-diary" title="宠物日记">
+    <span class="pet-quick-icon">📝</span>
+    <span class="pet-quick-label">日记</span>
+  </button>
+  <button class="pet-quick-btn" id="btn-write-letter" title="宠物来信" style="display:none;">
+    <span class="pet-quick-icon">✉️</span>
+    <span class="pet-quick-label">来信</span>
+  </button>
+</div>
 
 <!-- 聊天入口（替换原来的 pet-chat-area + pet-input-row） -->
 <button class="chat-open-btn" id="btn-open-chat">
@@ -923,6 +934,37 @@
 
   </div>
 </div><!-- /chat-modal-overlay -->
+<!-- ====================================================
+     宠物日记 Modal
+     ==================================================== -->
+<div id="diary-modal-overlay">
+  <div class="diary-panel">
+
+    <!-- 顶栏 -->
+    <div class="diary-header">
+      <div class="diary-header-icon">📝</div>
+      <div class="diary-header-info">
+        <div class="diary-header-title">宠物日记</div>
+        <div class="diary-header-date" id="diary-header-date">今天</div>
+      </div>
+      <button class="diary-edit-btn" id="diary-edit-btn" title="编辑">✏️</button>
+      <button class="diary-close-btn" id="diary-close-btn" aria-label="关闭">✕</button>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="diary-body" id="diary-body">
+      <!-- 生成中 / 内容 / 编辑框 动态渲染 -->
+    </div>
+
+    <!-- 底部操作 -->
+    <div class="diary-footer" id="diary-footer">
+      <button class="btn btn-primary" id="diary-save-btn" style="display:none; width:100%;">💾 保存</button>
+      <button class="btn btn-ghost" id="diary-regen-btn" style="width:100%;">🔄 重新生成</button>
+    </div>
+
+  </div>
+</div><!-- /diary-modal-overlay -->
+
 
 
 
@@ -1115,6 +1157,8 @@ async function init() {
   fillSettingsForms();
 
   bindPetActions();
+  bindDiarySystem();
+  bindDiarySystem();
   bindNavigation();
   bindSettingsTabs();
   bindLogTabs();
@@ -7052,6 +7096,453 @@ function fillPromptForms() {
   set('set-prompt-adventure-style',    pc.adventureStyle    || '', 'hint-adventure-style',    500);
   set('set-prompt-bubble-style',       pc.bubbleStyle       || '', 'hint-bubble-style',       300);
 }
+// ══════════════════════════════════════════════════════════════
+// 宠物日记系统
+// ══════════════════════════════════════════════════════════════
+
+// 当前日记 Modal 状态
+const diaryState = {
+  isGenerating: false,
+  isEditing:    false,
+  currentRecord: null,   // 当前打开的日记记录（来自 DB）
+  todayDate: '',         // 'YYYY-MM-DD'
+};
+
+/** 获取今天的日期字符串 */
+function _getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/** 格式化日期显示 */
+function _formatDiaryDate(dateStr) {
+  if (!dateStr) return '今天';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+/**
+ * 查询今天是否已有日记
+ * @returns {object|null} 日记记录 或 null
+ */
+async function _getTodayDiary() {
+  const today = _getTodayStr();
+  const records = await dbQuery('sceneHistory', r => r.type === 'diary' && r.date === today);
+  return records.length > 0 ? records[0] : null;
+}
+
+/**
+ * 用 AI 生成宠物日记正文
+ * 素材：过去 24h actionLog（最多10条）+ chatHistory（最多5条 user 消息）+ 当前状态
+ * @returns {string} 日记正文
+ */
+async function _generateDiaryContent() {
+  const pet      = runtime.pet      || {};
+  const settings = runtime.settings || {};
+  const pc       = settings.promptConfig || {};
+
+  // 收集素材
+  const now = Date.now();
+  const oneDayAgo = now - 24 * 3600 * 1000;
+
+  // actionLog：过去 24h，最多 10 条
+  let recentActions = [];
+  try {
+    const allLogs = await dbList('actionLog', { limit: 50 });
+    recentActions = allLogs
+      .filter(l => (l.createdAt || 0) > oneDayAgo)
+      .slice(-10)
+      .map(l => l.message || l.content || '')
+      .filter(Boolean);
+  } catch (_) {}
+
+  // chatHistory：最多 5 条 user 消息
+  let recentChats = [];
+  try {
+    const allChats = await dbList('chatHistory', { limit: 30 });
+    recentChats = allChats
+      .filter(c => c.role === 'user' && (c.createdAt || 0) > oneDayAgo)
+      .slice(-5)
+      .map(c => c.content || '')
+      .filter(Boolean);
+  } catch (_) {}
+
+  // 状态描述
+  const statusDesc = [
+    `饱食度 ${Math.round(pet.hunger||0)}`,
+    `心情 ${Math.round(pet.mood||0)}`,
+    `健康 ${Math.round(pet.health||0)}`,
+    `清洁 ${Math.round(pet.clean||0)}`,
+    `亲密度 ${Math.round(pet.bond||0)}`,
+  ].join('、');
+
+  // 构建 prompt
+  const materialParts = [];
+  if (recentActions.length) {
+    materialParts.push(`【今日行为】${recentActions.join('；')}`);
+  }
+  if (recentChats.length) {
+    materialParts.push(`【和主人的对话片段】${recentChats.join('；')}`);
+  }
+  materialParts.push(`【当前状态】${statusDesc}`);
+
+  const { buildSystemPrompt } = await import('./js/ai.js');
+  const { getPersonalityPrompt } = await import('./js/pet.js');
+  const personalityPrompt = getPersonalityPrompt(pet);
+
+  const today = _getTodayStr();
+  const dateDisplay = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+
+  const systemPrompt = await buildSystemPrompt({
+    rolePrompt: [
+      `你是一只名叫「${pet.name || '宠物'}」的电子宠物，正在写今天（${dateDisplay}）的日记。`,
+      personalityPrompt,
+      pc.petExtra || '',
+      '用第一人称写日记，100字以内，有情感有细节，可以提及主人的行为，语气符合你的性格。',
+      '只输出日记正文本身，不需要日期标题。',
+    ].filter(Boolean).join('\n'),
+    statusContext: materialParts.join('\n'),
+    promptKeys: [],
+  });
+
+  const text = await callAI({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: '请写今天的日记。' },
+    ],
+    stream: false,
+  });
+
+  return text.trim();
+}
+
+/**
+ * 生成日记摘要（30字以内，用于记忆注入）
+ * @param {string} content 日记正文
+ * @returns {string}
+ */
+async function _generateDiarySummary(content) {
+  if (!content) return '';
+  // 简单截取前30字作为摘要（避免额外 AI 调用）
+  return content.slice(0, 30) + (content.length > 30 ? '…' : '');
+}
+
+/**
+ * 打开日记 Modal
+ * 如果今天已有日记，直接显示；否则触发生成
+ */
+async function openDiaryModal() {
+  const overlay = document.getElementById('diary-modal-overlay');
+  if (!overlay) return;
+
+  diaryState.isEditing    = false;
+  diaryState.isGenerating = false;
+  diaryState.todayDate    = _getTodayStr();
+
+  // 更新顶栏日期
+  const dateEl = document.getElementById('diary-header-date');
+  if (dateEl) dateEl.textContent = _formatDiaryDate(diaryState.todayDate);
+
+  overlay.classList.add('show');
+  _bindDiaryModal();
+
+  // 检查今天是否已有日记
+  const existing = await _getTodayDiary();
+
+  if (existing) {
+    diaryState.currentRecord = existing;
+    _renderDiaryContent(existing.content || '（日记内容为空）');
+  } else {
+    // 没有日记，自动生成
+    diaryState.currentRecord = null;
+    await _triggerDiaryGeneration();
+  }
+}
+
+/** 关闭日记 Modal */
+function closeDiaryModal() {
+  const overlay = document.getElementById('diary-modal-overlay');
+  overlay?.classList.remove('show');
+  diaryState.isEditing    = false;
+  diaryState.isGenerating = false;
+}
+
+/** 绑定 Modal 内部事件（每次打开时重新绑定） */
+function _bindDiaryModal() {
+  // 关闭按钮
+  const closeBtn = document.getElementById('diary-close-btn');
+  closeBtn?.replaceWith(closeBtn.cloneNode(true));
+  document.getElementById('diary-close-btn')
+    ?.addEventListener('click', closeDiaryModal);
+
+  // 点击遮罩关闭
+  const overlay = document.getElementById('diary-modal-overlay');
+  const onOverlay = (e) => {
+    if (e.target === overlay) {
+      closeDiaryModal();
+      overlay.removeEventListener('click', onOverlay);
+    }
+  };
+  overlay?.addEventListener('click', onOverlay);
+
+  // 编辑按钮
+  const editBtn = document.getElementById('diary-edit-btn');
+  editBtn?.replaceWith(editBtn.cloneNode(true));
+  document.getElementById('diary-edit-btn')
+    ?.addEventListener('click', _toggleDiaryEdit);
+
+  // 保存按钮
+  const saveBtn = document.getElementById('diary-save-btn');
+  saveBtn?.replaceWith(saveBtn.cloneNode(true));
+  document.getElementById('diary-save-btn')
+    ?.addEventListener('click', _saveDiaryEdit);
+
+  // 重新生成按钮
+  const regenBtn = document.getElementById('diary-regen-btn');
+  regenBtn?.replaceWith(regenBtn.cloneNode(true));
+  document.getElementById('diary-regen-btn')
+    ?.addEventListener('click', async () => {
+      if (diaryState.isGenerating) return;
+      diaryState.currentRecord = null;
+      diaryState.isEditing = false;
+      await _triggerDiaryGeneration();
+    });
+}
+
+/** 渲染日记内容（阅读模式） */
+function _renderDiaryContent(text) {
+  const body    = document.getElementById('diary-body');
+  const editBtn = document.getElementById('diary-edit-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+
+  if (!body) return;
+
+  body.innerHTML = '';
+
+  const contentEl = document.createElement('div');
+  contentEl.className = 'diary-content';
+  contentEl.textContent = text;
+  body.appendChild(contentEl);
+
+  // 按钮状态
+  if (editBtn)  editBtn.style.display  = '';
+  if (saveBtn)  saveBtn.style.display  = 'none';
+  if (regenBtn) regenBtn.style.display = '';
+
+  diaryState.isEditing = false;
+}
+
+/** 渲染生成中状态 */
+function _renderDiaryGenerating() {
+  const body    = document.getElementById('diary-body');
+  const editBtn = document.getElementById('diary-edit-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+
+  if (!body) return;
+
+  body.innerHTML = '';
+
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'diary-loading';
+  loadingEl.innerHTML = `
+    <div class="diary-loading-icon">📝</div>
+    <div class="diary-loading-text">正在写日记…</div>
+    <div class="diary-loading-dots">${createTypingIndicator().outerHTML}</div>
+  `;
+  body.appendChild(loadingEl);
+
+  if (editBtn)  editBtn.style.display  = 'none';
+  if (saveBtn)  saveBtn.style.display  = 'none';
+  if (regenBtn) { regenBtn.disabled = true; regenBtn.textContent = '生成中…'; }
+}
+
+/** 触发日记生成流程 */
+async function _triggerDiaryGeneration() {
+  if (diaryState.isGenerating) return;
+  diaryState.isGenerating = true;
+
+  _renderDiaryGenerating();
+
+  let content = '';
+
+  try {
+    content = await _generateDiaryContent();
+  } catch (err) {
+    // 本地兜底
+    const pet = runtime.pet || {};
+    const fallbacks = [
+      `今天主人来陪我玩了，心情很好！虽然不记得具体发生了什么，但感觉很幸福。希望明天也能这样。`,
+      `今天过得还不错。主人喂了我东西吃，我们还聊了一会儿。有主人在的日子真好。`,
+      `今天有点想主人。不过没关系，只要主人记得我，我就很满足了。明天见！`,
+    ];
+    content = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    logError('app', `Diary generation failed: ${err.message}`);
+    showToast('AI 生成失败，已用本地内容替代', 'warning');
+  }
+
+  // 生成摘要
+  const summary = await _generateDiarySummary(content);
+
+  // 存入 DB
+  const today = _getTodayStr();
+  const record = {
+    id:        Date.now() + Math.random(),
+    type:      'diary',
+    date:      today,
+    content,
+    summary,
+    petName:   runtime.pet?.name || '',
+    createdAt: Date.now(),
+  };
+
+  try {
+    await dbAppend('sceneHistory', record);
+    diaryState.currentRecord = record;
+    logInfo('app', `Pet diary generated for ${today}`);
+  } catch (err) {
+    logError('app', `Save diary failed: ${err.message}`);
+  }
+
+  diaryState.isGenerating = false;
+
+  // 恢复重新生成按钮
+  const regenBtn = document.getElementById('diary-regen-btn');
+  if (regenBtn) { regenBtn.disabled = false; regenBtn.textContent = '🔄 重新生成'; }
+
+  _renderDiaryContent(content);
+}
+
+/** 切换编辑模式 */
+function _toggleDiaryEdit() {
+  if (diaryState.isGenerating) return;
+
+  const body    = document.getElementById('diary-body');
+  const editBtn = document.getElementById('diary-edit-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+
+  if (!body) return;
+
+  if (!diaryState.isEditing) {
+    // 进入编辑模式
+    const currentText = body.querySelector('.diary-content')?.textContent || '';
+
+    body.innerHTML = '';
+    const textarea = document.createElement('textarea');
+    textarea.className = 'diary-textarea';
+    textarea.value = currentText;
+    textarea.placeholder = '写下今天的故事…';
+    body.appendChild(textarea);
+    textarea.focus();
+
+    if (editBtn)  editBtn.textContent  = '👁 预览';
+    if (saveBtn)  saveBtn.style.display  = '';
+    if (regenBtn) regenBtn.style.display = 'none';
+
+    diaryState.isEditing = true;
+  } else {
+    // 退出编辑模式（预览，不保存）
+    const textarea = body.querySelector('.diary-textarea');
+    const text = textarea?.value || '';
+    _renderDiaryContent(text);
+    if (editBtn) editBtn.textContent = '✏️';
+  }
+}
+
+/** 保存编辑内容 */
+async function _saveDiaryEdit() {
+  const body    = document.getElementById('diary-body');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const editBtn = document.getElementById('diary-edit-btn');
+
+  const textarea = body?.querySelector('.diary-textarea');
+  if (!textarea) return;
+
+  const newContent = textarea.value.trim();
+  if (!newContent) {
+    showToast('日记内容不能为空', 'warning');
+    return;
+  }
+
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
+
+  try {
+    const record = diaryState.currentRecord;
+    if (record) {
+      // 更新已有记录（summary 清空，下次注入时跳过或重新生成）
+      const updated = { ...record, content: newContent, summary: '' };
+      await dbSet('sceneHistory', updated);
+      diaryState.currentRecord = updated;
+    }
+
+    showToast('日记已保存 ✓', 'success');
+    logInfo('app', 'Diary edited and saved');
+
+    _renderDiaryContent(newContent);
+    if (editBtn) editBtn.textContent = '✏️';
+
+  } catch (err) {
+    showToast('保存失败：' + err.message, 'error');
+    logError('app', `Save diary edit failed: ${err.message}`);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 保存'; }
+  }
+}
+
+/**
+ * 检查今日日记，没有则在宠物页显示 banner 提示
+ * 在 init() 里调用
+ */
+async function checkDiaryBanner() {
+  const existing = await _getTodayDiary();
+  if (existing) return; // 今天已有日记，不提示
+
+  const stack = document.getElementById('system-banner-stack');
+  if (!stack) return;
+
+  // 避免重复添加
+  if (stack.querySelector('[data-banner="diary"]')) return;
+
+  const el = document.createElement('div');
+  el.className = 'system-banner info';
+  el.setAttribute('data-banner', 'diary');
+  el.setAttribute('role', 'status');
+
+  el.innerHTML = `
+    <span class="system-banner-icon">📝</span>
+    <span class="system-banner-text">${runtime.pet?.name || '宠物'} 今天还没写日记，点击生成</span>
+    <span class="system-banner-arrow">›</span>
+  `;
+
+  el.addEventListener('click', () => {
+    el.style.animation = 'toast-out 0.2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+    openDiaryModal();
+  });
+
+  stack.appendChild(el);
+
+  // 30 秒后自动消失
+  setTimeout(() => {
+    if (el.parentNode) {
+      el.style.animation = 'toast-out 0.2s ease forwards';
+      setTimeout(() => el.remove(), 200);
+    }
+  }, 30000);
+}
+
+/** 绑定日记系统所有入口 */
+function bindDiarySystem() {
+  // 📝 日记按钮
+  document.getElementById('btn-diary')
+    ?.addEventListener('click', openDiaryModal);
+
+  // 启动时检查今日日记 banner（延迟 3 秒，等初始化完成）
+  setTimeout(checkDiaryBanner, 3000);
+}
+
 
 // ── 启动 ─────────────────────────────────────────────────────
 init().catch(err => {

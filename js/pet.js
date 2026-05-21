@@ -397,3 +397,15 @@ export async function gainExp(amount) {
 
   return { leveledUp, oldLevel: pet.level, newLevel: level, stage };
 }
+// ── 暴露到 window（供内联脚本访问）─────────────────────────
+// 已有的：
+// window.FOOD_LIST = FOOD_LIST;
+// window.canUseFood = canUseFood;
+// ...
+
+// 新增：暴露日记所需的辅助函数
+window._petHelpers = {
+  getPersonalityPrompt,
+  getPetStatusContext,
+};
+
