@@ -271,14 +271,21 @@
 
   <!-- 场景卡片列表 -->
   <div id="scene-list" style="flex:1; overflow-y:auto; padding:0 16px 12px;"></div>
-
-  <!-- 最近冒险记录 -->
-  <div style="padding:0 16px 16px; flex-shrink:0;">
-    <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">最近记录</div>
-    <div id="adventure-log" style="background:var(--bg-card); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-card);">
-      <div class="empty-state" style="padding:24px;"><div class="empty-state-text">暂无冒险记录</div></div>
-    </div>
+<!-- 最近冒险记录 -->
+<div style="padding:0 16px 16px; flex-shrink:0;">
+  <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">最近记录</div>
+  <div id="adventure-log" style="
+    background:var(--bg-card);
+    border-radius:var(--radius-lg);
+    overflow-y:auto;
+    max-height:260px;
+    box-shadow:var(--shadow-card);
+    -webkit-overflow-scrolling:touch;
+  ">
+    <div class="empty-state" style="padding:24px;"><div class="empty-state-text">暂无冒险记录</div></div>
   </div>
+</div>
+
 
 </section>
 
