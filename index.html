@@ -1031,6 +1031,7 @@
         <button class="parent-room-btn active" data-room="parent-user">与你</button>
         <button class="parent-room-btn" data-room="parent-trio">三方</button>
       </div>
+      <button class="parent-diary-btn" id="parent-diary-btn" title="家长日志">📋</button>
       <button class="parent-close-btn" id="parent-close-btn" aria-label="关闭">✕</button>
     </div>
 
@@ -1061,6 +1062,35 @@
 
   </div>
 </div><!-- /parent-modal-overlay -->
+<!-- ====================================================
+     家长日志 Modal
+     ==================================================== -->
+<div id="parent-diary-modal-overlay">
+  <div class="parent-diary-panel">
+
+    <!-- 顶栏 -->
+    <div class="diary-header">
+      <div class="diary-header-icon">📋</div>
+      <div class="diary-header-info">
+        <div class="diary-header-title">家长日志</div>
+        <div class="diary-header-date" id="parent-diary-header-date">今天</div>
+      </div>
+      <button class="diary-edit-btn" id="parent-diary-edit-btn" title="编辑">✏️</button>
+      <button class="diary-close-btn" id="parent-diary-close-btn" aria-label="关闭">✕</button>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="diary-body" id="parent-diary-body">
+    </div>
+
+    <!-- 底部操作 -->
+    <div class="diary-footer" id="parent-diary-footer">
+      <button class="btn btn-primary" id="parent-diary-save-btn" style="display:none; width:100%;">💾 保存</button>
+      <button class="btn btn-ghost" id="parent-diary-regen-btn" style="width:100%;">🔄 重新生成</button>
+    </div>
+
+  </div>
+</div><!-- /parent-diary-modal-overlay -->
 
 
 </div><!-- /app-shell -->
@@ -1157,7 +1187,6 @@ async function init() {
   fillSettingsForms();
 
   bindPetActions();
-  bindDiarySystem();
   bindDiarySystem();
   bindNavigation();
   bindSettingsTabs();
@@ -6028,7 +6057,13 @@ function closeParentModal() {
     parentState.abortCtrl.abort();
     parentState.abortCtrl = null;
   }
+
+  // 关闭后静默生成今日家长日志（有 API Key 才触发）
+  if (runtime.settings?.apiKey) {
+    _silentGenerateParentDiary();
+  }
 }
+
 
 // ── 设置家长头像 ──────────────────────────────────────────────
 function _setParentHeaderAvatar(avatarUrl) {
@@ -6091,6 +6126,14 @@ function _bindParentModal() {
       if (input) input.value = '';
 
       _appendParentLine(parentState.room, 'user', text, '你');
+      // 存用户消息到 parentChatHistory
+await dbAppend('parentChatHistory', {
+  id:        Date.now() + Math.random(),
+  role:      'user',
+  content:   text,
+  room:      parentState.room,
+  createdAt: Date.now(),
+});
       await _parentUserTurn(text);
     };
 
@@ -6350,26 +6393,39 @@ async function _parentSpeak(room, role, messages, fallbackKey = 'reply') {
   let replyText = '';
 
   try {
-    const { callAI } = await import('./js/ai.js');
-    await callAI({
-      messages,
-      stream:  true,
-      signal:  parentState.abortCtrl.signal,
-      onChunk: (delta) => {
-        replyText += delta;
-        if (typingLine) {
-          const bubble = typingLine.querySelector('.parent-bubble');
-          if (bubble) bubble.textContent = replyText;
-        }
-      },
+  const { callAI } = await import('./js/ai.js');
+  await callAI({
+    messages,
+    stream:  true,
+    signal:  parentState.abortCtrl.signal,
+    onChunk: (delta) => {
+      replyText += delta;
+      if (typingLine) {
+        const bubble = typingLine.querySelector('.parent-bubble');
+        if (bubble) bubble.textContent = replyText;
+      }
+    },
+  });
+
+  // 流式结束后，如果没有内容则用兜底
+  if (!replyText && typingLine) {
+    const bubble = typingLine.querySelector('.parent-bubble');
+    if (bubble) bubble.textContent = _pickParentFallback(fallbackKey);
+  }
+
+  // 存 AI 回复到 parentChatHistory
+  if (replyText) {
+    await dbAppend('parentChatHistory', {
+      id:        Date.now() + Math.random(),
+      role:      'assistant',
+      speaker:   speakerName,
+      content:   replyText,
+      room,
+      createdAt: Date.now(),
     });
+  }
 
-    if (!replyText && typingLine) {
-      const bubble = typingLine.querySelector('.parent-bubble');
-      if (bubble) bubble.textContent = _pickParentFallback(fallbackKey);
-    }
-
-  } catch (err) {
+} catch (err) {
     if (err.name === 'AbortError') {
       typingLine?.remove();
       return;
@@ -7542,16 +7598,392 @@ async function checkDiaryBanner() {
     }
   }, 30000);
 }
+// ══════════════════════════════════════════════════════════════
+// 家长日志系统
+// ══════════════════════════════════════════════════════════════
+
+const parentDiaryState = {
+  isGenerating: false,
+  isEditing:    false,
+  currentRecord: null,
+  todayDate:    '',
+};
+
+/**
+ * 查询今天是否已有家长日志
+ */
+async function _getTodayParentDiary() {
+  const today = _getTodayStr();
+  const records = await dbQuery('sceneHistory', r => r.type === 'parent-diary' && r.date === today);
+  return records.length > 0 ? records[0] : null;
+}
+
+/**
+ * 用 AI 生成家长日志正文（静默调用，不打断用户）
+ * 素材：过去 24h actionLog + 最近一次家长对话最后5条 + 当前状态
+ */
+async function _generateParentDiaryContent() {
+  const pet    = runtime.pet      || {};
+  const parent = runtime.aiParent || {};
+  const s      = runtime.settings || {};
+  const pc     = s.promptConfig   || {};
+
+  const now       = Date.now();
+  const oneDayAgo = now - 24 * 3600 * 1000;
+
+  // actionLog：过去 24h，最多 10 条
+  let recentActions = [];
+  try {
+    const allLogs = await dbList('actionLog', { limit: 50 });
+    recentActions = allLogs
+      .filter(l => (l.createdAt || 0) > oneDayAgo)
+      .slice(-10)
+      .map(l => l.message || l.content || '')
+      .filter(Boolean);
+  } catch (_) {}
+
+  // parentChatHistory：最近5条
+  let recentParentChats = [];
+  try {
+    const allChats = await dbList('parentChatHistory', { limit: 20 });
+    recentParentChats = allChats
+      .slice(-5)
+      .map(c => `${c.role === 'user' ? '主人' : parent.name || '家长'}：${c.content || ''}`)
+      .filter(c => c.length > 5);
+  } catch (_) {}
+
+  // 状态描述
+  const statusDesc = [
+    `饱食度 ${Math.round(pet.hunger||0)}`,
+    `心情 ${Math.round(pet.mood||0)}`,
+    `健康 ${Math.round(pet.health||0)}`,
+    `清洁 ${Math.round(pet.clean||0)}`,
+    `亲密度 ${Math.round(pet.bond||0)}`,
+  ].join('、');
+
+  const materialParts = [];
+  if (recentActions.length) {
+    materialParts.push(`【今日行为记录】${recentActions.join('；')}`);
+  }
+  if (recentParentChats.length) {
+    materialParts.push(`【最近对话】${recentParentChats.join(' / ')}`);
+  }
+  materialParts.push(`【宠物当前状态】${statusDesc}`);
+
+  const dateDisplay = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+  const parentName  = parent.name || '家长';
+  const petName     = pet.name    || '宠物';
+
+  const systemPrompt = [
+    s.globalPrompt || '',
+    `你叫「${parentName}」，是电子宠物「${petName}」的家长。`,
+    parent.personality ? `你的性格：${parent.personality}` : '',
+    parent.customPrompt || '',
+    pc.parentExtra || '',
+    `今天是 ${dateDisplay}，请用家长的视角写一篇简短的观察日志（50字以内）。`,
+    '内容可以包括：宠物今天的状态、主人的照顾情况、你的感受或叮嘱。',
+    '语气自然，像私人笔记，不需要标题，只输出正文。',
+    materialParts.join('\n'),
+  ].filter(Boolean).join('\n');
+
+  const text = await callAI({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: '请写今天的观察日志。' },
+    ],
+    stream: false,
+  });
+
+  return text.trim();
+}
+
+/**
+ * 关闭家长 Modal 后静默生成日志
+ * 只在今天还没有日志时触发
+ */
+async function _silentGenerateParentDiary() {
+  try {
+    const existing = await _getTodayParentDiary();
+    if (existing) return; // 今天已有，不重复生成
+
+    const content = await _generateParentDiaryContent();
+    const summary = content.slice(0, 30) + (content.length > 30 ? '…' : '');
+    const today   = _getTodayStr();
+
+    const record = {
+      id:         Date.now() + Math.random(),
+      type:       'parent-diary',
+      date:       today,
+      content,
+      summary,
+      parentName: runtime.aiParent?.name || '家长',
+      createdAt:  Date.now(),
+    };
+
+    await dbAppend('sceneHistory', record);
+    logInfo('app', `Parent diary generated for ${today}`);
+  } catch (err) {
+    // 静默失败，不打扰用户
+    logError('app', `Silent parent diary generation failed: ${err.message}`);
+  }
+}
+
+/**
+ * 打开家长日志 Modal
+ */
+async function openParentDiaryModal() {
+  const overlay = document.getElementById('parent-diary-modal-overlay');
+  if (!overlay) return;
+
+  parentDiaryState.isEditing    = false;
+  parentDiaryState.isGenerating = false;
+  parentDiaryState.todayDate    = _getTodayStr();
+
+  const dateEl = document.getElementById('parent-diary-header-date');
+  if (dateEl) dateEl.textContent = _formatDiaryDate(parentDiaryState.todayDate);
+
+  overlay.classList.add('show');
+  _bindParentDiaryModal();
+
+  const existing = await _getTodayParentDiary();
+
+  if (existing) {
+    parentDiaryState.currentRecord = existing;
+    _renderParentDiaryContent(existing.content || '（日志内容为空）');
+  } else {
+    parentDiaryState.currentRecord = null;
+    await _triggerParentDiaryGeneration();
+  }
+}
+
+/**
+ * 关闭家长日志 Modal
+ */
+function closeParentDiaryModal() {
+  const overlay = document.getElementById('parent-diary-modal-overlay');
+  overlay?.classList.remove('show');
+  parentDiaryState.isEditing    = false;
+  parentDiaryState.isGenerating = false;
+}
+
+/**
+ * 绑定家长日志 Modal 内部事件
+ */
+function _bindParentDiaryModal() {
+  const closeBtn = document.getElementById('parent-diary-close-btn');
+  closeBtn?.replaceWith(closeBtn.cloneNode(true));
+  document.getElementById('parent-diary-close-btn')
+    ?.addEventListener('click', closeParentDiaryModal);
+
+  const overlay = document.getElementById('parent-diary-modal-overlay');
+  const onOverlay = (e) => {
+    if (e.target === overlay) {
+      closeParentDiaryModal();
+      overlay.removeEventListener('click', onOverlay);
+    }
+  };
+  overlay?.addEventListener('click', onOverlay);
+
+  const editBtn = document.getElementById('parent-diary-edit-btn');
+  editBtn?.replaceWith(editBtn.cloneNode(true));
+  document.getElementById('parent-diary-edit-btn')
+    ?.addEventListener('click', _toggleParentDiaryEdit);
+
+  const saveBtn = document.getElementById('parent-diary-save-btn');
+  saveBtn?.replaceWith(saveBtn.cloneNode(true));
+  document.getElementById('parent-diary-save-btn')
+    ?.addEventListener('click', _saveParentDiaryEdit);
+
+  const regenBtn = document.getElementById('parent-diary-regen-btn');
+  regenBtn?.replaceWith(regenBtn.cloneNode(true));
+  document.getElementById('parent-diary-regen-btn')
+    ?.addEventListener('click', async () => {
+      if (parentDiaryState.isGenerating) return;
+      parentDiaryState.currentRecord = null;
+      parentDiaryState.isEditing = false;
+      await _triggerParentDiaryGeneration();
+    });
+}
+
+function _renderParentDiaryContent(text) {
+  const body     = document.getElementById('parent-diary-body');
+  const editBtn  = document.getElementById('parent-diary-edit-btn');
+  const saveBtn  = document.getElementById('parent-diary-save-btn');
+  const regenBtn = document.getElementById('parent-diary-regen-btn');
+  if (!body) return;
+
+  body.innerHTML = '';
+  const contentEl = document.createElement('div');
+  contentEl.className = 'diary-content parent-diary-content';
+  contentEl.textContent = text;
+  body.appendChild(contentEl);
+
+  if (editBtn)  editBtn.style.display  = '';
+  if (saveBtn)  saveBtn.style.display  = 'none';
+  if (regenBtn) regenBtn.style.display = '';
+
+  parentDiaryState.isEditing = false;
+}
+
+function _renderParentDiaryGenerating() {
+  const body     = document.getElementById('parent-diary-body');
+  const editBtn  = document.getElementById('parent-diary-edit-btn');
+  const saveBtn  = document.getElementById('parent-diary-save-btn');
+  const regenBtn = document.getElementById('parent-diary-regen-btn');
+  if (!body) return;
+
+  body.innerHTML = '';
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'diary-loading';
+  loadingEl.innerHTML = `
+    <div class="diary-loading-icon">📋</div>
+    <div class="diary-loading-text">家长正在记录…</div>
+    <div class="diary-loading-dots">${createTypingIndicator().outerHTML}</div>
+  `;
+  body.appendChild(loadingEl);
+
+  if (editBtn)  editBtn.style.display  = 'none';
+  if (saveBtn)  saveBtn.style.display  = 'none';
+  if (regenBtn) { regenBtn.disabled = true; regenBtn.textContent = '生成中…'; }
+}
+
+async function _triggerParentDiaryGeneration() {
+  if (parentDiaryState.isGenerating) return;
+  parentDiaryState.isGenerating = true;
+
+  _renderParentDiaryGenerating();
+
+  let content = '';
+  try {
+    content = await _generateParentDiaryContent();
+  } catch (err) {
+    const parent = runtime.aiParent || {};
+    const pet    = runtime.pet      || {};
+    const fallbacks = [
+      `今天${pet.name || '宝贝'}状态还不错，主人有在好好照顾它，我放心了。`,
+      `看了一下${pet.name || '宝贝'}的状态，还算正常。希望主人继续加油！`,
+      `今天没什么特别的事，${pet.name || '宝贝'}平平安安就好。`,
+    ];
+    content = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    logError('app', `Parent diary generation failed: ${err.message}`);
+    showToast('AI 生成失败，已用本地内容替代', 'warning');
+  }
+
+  const summary = content.slice(0, 30) + (content.length > 30 ? '…' : '');
+  const today   = _getTodayStr();
+  const record  = {
+    id:         Date.now() + Math.random(),
+    type:       'parent-diary',
+    date:       today,
+    content,
+    summary,
+    parentName: runtime.aiParent?.name || '家长',
+    createdAt:  Date.now(),
+  };
+
+  try {
+    await dbAppend('sceneHistory', record);
+    parentDiaryState.currentRecord = record;
+    logInfo('app', `Parent diary generated for ${today}`);
+  } catch (err) {
+    logError('app', `Save parent diary failed: ${err.message}`);
+  }
+
+  parentDiaryState.isGenerating = false;
+
+  const regenBtn = document.getElementById('parent-diary-regen-btn');
+  if (regenBtn) { regenBtn.disabled = false; regenBtn.textContent = '🔄 重新生成'; }
+
+  _renderParentDiaryContent(content);
+}
+
+function _toggleParentDiaryEdit() {
+  if (parentDiaryState.isGenerating) return;
+
+  const body     = document.getElementById('parent-diary-body');
+  const editBtn  = document.getElementById('parent-diary-edit-btn');
+  const saveBtn  = document.getElementById('parent-diary-save-btn');
+  const regenBtn = document.getElementById('parent-diary-regen-btn');
+  if (!body) return;
+
+  if (!parentDiaryState.isEditing) {
+    const currentText = body.querySelector('.diary-content')?.textContent || '';
+    body.innerHTML = '';
+    const textarea = document.createElement('textarea');
+    textarea.className = 'diary-textarea';
+    textarea.value = currentText;
+    textarea.placeholder = '记录今天的观察…';
+    body.appendChild(textarea);
+    textarea.focus();
+
+    if (editBtn)  editBtn.textContent   = '👁 预览';
+    if (saveBtn)  saveBtn.style.display = '';
+    if (regenBtn) regenBtn.style.display = 'none';
+
+    parentDiaryState.isEditing = true;
+  } else {
+    const textarea = body.querySelector('.diary-textarea');
+    const text = textarea?.value || '';
+    _renderParentDiaryContent(text);
+    if (editBtn) editBtn.textContent = '✏️';
+  }
+}
+
+async function _saveParentDiaryEdit() {
+  const body    = document.getElementById('parent-diary-body');
+  const saveBtn = document.getElementById('parent-diary-save-btn');
+  const editBtn = document.getElementById('parent-diary-edit-btn');
+
+  const textarea = body?.querySelector('.diary-textarea');
+  if (!textarea) return;
+
+  const newContent = textarea.value.trim();
+  if (!newContent) {
+    showToast('日志内容不能为空', 'warning');
+    return;
+  }
+
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
+
+  try {
+    const record = parentDiaryState.currentRecord;
+    if (record) {
+      const updated = { ...record, content: newContent, summary: '' };
+      await dbSet('sceneHistory', updated);
+      parentDiaryState.currentRecord = updated;
+    }
+    showToast('日志已保存 ✓', 'success');
+    _renderParentDiaryContent(newContent);
+    if (editBtn) editBtn.textContent = '✏️';
+  } catch (err) {
+    showToast('保存失败：' + err.message, 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 保存'; }
+  }
+}
+
+/**
+ * 绑定家长日志系统所有入口
+ */
+function bindParentDiarySystem() {
+  // 📋 家长日志按钮（在家长 Modal 顶栏）
+  document.getElementById('parent-diary-btn')
+    ?.addEventListener('click', openParentDiaryModal);
+}
+
 
 /** 绑定日记系统所有入口 */
 function bindDiarySystem() {
   // 📝 日记按钮
   document.getElementById('btn-diary')
     ?.addEventListener('click', openDiaryModal);
+    // 新增：绑定家长日志系统
+  bindParentDiarySystem();
 
   // 启动时检查今日日记 banner（延迟 3 秒，等初始化完成）
   setTimeout(checkDiaryBanner, 3000);
 }
+
 
 
 // ── 启动 ─────────────────────────────────────────────────────
