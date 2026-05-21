@@ -6077,41 +6077,7 @@ function _pickParentFallback(key) {
   const pool = PARENT_FALLBACKS[key] || PARENT_FALLBACKS.reply;
   return pool[Math.floor(Math.random() * pool.length)];
 }
-
 // ── 打开家长 Modal ────────────────────────────────────────────
-function openParentModal() {
-  const overlay = document.getElementById('parent-modal-overlay');
-  if (!overlay) return;
-
-  const parent = runtime.aiParent || {};
-  const pet    = runtime.pet     || {};
-
-  // 填充顶栏
-  _setParentHeaderAvatar(parent.avatarUrl);
-  const nameEl = document.getElementById('parent-header-name');
-  const subEl  = document.getElementById('parent-header-sub');
-  if (nameEl) nameEl.textContent = parent.name || '妈妈';
-  if (subEl)  subEl.textContent  = 'AI 家长';
-
-  // 重置状态
-  parentState.isOpen   = true;
-  parentState.isAIBusy = false;
-  parentState.room     = 'parent-user';
-
-  // 切换到默认房间
-  _switchParentRoom('parent-user');
-
-  // 如果两个房间都是空的，触发家长开场白
-  const room1 = document.getElementById('parent-room-parent-user');
-  if (room1 && !room1.querySelector('.parent-line')) {
-    _parentGreet();
-  }
-
-  overlay.classList.add('show');
-  _bindParentModal();
-}
-
-// ── 关闭家长 Modal ────────────────────────────────────────────
 function openParentModal() {
   const overlay = document.getElementById('parent-modal-overlay');
   if (!overlay) return;
