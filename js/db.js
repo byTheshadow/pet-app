@@ -15,7 +15,6 @@ const STORES = {
   actionLog:   { keyPath: 'id', autoIncrement: true },
   sceneHistory:{ keyPath: 'id', autoIncrement: true },
   errorLog:    { keyPath: 'id', autoIncrement: true },
-  parentChatHistory: { keyPath: 'id', autoIncrement: true },  // ← 新增
 };
 
 let _db = null;
