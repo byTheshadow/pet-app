@@ -155,7 +155,7 @@
     <span class="pet-quick-icon">📝</span>
     <span class="pet-quick-label">日记</span>
   </button>
-  <button class="pet-quick-btn" id="btn-write-letter" title="宠物来信" style="display:none;">
+  <button class="pet-quick-btn" id="btn-write-letter" title="宠物来信">
     <span class="pet-quick-icon">✉️</span>
     <span class="pet-quick-label">来信</span>
   </button>
@@ -1987,6 +1987,7 @@ function _bindChatModal() {
     chatModalState.isAIBusy = true;
     if (newSend) newSend.disabled = true;
 
+chatModalState._bondBeforeSend = runtime.pet?.bond ?? 0;
 _appendChatMsg('user', text);
 
 // 存用户消息到 chatHistory
@@ -2023,12 +2024,17 @@ const typingMsg = _appendChatMsg('pet', null, true);
       }
 
       await dbAppend('chatHistory', {
-        id:        Date.now() + Math.random(),
-        role:      'assistant',
-        content:   replyText || '(´-ω-`)',
-        petName:   runtime.pet?.name,
-        createdAt: Date.now(),
-      });
+  id:        Date.now() + Math.random(),
+  role:      'assistant',
+  content:   replyText || '(´-ω-`)',
+  petName:   runtime.pet?.name,
+  createdAt: Date.now(),
+});
+await checkBondTierAndTriggerLetter(
+  chatModalState._bondBeforeSend ?? 0,
+  runtime.pet?.bond ?? 0
+);
+
 
     } catch (err) {
       typingMsg?.remove();
@@ -2377,9 +2383,12 @@ function bindPetActions() {
     const btn = e.currentTarget;
     btn.disabled = true;
     try {
+      const oldBond = runtime.pet?.bond ?? 0;
       await playWithPet();
       showToast('玩耍成功 🎮+20 心情', 'success');
-      _appendChatMsg('system', '你和宠物玩耍了 🎮');showLocalReaction('play');
+      _appendChatMsg('system', '你和宠物玩耍了 🎮');
+      showLocalReaction('play');
+      await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
     } catch (err) {
       showToast('操作失败：' + err.message, 'error');
       logError('app', 'btn-play failed', { stack: err.stack });
@@ -2393,10 +2402,12 @@ function bindPetActions() {
     const btn = e.currentTarget;
     btn.disabled = true;
     try {
+      const oldBond = runtime.pet?.bond ?? 0;
       await cleanPet();
       showToast('洗澡完成 🚿 +30 清洁', 'success');
       _appendChatMsg('system', '你帮宠物洗澡了 🚿');
       showLocalReaction('clean');
+      await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
     } catch (err) {
       showToast('操作失败：' + err.message, 'error');
       logError('app', 'btn-clean failed', { stack: err.stack });
@@ -2405,12 +2416,12 @@ function bindPetActions() {
     }
   });
 
+ 
   // ── 治疗（营养剂）──
   document.getElementById('btn-heal')?.addEventListener('click', async (e) => {
     const btn = e.currentTarget;
     const pet = runtime.pet || {};
 
-    // 没生病时不能用
     if ((pet.health ?? 100) >= 80) {
       showToast('宠物很健康，不需要吃药😊', 'info');
       return;
@@ -2418,11 +2429,14 @@ function bindPetActions() {
 
     btn.disabled = true;
     try {
+      const oldBond = runtime.pet?.bond ?? 0;
       await healPet();
       showToast('营养剂生效 💊 +50 健康', 'success');
       _appendChatMsg('system', '你给宠物吃了营养剂 💊');
       showLocalReaction('heal');
       _updateHealButton();
+      await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
+      await triggerRecoveryLetter();
     } catch (err) {
       if (err.message === '该食物当前不可用') {
         showToast('营养剂冷却中，请明天再用', 'warning');
@@ -2434,6 +2448,7 @@ function bindPetActions() {
       btn.disabled = false;
     }
   });
+
 
   // 绑定聊天入口按钮
   document.getElementById('btn-open-chat')?.addEventListener('click', openChatModal);
@@ -2522,19 +2537,19 @@ function _openFoodPanel() {
     useBtn.disabled = true;
     useBtn.textContent = '···';
 
-    try {
-      const food = await feedWithFood(foodId);
-      showToast(`${food.icon} ${food.label} 喂食成功！`, 'success');
-      _appendChatMsg('system', `你喂了宠物 ${food.icon} ${food.label}`);
-      showLocalReaction('feed');
-      _closeFoodPanel();
-    } catch (err) {
-      showToast('喂食失败：' + err.message, 'error');
-      logError('app', `feedWithFood(${foodId}) failed`, { stack: err.stack });
-      useBtn.disabled = false;
-      useBtn.textContent = '喂';
-    }
-  });
+   try {
+  const oldBond = runtime.pet?.bond ?? 0;
+  const food = await feedWithFood(foodId);
+  showToast(`${food.icon} ${food.label} 喂食成功！`, 'success');
+  _appendChatMsg('system', `你喂了宠物 ${food.icon} ${food.label}`);
+  showLocalReaction('feed');
+  _closeFoodPanel();
+  await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
+} catch (err) {
+  showToast('喂食失败：' + err.message, 'error');
+  logError('app', `feedWithFood(${foodId}) failed`, { stack: err.stack });
+  useBtn.disabled = false;
+
 
   panel.classList.add('show');
 }
@@ -5131,38 +5146,75 @@ async function openMailboxModal() {
                <div class="empty-state-icon">📭</div>
                <div class="empty-state-text">信箱是空的</div>
              </div>`
-          :letters.map(r => `
-  <div class="letter-card" data-letter-id="${r.id}">
-    <div class="letter-card-header">
-      <span class="letter-card-icon">${r.eggIcon || '📄'}</span>
-      <div class="letter-card-meta">
-        <div class="letter-card-title">
-          ${r.eggLabel || '信件'}
-          ${r.letterFrom === 'friend'
-            ? `<span style="font-size:10px; font-weight:600; padding:1px 6px;
-                border-radius:var(--radius-full);
-                background:rgba(255,180,0,0.15); color:#a07000;
-                margin-left:4px;">好友来信</span>`
-            : `<span style="font-size:10px; font-weight:600; padding:1px 6px;
-                border-radius:var(--radius-full);
-                background:rgba(90,120,255,0.12); color:#3a5bd9;
-                margin-left:4px;">冒险彩蛋</span>`
-          }
+          :letters.map(r => {
+  // 标签：好友来信（金色）/ 宠物来信（绿色）/ 冒险彩蛋（蓝色）
+  let tagHtml = '';
+  if (r.letterFrom === 'friend') {
+    tagHtml = `<span style="font-size:10px; font-weight:600; padding:1px 6px;
+      border-radius:var(--radius-full);
+      background:rgba(255,180,0,0.15); color:#a07000;
+      margin-left:4px;">好友来信</span>`;
+  } else if (r.letterFrom === 'self') {
+    tagHtml = `<span style="font-size:10px; font-weight:600; padding:1px 6px;
+      border-radius:var(--radius-full);
+      background:rgba(60,180,80,0.15); color:#1a7a30;
+      margin-left:4px;">宠物来信</span>`;
+  } else {
+    tagHtml = `<span style="font-size:10px; font-weight:600; padding:1px 6px;
+      border-radius:var(--radius-full);
+      background:rgba(90,120,255,0.12); color:#3a5bd9;
+      margin-left:4px;">冒险彩蛋</span>`;
+  }
+
+  // 副标题：来源信息
+  let subText = '';
+  if (r.letterFrom === 'friend') {
+    subText = `· 来自 ${r.friendName || '好友'}`;
+  } else if (r.letterFrom === 'self') {
+    const triggerLabel = {
+      'manual':    '手动触发',
+      'bond':      `亲密度升级`,
+      'recovered': '康复后',
+    }[r.trigger] || '';
+    subText = triggerLabel ? `· ${triggerLabel}` : '';
+  } else {
+    subText = `· ${r.sceneLabel || ''}`;
+  }
+
+  // 图标
+  const icon = r.letterFrom === 'self'
+    ? '💌'
+    : (r.eggIcon || '📄');
+
+  // 信件正文
+  const body = r.letterFrom === 'self'
+    ? (r.content || r.eggLetter || '')
+    : (r.eggLetter || '');
+
+  return `
+    <div class="letter-card ${r.letterFrom === 'self' ? 'letter-card-pet' : ''}" data-letter-id="${r.id}">
+      <div class="letter-card-header">
+        <span class="letter-card-icon">${icon}</span>
+        <div class="letter-card-meta">
+          <div class="letter-card-title">
+            ${r.eggLabel || (r.letterFrom === 'self' ? `来自 ${r.petName || runtime.pet?.name || '宠物'} 的信` : '信件')}
+            ${tagHtml}
+          </div>
+          <div class="letter-card-date">
+            ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+            ${subText}
+          </div>
         </div>
-        <div class="letter-card-date">
-          ${new Date(r.createdAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
-          ${r.letterFrom === 'friend' ? `· 来自 ${r.friendName || '好友'}` : `· ${r.sceneLabel || ''}`}
-        </div>
+        <button class="btn btn-ghost btn-sm letter-del-btn"
+          data-letter-id="${r.id}"
+          style="flex-shrink:0; padding:6px 10px; color:#ff6b6b;">
+          删除
+        </button>
       </div>
-      <button class="btn btn-ghost btn-sm letter-del-btn"
-        data-letter-id="${r.id}"
-        style="flex-shrink:0; padding:6px 10px; color:#ff6b6b;">
-        删除
-      </button>
+      <div class="letter-card-body">${body}</div>
     </div>
-    <div class="letter-card-body">${r.eggLetter || ''}</div>
-  </div>
-`).join('')
+  `;
+}).join('')
 
         }
       </div>
@@ -7979,9 +8031,247 @@ function bindDiarySystem() {
     ?.addEventListener('click', openDiaryModal);
     // 新增：绑定家长日志系统
   bindParentDiarySystem();
-
+bindPetLetterSystem(); 
   // 启动时检查今日日记 banner（延迟 3 秒，等初始化完成）
   setTimeout(checkDiaryBanner, 3000);
+}
+// ══════════════════════════════════════════════════════════════
+// 宠物来信系统
+// ══════════════════════════════════════════════════════════════
+
+// bond 段位定义
+const BOND_TIERS = [
+  { min: 0,  max: 20,  label: '陌生' },
+  { min: 21, max: 40,  label: '熟悉' },
+  { min: 41, max: 60,  label: '亲密' },
+  { min: 61, max: 80,  label: '挚友' },
+  { min: 81, max: 100, label: '灵魂伴侣' },
+];
+
+/** 根据 bond 值获取段位标签 */
+function _getBondTierLabel(bond) {
+  const tier = BOND_TIERS.find(t => bond >= t.min && bond <= t.max);
+  return tier ? tier.label : '陌生';
+}
+
+/** 检查 bond 是否跨越了段位阈值（20/40/60/80） */
+function _checkBondTierCrossed(oldBond, newBond) {
+  const thresholds = [20, 40, 60, 80];
+  for (const t of thresholds) {
+    if (oldBond < t && newBond >= t) return t;
+    // 也检查下降（衰减跨段位，不触发来信，只上升才触发）
+  }
+  return null;
+}
+
+/**
+ * 获取最近3篇日记摘要，用于注入来信 prompt
+ */
+async function _getRecentDiarySummaries() {
+  try {
+    const records = await dbQuery('sceneHistory', r => r.type === 'diary' && r.summary, { limit: 10 });
+    // 按时间倒序取最近3篇
+    return records
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 3)
+      .map(r => {
+        const d = new Date(r.createdAt);
+        const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+        return `${dateStr} ${r.summary}`;
+      });
+  } catch (_) {
+    return [];
+  }
+}
+
+/**
+ * 用 AI 生成宠物来信正文
+ * @param {'manual'|'bond'|'recovered'} trigger 触发原因
+ * @param {number} [crossedThreshold] bond 跨越的阈值（bond 触发时传入）
+ */
+async function _generatePetLetterContent(trigger, crossedThreshold) {
+  const pet = runtime.pet || {};
+  const s   = runtime.settings || {};
+  const pc  = s.promptConfig || {};
+
+  // 收集素材
+  const diarySummaries = await _getRecentDiarySummaries();
+  const bondTierLabel  = _getBondTierLabel(pet.bond || 0);
+
+  // 触发原因描述
+  const triggerDesc = {
+    manual:    '宠物想主动给主人写一封信，表达最近的心情和感受。',
+    bond:      `宠物和主人的关系刚刚升级到「${bondTierLabel}」，宠物很激动，想写信庆祝。`,
+    recovered: '宠物刚刚从生病中康复，想写信感谢主人的照顾。',
+  }[trigger] || '宠物想给主人写一封信。';
+
+  // 记忆素材
+  const memoryPart = diarySummaries.length
+    ? `【近期记忆】\n${diarySummaries.join('\n')}`
+    : '';
+
+  const statusDesc = [
+    `饱食度 ${Math.round(pet.hunger||0)}`,
+    `心情 ${Math.round(pet.mood||0)}`,
+    `健康 ${Math.round(pet.health||0)}`,
+    `亲密度 ${Math.round(pet.bond||0)}（${bondTierLabel}）`,
+  ].join('、');
+
+  // 获取性格 prompt
+  const personalityPrompt = pet.customPrompt || (() => {
+    const presets = {
+      tsundere: '表面冷淡实则关心，说话时经常用"才、才不是"等傲娇语气，偶尔脸红。',
+      genki:    '活泼开朗，充满正能量，说话语速快，喜欢用感叹号和开心的颜文字。',
+      lazy:     '慵懒随性，说话简短，经常表示困倦，但对喜欢的事会突然来劲。',
+      kuudere:  '表面温和，内心腹黑，偶尔说出意想不到的毒舌话，但不是恶意的。',
+      airhead:  '天然呆萌，经常误解意思，反应慢半拍，但非常可爱真诚。',
+      calm:     '冷静理性，说话简洁有条理，不轻易表露情绪，但内心细腻。',
+    };
+    return presets[pet.personality] || presets.genki;
+  })();
+
+  const systemPrompt = [
+    s.globalPrompt || '',
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物，正在给主人写一封信。`,
+    personalityPrompt,
+    pc.petExtra || '',
+    triggerDesc,
+    memoryPart,
+    `【当前状态】${statusDesc}`,
+    '用第一人称写信，150字以内，有情感有细节，语气符合你的性格。',
+    '可以提及近期记忆里的具体事情，让信件更真实。',
+    '只输出信件正文，不需要称呼和落款。',
+  ].filter(Boolean).join('\n\n');
+
+  const text = await callAI({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: '请写这封信。' },
+    ],
+    stream: false,
+  });
+
+  return text.trim();
+}
+
+/**
+ * 生成并存储宠物来信
+ * @param {'manual'|'bond'|'recovered'} trigger
+ * @param {number} [crossedThreshold]
+ * @param {boolean} [silent=false] 静默模式（不显示 toast 进度）
+ */
+async function generatePetLetter(trigger = 'manual', crossedThreshold = null, silent = false) {
+  const pet = runtime.pet || {};
+
+  if (!silent) showToast('宠物正在写信…', 'info', 2000);
+
+  let content = '';
+  try {
+    content = await _generatePetLetterContent(trigger, crossedThreshold);
+  } catch (err) {
+    // 本地兜底
+    const fallbacks = {
+      manual: [
+        `主人，最近还好吗？我一直在想你。每次你来陪我，我都好开心。希望你也要好好照顾自己哦！`,
+        `主人！我今天突然很想给你写信。你有没有想我呀？我可是一直都在等你的！(｡•̀ᴗ-)✧`,
+        `主人，我有很多话想说，但不知道从哪里开始……总之，谢谢你一直陪着我。`,
+      ],
+      bond: [
+        `主人！我们的关系变得更亲密了，我好开心！以后要继续一起玩哦！(≧▽≦)`,
+        `主人，我感觉我们越来越像真正的朋友了。谢谢你一直陪着我、照顾我。`,
+        `主人，你知道吗，我觉得我们之间有一种特别的联系。希望这种感觉能一直持续下去。`,
+      ],
+      recovered: [
+        `主人，我好多了！谢谢你在我生病的时候照顾我。有你在真的好安心。`,
+        `主人！我康复啦！之前生病的时候好难受，幸好有你陪着我。我会好好保重身体的！`,
+        `主人，谢谢你给我吃药。我现在感觉好多了，可以继续陪你玩了！(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧`,
+      ],
+    };
+    const list = fallbacks[trigger] || fallbacks.manual;
+    content = list[Math.floor(Math.random() * list.length)];
+    logError('app', `Pet letter generation failed: ${err.message}`);
+    if (!silent) showToast('AI 生成失败，已用本地内容替代', 'warning');
+  }
+
+  // 存入 sceneHistory
+  const record = {
+    id:          Date.now() + Math.random(),
+    type:        'pet-letter',
+    isLetter:    true,
+    letterFrom:  'self',
+    trigger,
+    content,
+    eggLabel:    `来自 ${pet.name || '宠物'} 的信`,
+    petName:     pet.name || '',
+    bondTier:    _getBondTierLabel(pet.bond || 0),
+    createdAt:   Date.now(),
+    letterRead:  false,
+  };
+
+  try {
+    await dbAppend('sceneHistory', record);
+    logInfo('app', `Pet letter generated, trigger=${trigger}`);
+    updateMailboxBadge();
+    if (!silent) showToast(`💌 收到 ${pet.name || '宠物'} 的来信！`, 'success', 4000);
+  } catch (err) {
+    logError('app', `Save pet letter failed: ${err.message}`);
+  }
+
+  return record;
+}
+
+/**
+ * bond 跨段位检测，在每次 savePet 后调用
+ * @param {number} oldBond 保存前的 bond 值
+ * @param {number} newBond 保存后的 bond 值
+ */
+async function checkBondTierAndTriggerLetter(oldBond, newBond) {
+  const crossed = _checkBondTierCrossed(oldBond, newBond);
+  if (!crossed) return;
+
+  logInfo('app', `Bond tier crossed threshold ${crossed}: ${oldBond} → ${newBond}`);
+
+  // 静默生成（不打断用户操作）
+  await generatePetLetter('bond', crossed, true);
+
+  // 延迟 1 秒再显示 toast，避免和操作反馈重叠
+  setTimeout(() => {
+    const pet = runtime.pet || {};
+    const tierLabel = _getBondTierLabel(newBond);
+    showToast(`💌 亲密度升级到「${tierLabel}」！${pet.name || '宠物'} 给你写了一封信`, 'success', 5000);
+  }, 1000);
+}
+
+/**
+ * 康复后触发来信
+ * 在 healPet 成功后调用
+ */
+async function triggerRecoveryLetter() {
+  const pet = runtime.pet || {};
+  if ((pet.health ?? 100) >= 80) {
+    // 康复了，触发来信
+    await generatePetLetter('recovered', null, true);
+    setTimeout(() => {
+      showToast(`💌 ${pet.name || '宠物'} 康复后给你写了一封信`, 'success', 4000);
+    }, 800);
+  }
+}
+
+/** 绑定宠物来信系统所有入口 */
+function bindPetLetterSystem() {
+  // ✉️ 手动写信按钮
+  document.getElementById('btn-write-letter')
+    ?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-write-letter');
+      if (btn) { btn.disabled = true; }
+      try {
+        await generatePetLetter('manual', null, false);
+        // 生成成功后打开信箱
+        setTimeout(openMailboxModal, 500);
+      } finally {
+        if (btn) { btn.disabled = false; }
+      }
+    });
 }
 
 
