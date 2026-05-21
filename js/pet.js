@@ -259,7 +259,7 @@ export async function healPet() {
 }
 
 // ── 获取宠物当前状态描述（注入 AI prompt）────────────────────
-export function getPetStatusContext(pet) {
+export function getPetStatusContext(pet, memoryContext = '') {
   const p = pet || runtime.pet;
   if (!p) return '';
 
@@ -270,14 +270,22 @@ export function getPetStatusContext(pet) {
     `心情:${Math.round(p.mood)}/100`,
     `健康:${Math.round(p.health)}/100${isSick ? '（生病中！）' : ''}`,
     `清洁:${Math.round(p.clean)}/100`,
-    `亲密度:${Math.round(p.bond)}/100`,].join('，');
+    `亲密度:${Math.round(p.bond)}/100`,
+  ].join('，');
 
   const moodDesc   = p.mood   > 70 ? '心情很好'   : p.mood   > 40 ? '心情一般' : '心情很差';
-  const hungerDesc = p.hunger < 30 ? '非常饥饿'   : p.hunger < 60 ? '有点饿': '不饿';
+  const hungerDesc = p.hunger < 30 ? '非常饥饿'   : p.hunger < 60 ? '有点饿'   : '不饿';
   const sickDesc   = isSick ? '身体不舒服，需要主人照顾。' : '';
 
-  return `【当前状态】${statusDesc}。${moodDesc}，${hungerDesc}。${sickDesc}`;
+  const base = `【当前状态】${statusDesc}。${moodDesc}，${hungerDesc}。${sickDesc}`;
+
+  // 注入记忆
+  if (memoryContext) {
+    return `${base}\n\n${memoryContext}`;
+  }
+  return base;
 }
+
 
 // ── 获取性格 prompt ──────────────────────────────────────────
 export function getPersonalityPrompt(pet) {
@@ -287,7 +295,32 @@ export function getPersonalityPrompt(pet) {
   const preset = PERSONALITY_PRESETS[p.personality];
   return preset ? preset.prompt : PERSONALITY_PRESETS.genki.prompt;
 }
+// ── 查询近期日记摘要，用于记忆注入 ──────────────────────────
+async function _getMemoryContext() {
+  try {
+    const { dbQuery } = await import('./db.js');
 
+    // 宠物日记：最近3篇，有 summary 的
+    const diaries = await dbQuery('sceneHistory',
+      r => r.type === 'diary' && r.summary
+    );
+    const recentDiaries = diaries
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 3);
+
+    if (!recentDiaries.length) return '';
+
+    const lines = recentDiaries.map(r => {
+      const d = new Date(r.createdAt);
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+      return `${dateStr} ${r.summary}`;
+    });
+
+    return `【近期记忆】\n${lines.join('\n')}`;
+  } catch (_) {
+    return '';
+  }
+}
 // ── AI 对话（宠物回复）───────────────────────────────────────
 export async function petChat({ userText, onChunk, signal }) {
   const pet = runtime.pet;

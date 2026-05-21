@@ -1093,6 +1093,7 @@
 </div><!-- /parent-diary-modal-overlay -->
 
 
+
 </div><!-- /app-shell -->
 
 <script type="module">
@@ -6009,11 +6010,17 @@ setTimeout(() => {
 
 // ── 家长 Modal 状态 ───────────────────────────────────────────
 const parentState = {
-  isOpen:    false,
-  isAIBusy:  false,
-  abortCtrl: null,
-  room:      'parent-user',  // 'parent-user' | 'parent-trio'
+  isOpen:      false,
+  room:        'parent-user',
+  isAIBusy:    false,
+  abortCtrl:   null,
+  // 新增：
+  memoryCache: {
+    diaries:      '',   // 宠物日记摘要（注入宠物 prompt）
+    parentDiaries: '',  // 家长日志摘要（注入家长 prompt）
+  },
 };
+
 
 // ── 本地兜底台词 ──────────────────────────────────────────────
 const PARENT_FALLBACKS = {
@@ -6105,21 +6112,41 @@ function openParentModal() {
 }
 
 // ── 关闭家长 Modal ────────────────────────────────────────────
-function closeParentModal() {
+function openParentModal() {
   const overlay = document.getElementById('parent-modal-overlay');
-  overlay?.classList.remove('show');
-  parentState.isOpen = false;
+  if (!overlay) return;
 
-  if (parentState.abortCtrl) {
-    parentState.abortCtrl.abort();
-    parentState.abortCtrl = null;
+  const parent = runtime.aiParent || {};
+  const pet    = runtime.pet     || {};
+
+  // 填充顶栏
+  _setParentHeaderAvatar(parent.avatarUrl);
+  const nameEl = document.getElementById('parent-header-name');
+  const subEl  = document.getElementById('parent-header-sub');
+  if (nameEl) nameEl.textContent = parent.name || '妈妈';
+  if (subEl)  subEl.textContent  = 'AI 家长';
+
+  // 重置状态
+  parentState.isOpen   = true;
+  parentState.isAIBusy = false;
+  parentState.room     = 'parent-user';
+
+  // 切换到默认房间
+  _switchParentRoom('parent-user');
+
+  // 如果两个房间都是空的，触发家长开场白
+  const room1 = document.getElementById('parent-room-parent-user');
+  if (room1 && !room1.querySelector('.parent-line')) {
+    _parentGreet();
   }
 
-  // 关闭后静默生成今日家长日志（有 API Key 才触发）
-  if (runtime.settings?.apiKey) {
-    _silentGenerateParentDiary();
-  }
+  // 预加载记忆缓存（后台加载，不阻塞 Modal 打开）
+  _loadParentMemoryCache();
+
+  overlay.classList.add('show');
+  _bindParentModal();
 }
+
 
 
 // ── 设置家长头像 ──────────────────────────────────────────────
@@ -6537,6 +6564,8 @@ function _buildParentSystemPrompt(scene = '') {
     parent.personality ? `你的性格：${parent.personality}` : '',
     parent.customPrompt || '',
     pc.parentExtra || '',
+    parentState.memoryCache?.diaries      || '',   // ← 宠物日记摘要
+    parentState.memoryCache?.parentDiaries || '',  // ← 家长日志摘要
     scene,
     '用符合你性格的语气说话，回复简短（40字以内），可以用颜文字。只输出这句话本身。',
   ].filter(Boolean);
@@ -6595,6 +6624,7 @@ function _buildPetSystemPromptForParent(scene = '') {
     `你的性格：${personalityPrompt}`,
     pc.petExtra || '',
     statusContext,
+    parentState.memoryCache?.diaries || '',   // ← 注入宠物日记摘要
     scene,
     behaviorRule,
   ].filter(Boolean);
@@ -8018,6 +8048,47 @@ async function _saveParentDiaryEdit() {
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 保存'; }
   }
 }
+// ── 预加载记忆缓存（打开家长 Modal 时调用）──────────────────
+async function _loadParentMemoryCache() {
+  try {
+    // 宠物日记摘要（最近3篇）
+    const diaries = await dbQuery('sceneHistory',
+      r => r.type === 'diary' && r.summary
+    );
+    const recentDiaries = diaries
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 3)
+      .map(r => {
+        const d = new Date(r.createdAt);
+        return `${d.getMonth()+1}/${d.getDate()} ${r.summary}`;
+      });
+
+    parentState.memoryCache.diaries = recentDiaries.length
+      ? `【近期记忆】\n${recentDiaries.join('\n')}`
+      : '';
+
+    // 家长日志摘要（最近3篇）
+    const parentDiaries = await dbQuery('sceneHistory',
+      r => r.type === 'parent-diary' && r.summary
+    );
+    const recentParentDiaries = parentDiaries
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 3)
+      .map(r => {
+        const d = new Date(r.createdAt);
+        return `${d.getMonth()+1}/${d.getDate()} ${r.summary}`;
+      });
+
+    parentState.memoryCache.parentDiaries = recentParentDiaries.length
+      ? `【家长观察】\n${recentParentDiaries.join('\n')}`
+      : '';
+
+    logInfo('app', `Memory cache loaded: ${recentDiaries.length} diaries, ${recentParentDiaries.length} parent diaries`);
+  } catch (err) {
+    logError('app', `Load memory cache failed: ${err.message}`);
+  }
+}
+
 
 /**
  * 绑定家长日志系统所有入口
