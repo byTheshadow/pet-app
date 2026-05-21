@@ -4,7 +4,7 @@
 //              chatHistory / actionLog / sceneHistory / errorLog
 
 const DB_NAME = 'PetDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
   settings:    { keyPath: 'id' },
@@ -15,6 +15,7 @@ const STORES = {
   actionLog:   { keyPath: 'id', autoIncrement: true },
   sceneHistory:{ keyPath: 'id', autoIncrement: true },
   errorLog:    { keyPath: 'id', autoIncrement: true },
+  parentChatHistory: { keyPath: 'id', autoIncrement: true },  // ← 新增
 };
 
 let _db = null;
