@@ -4,7 +4,7 @@
 //              chatHistory / actionLog / sceneHistory / errorLog
 
 const DB_NAME = 'PetDB';
-const DB_VERSION = 2;
+const DB_VERSION = 1;
 
 const STORES = {
   settings:    { keyPath: 'id' },
