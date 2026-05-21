@@ -2458,9 +2458,13 @@ function bindPetActions() {
 
   // 初始化治疗按钮状态
   _updateHealButton();
+   _updateLetterBtnState();
 
   // 监听宠物状态变化，更新治疗按钮
   bus.on(EVENTS.PET_UPDATED, () => _updateHealButton());
+   _updateLetterBtnState();
+
+
 }
 
 // ── 治疗按钮状态更新 ─────────────────────────────────────────
@@ -8262,18 +8266,59 @@ async function triggerRecoveryLetter() {
 function bindPetLetterSystem() {
   // ✉️ 手动写信按钮
   document.getElementById('btn-write-letter')
-    ?.addEventListener('click', async () => {
-      const btn = document.getElementById('btn-write-letter');
-      if (btn) { btn.disabled = true; }
-      try {
-        await generatePetLetter('manual', null, false);
-        // 生成成功后打开信箱
-        setTimeout(openMailboxModal, 500);
-      } finally {
-        if (btn) { btn.disabled = false; }
-      }
-    });
+  ?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-write-letter');
+
+    // bond 门槛检查
+    const bond = runtime.pet?.bond ?? 0;
+    if (bond < 20) {
+      showToast(`还不够熟悉，多陪陪 ${runtime.pet?.name || '宠物'} 吧～`, 'info');
+      return;
+    }
+
+    // 24 小时冷却检查
+    const lastLetterAt = parseInt(localStorage.getItem('petos-manual-letter-cd') || '0', 10);
+    const remaining = (lastLetterAt + 24 * 3600000) - Date.now();
+    if (remaining > 0) {
+      const hours   = Math.floor(remaining / 3600000);
+      const minutes = Math.floor((remaining % 3600000) / 60000);
+      showToast(`今天已经写过信了，${hours > 0 ? hours + ' 小时' : ''}${minutes} 分钟后再来吧`, 'info');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; }
+    try {
+      await generatePetLetter('manual', null, false);
+      localStorage.setItem('petos-manual-letter-cd', String(Date.now()));
+      setTimeout(openMailboxModal, 500);
+    } finally {
+      if (btn) { btn.disabled = false; }
+    }
+  });
+    _updateLetterBtnState();
 }
+
+function _updateLetterBtnState() {
+  const btn = document.getElementById('btn-write-letter');
+  if (!btn) return;
+
+  const bond = runtime.pet?.bond ?? 0;
+  const lastLetterAt = parseInt(localStorage.getItem('petos-manual-letter-cd') || '0', 10);
+  const remaining = (lastLetterAt + 24 * 3600000) - Date.now();
+
+  if (bond < 20) {
+    btn.title = '亲密度不足，无法写信';
+    btn.style.opacity = '0.45';
+  } else if (remaining > 0) {
+    const hours = Math.floor(remaining / 3600000);
+    btn.title = `冷却中，还需 ${hours} 小时`;
+    btn.style.opacity = '0.45';
+  } else {
+    btn.title = '宠物来信';
+    btn.style.opacity = '';
+  }
+}
+
 
 
 // ── 启动 ─────────────────────────────────────────────────────
