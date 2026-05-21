@@ -7279,6 +7279,7 @@ async function _getTodayDiary() {
  * @returns {string} 日记正文
  */
 async function _generateDiaryContent() {
+  const { callAI, buildSystemPrompt } = await import('./js/ai.js');
   const pet      = runtime.pet      || {};
   const settings = runtime.settings || {};
   const pc       = settings.promptConfig || {};
@@ -7328,7 +7329,6 @@ async function _generateDiaryContent() {
   }
   materialParts.push(`【当前状态】${statusDesc}`);
 
-  const { buildSystemPrompt } = await import('./js/ai.js');
   const { getPersonalityPrompt } = await import('./js/pet.js');
   const personalityPrompt = getPersonalityPrompt(pet);
 
@@ -7699,6 +7699,7 @@ async function _getTodayParentDiary() {
  * 素材：过去 24h actionLog + 最近一次家长对话最后5条 + 当前状态
  */
 async function _generateParentDiaryContent() {
+  const { callAI } = await import('./js/ai.js');
   const pet    = runtime.pet      || {};
   const parent = runtime.aiParent || {};
   const s      = runtime.settings || {};
@@ -8155,6 +8156,7 @@ async function _getRecentDiarySummaries() {
  * @param {number} [crossedThreshold] bond 跨越的阈值（bond 触发时传入）
  */
 async function _generatePetLetterContent(trigger, crossedThreshold) {
+   const { callAI } = await import('./js/ai.js'); 
   const pet = runtime.pet || {};
   const s   = runtime.settings || {};
   const pc  = s.promptConfig || {};
