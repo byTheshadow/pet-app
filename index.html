@@ -2529,7 +2529,7 @@ function _openFoodPanel() {
   });
 
   // 事件委托：点击喂食按钮
-  list.addEventListener('click', async (e) => {
+ list.addEventListener('click', async (e) => {
     const useBtn = e.target.closest('.food-use-btn');
     if (!useBtn) return;
 
@@ -2537,22 +2537,23 @@ function _openFoodPanel() {
     useBtn.disabled = true;
     useBtn.textContent = '···';
 
-   try {
-  const oldBond = runtime.pet?.bond ?? 0;
-  const food = await feedWithFood(foodId);
-  showToast(`${food.icon} ${food.label} 喂食成功！`, 'success');
-  _appendChatMsg('system', `你喂了宠物 ${food.icon} ${food.label}`);
-  showLocalReaction('feed');
-  _closeFoodPanel();
-  await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
-} catch (err) {
-  showToast('喂食失败：' + err.message, 'error');
-  logError('app', `feedWithFood(${foodId}) failed`, { stack: err.stack });
-  useBtn.disabled = false;
-
+    try {
+      const oldBond = runtime.pet?.bond ?? 0;
+      const food = await feedWithFood(foodId);
+      showToast(`${food.icon} ${food.label} 喂食成功！`, 'success');
+      _appendChatMsg('system', `你喂了宠物 ${food.icon} ${food.label}`);
+      showLocalReaction('feed');
+      _closeFoodPanel();
+      await checkBondTierAndTriggerLetter(oldBond, runtime.pet?.bond ?? 0);
+    } catch (err) {
+      showToast('喂食失败：' + err.message, 'error');
+      logError('app', `feedWithFood(${foodId}) failed`, { stack: err.stack });
+      useBtn.disabled = false;
+    }
+  });  // ← });  在 catch 块外面，关闭 addEventListener 回调
 
   panel.classList.add('show');
-}
+}  // ← 关闭 _openFoodPanel 函数
 
 function _closeFoodPanel() {
   document.getElementById('food-panel')?.classList.remove('show');
@@ -6476,7 +6477,7 @@ async function _parentSpeak(room, role, messages, fallbackKey = 'reply') {
       createdAt: Date.now(),
     });
   }
-
+  
 } catch (err) {
     if (err.name === 'AbortError') {
       typingLine?.remove();
@@ -8273,7 +8274,6 @@ function bindPetLetterSystem() {
       }
     });
 }
-
 
 
 // ── 启动 ─────────────────────────────────────────────────────
