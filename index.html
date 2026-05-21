@@ -1958,8 +1958,18 @@ function _bindChatModal() {
     chatModalState.isAIBusy = true;
     if (newSend) newSend.disabled = true;
 
-    _appendChatMsg('user', text);
-    const typingMsg = _appendChatMsg('pet', null, true);
+_appendChatMsg('user', text);
+
+// 存用户消息到 chatHistory
+await dbAppend('chatHistory', {
+  id:        Date.now() + Math.random(),
+  role:      'user',
+  content:   text,
+  createdAt: Date.now(),
+});
+
+const typingMsg = _appendChatMsg('pet', null, true);
+
 
     chatModalState.abortCtrl = new AbortController();
     let replyText = '';
