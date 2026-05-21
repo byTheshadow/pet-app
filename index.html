@@ -6113,6 +6113,22 @@ function openParentModal() {
   _bindParentModal();
 }
 
+// ── 关闭家长 Modal ────────────────────────────────────────────
+function closeParentModal() {
+  const overlay = document.getElementById('parent-modal-overlay');
+  overlay?.classList.remove('show');
+  parentState.isOpen = false;
+
+  if (parentState.abortCtrl) {
+    parentState.abortCtrl.abort();
+    parentState.abortCtrl = null;
+  }
+
+  // 关闭后静默生成今日家长日志（有 API Key 才触发）
+  if (runtime.settings?.apiKey) {
+    _silentGenerateParentDiary();
+  }
+}
 
 
 // ── 设置家长头像 ──────────────────────────────────────────────
