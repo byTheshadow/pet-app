@@ -1119,6 +1119,7 @@ import {
   petChat, triggerEmotionBubble,FOOD_LIST, canUseFood, getFoodCooldownRemaining, feedWithFood,
 } from './js/pet.js';
 import { fetchModels } from './js/ai.js';
+import { initVisitSystem, openVisitComposer } from './js/visit.js';
 
 // ── 主题切换 ─────────────────────────────────────────────────
 function initTheme() {
@@ -1207,6 +1208,7 @@ async function init() {
   initParentTrigger();
   bindPromptTab();
   fillPromptForms();
+  initVisitSystem();
 
 
 
@@ -3523,13 +3525,18 @@ async function renderFriendsList() {
     });
     const visitBtn = document.createElement('button');
 visitBtn.className = 'visit-btn';
-visitBtn.textContent = '串门';
-visitBtn.title = '邀请好友来串门';
-visitBtn.addEventListener('click', (e) => {
+visitBtn.textContent = '做客';
+visitBtn.title = '打开做客面板';
+visitBtn.addEventListener('click', async (e) => {
   e.stopPropagation();
-  openVisitModal(f);
+  try {
+    await openVisitComposer(f);
+  } catch (err) {
+    showToast('打开做客面板失败：' + err.message, 'error');
+  }
 });
 actions.appendChild(visitBtn);
+
 
     actions.appendChild(delBtn);
 
@@ -3619,6 +3626,7 @@ function bindFriendsPage() {
             personality:  document.getElementById('new-friend-personality')?.value.trim().slice(0, 50) || '性格神秘',
             avatarUrl:    document.getElementById('new-friend-avatar')?.value.trim()   || '',
             customPrompt: document.getElementById('new-friend-prompt')?.value.trim()   || '',
+            speciesGroup: 'mammal',
             intimacy:     0,
             lastVisitAt:  null,
             memoryContext:'',
@@ -3681,6 +3689,7 @@ function bindFriendsPage() {
           personality:  String(data.personality  || '性格神秘').slice(0, 50),
           customPrompt: String(data.customPrompt || '').slice(0, 200),
           avatarUrl:    '',
+          speciesGroup: 'mammal',
           intimacy:     0,
           lastVisitAt:  null,
           memoryContext:'',

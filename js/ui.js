@@ -104,14 +104,17 @@ export function createTypingIndicator() {
 }
 
 // ── 按钮 loading 状态 ────────────────────────────────────────
-export function setButtonLoading(btn, loading, originalText = '') {
+export function setButtonLoading(btn, loading, loadingText = '处理中...', originalText = '') {
   if (!btn) return;
   btn.disabled = loading;
+
   if (loading) {
-    btn.dataset.originalText = btn.textContent;
-    btn.textContent = '···';
+    btn.dataset.originalText = originalText || btn.textContent;
+    btn.textContent = loadingText;
+    btn.classList.add('is-loading');
   } else {
-    btn.textContent = originalText || btn.dataset.originalText || btn.textContent;
+    btn.textContent = btn.dataset.originalText || originalText || btn.textContent;
+    btn.classList.remove('is-loading');
   }
 }
 

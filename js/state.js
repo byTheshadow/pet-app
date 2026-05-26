@@ -8,6 +8,7 @@ export const DEFAULT_PET = {
   avatarUrl:   '',
   personality: 'genki',       // 预设性格 key
   customPrompt:'',
+  speciesGroup: 'mammal',
   hunger:      80,
   mood:        80,
   health:      80,
@@ -289,3 +290,199 @@ export const EASTER_EGGS = [
     expReward: 40,
   },
 ];
+// ── 宠物分类 / 串门系统配置 ─────────────────────────────────
+
+export const SPECIES_GROUPS = {
+  mammal:    { label: '哺乳动物', icon: '🐶' },
+  amphibian: { label: '两栖动物', icon: '🐸' },
+  reptile:   { label: '爬行动物', icon: '🦎' },
+  bird:      { label: '鸟类', icon: '🐦' },
+  fish:      { label: '鱼类', icon: '🐟' },
+  generic:   { label: '通用', icon: '🐾' },
+};
+
+export const VISIT_MODES = {
+  INCOMING_CHAT: 'incoming-chat',
+  OUTGOING_CHAT: 'outgoing-chat',
+  OUTGOING_FOCUS: 'outgoing-focus',
+};
+
+export const VISIT_STATUS = {
+  IDLE: 'idle',
+  PREPARING: 'preparing',
+  ACTIVE: 'active',
+  AUTO_CHAT: 'auto-chat',
+  FOCUS: 'focus',
+  ENDING: 'ending',
+  ERROR: 'error',
+  COMPLETED: 'completed',
+};
+
+export const VISIT_TOY_ITEMS = [
+  {
+    id: 'ball',
+    label: '球球',
+    icon: '⚽',
+    desc: '热闹追逐，适合活泼型互动',
+    species: ['mammal', 'bird', 'generic'],
+    effects: { mood: 4, intimacy: 2 },
+    promptTag: '一起追逐球球，气氛很热闹',
+  },
+  {
+    id: 'pond_set',
+    label: '迷你水池',
+    icon: '💧',
+    desc: '适合喜欢水边或湿润环境的宠物',
+    species: ['amphibian', 'fish', 'generic'],
+    effects: { mood: 4, intimacy: 2 },
+    promptTag: '一起围着迷你水池玩耍，气氛清凉轻松',
+  },
+  {
+    id: 'warm_stone',
+    label: '暖石台',
+    icon: '🪨',
+    desc: '适合晒晒暖暖石头的宠物',
+    species: ['reptile', 'generic'],
+    effects: { mood: 3, intimacy: 2 },
+    promptTag: '一起趴在暖石台旁边放松，气氛安稳',
+  },
+  {
+    id: 'feather_wand',
+    label: '羽毛逗逗棒',
+    icon: '🪶',
+    desc: '轻快灵活，很适合跳跃扑抓',
+    species: ['bird', 'mammal', 'generic'],
+    effects: { mood: 5, intimacy: 1 },
+    promptTag: '被羽毛逗逗棒逗得很开心，笑闹不停',
+  },
+  {
+    id: 'storybook',
+    label: '绘本',
+    icon: '📖',
+    desc: '安静陪伴型互动',
+    species: ['generic'],
+    effects: { mood: 2, intimacy: 3 },
+    promptTag: '一起翻看绘本，小声交流',
+  },
+  {
+    id: 'plush',
+    label: '毛绒玩偶',
+    icon: '🧸',
+    desc: '治愈温柔型互动',
+    species: ['mammal', 'bird', 'generic'],
+    effects: { mood: 3, intimacy: 3 },
+    promptTag: '抱着毛绒玩偶聊天，氛围柔和',
+  },
+];
+
+export const VISIT_GIFT_ITEMS = [
+  {
+    id: 'snack_box',
+    label: '零食礼盒',
+    icon: '🎁',
+    desc: '大多数宠物都会喜欢的小礼物',
+    species: ['generic'],
+    effects: { intimacy: 4, mood: 2 },
+    promptTag: '带来了一份零食礼盒，对方很开心',
+  },
+  {
+    id: 'fruit_jelly',
+    label: '果冻小杯',
+    icon: '🍮',
+    desc: '清凉小点心，适合湿润型宠物',
+    species: ['amphibian', 'fish', 'generic'],
+    effects: { intimacy: 3, mood: 3 },
+    promptTag: '带来果冻小杯作为伴手礼，让对方眼前一亮',
+  },
+  {
+    id: 'sun_card',
+    label: '晒太阳卡片',
+    icon: '☀️',
+    desc: '适合喜欢温暖环境的宠物',
+    species: ['reptile', 'generic'],
+    effects: { intimacy: 4, mood: 1 },
+    promptTag: '带来了一张暖洋洋主题的小卡片，对方觉得很贴心',
+  },
+  {
+    id: 'seed_mix',
+    label: '种子拼配包',
+    icon: '🌾',
+    desc: '轻巧可爱，适合鸟类朋友',
+    species: ['bird', 'generic'],
+    effects: { intimacy: 4, mood: 2 },
+    promptTag: '带来了一个种子拼配包，对方非常喜欢',
+  },
+];
+
+export const VISIT_OUTING_PACK_ITEMS = [
+  {
+    id: 'water_bottle',
+    label: '小水壶',
+    icon: '🥤',
+    desc: '出门补水更安心',
+    species: ['generic'],
+    effects: { mood: 1, health: 1 },
+    promptTag: '带着自己的小水壶，出门更安心',
+  },
+  {
+    id: 'comfort_toy',
+    label: '安抚玩偶',
+    icon: '🧸',
+    desc: '陌生环境也不紧张',
+    species: ['mammal', 'bird', 'generic'],
+    effects: { mood: 2 },
+    promptTag: '抱着熟悉的安抚玩偶，心里更踏实',
+  },
+  {
+    id: 'mist_spray',
+    label: '保湿喷雾',
+    icon: '🌫️',
+    desc: '适合潮湿感偏好的宠物',
+    species: ['amphibian', 'generic'],
+    effects: { mood: 2, health: 1 },
+    promptTag: '带着保湿喷雾，状态舒服很多',
+  },
+  {
+    id: 'heat_pad',
+    label: '暖暖垫',
+    icon: '🔥',
+    desc: '适合偏好温暖的小伙伴',
+    species: ['reptile', 'generic'],
+    effects: { mood: 2, health: 1 },
+    promptTag: '带着暖暖垫，出门也能保持舒适',
+  },
+];
+
+export const VISIT_FALLBACK_EASTER_EGGS = [
+  {
+    id: 'toy_love',
+    text: '它们居然同时喜欢上了同一个玩具，围着它开心地转来转去。',
+    effects: { intimacy: 2, mood: 2 },
+  },
+  {
+    id: 'secret_whisper',
+    text: '它们凑在一起嘀嘀咕咕，像是交换了一个只有宠物才懂的小秘密。',
+    effects: { intimacy: 3, mood: 1 },
+  },
+  {
+    id: 'nap_together',
+    text: '玩累之后，它们并排靠着休息了一会儿，气氛安静又温柔。',
+    effects: { intimacy: 2, mood: 2 },
+  },
+  {
+    id: 'gift_hit',
+    text: '伴手礼意外特别对胃口，对方一下子就对这次做客更期待了。',
+    effects: { intimacy: 3, mood: 2 },
+  },
+];
+
+export function getSpeciesMeta(speciesGroup = 'generic') {
+  return SPECIES_GROUPS[speciesGroup] || SPECIES_GROUPS.generic;
+}
+
+export function getCompatibleVisitItems(items, speciesGroup = 'generic') {
+  return items.filter(item => {
+    const list = item.species || ['generic'];
+    return list.includes('generic') || list.includes(speciesGroup);
+  });
+}
