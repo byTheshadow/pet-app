@@ -132,6 +132,18 @@ function pickVisitFallback(role, scene = 'general') {
   return merged[Math.floor(Math.random() * merged.length)];
 }
 
+function clearAllVisitTypingIndicators() {
+  if (!visitRuntime.typingMap) {
+    visitRuntime.typingMap = new Map();
+    return;
+  }
+
+  for (const node of visitRuntime.typingMap.values()) {
+    node?.remove();
+  }
+  visitRuntime.typingMap.clear();
+}
+// === 区块结束：clearAllVisitTypingIndicators ===
 
 
 function resetVisitRuntime(friend) {
