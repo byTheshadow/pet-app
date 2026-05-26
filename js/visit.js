@@ -26,18 +26,55 @@ const visitRuntime = {
   startedContext: null,
 };
 
-const VISIT_FAREWELL_FALLBACKS = {
+const VISIT_LEGACY_FALLBACKS = {
   pet: [
-    '今天真的很开心，下次也要来玩哦！(´▽`)',
-    '路上要小心呀，下次再一起玩～',
-    '我会记得今天的，拜拜啦！',
+    '（开心地摇尾巴）',
+    '哇，你来了！',
+    '嗯嗯！',
+    '（好奇地看着）',
+    '一起玩吧！',
+    '（蹭了蹭）',
+    '下次还要来玩哦！(´▽`)',
+    '今天好开心，拜拜～',
   ],
   friend: [
-    '今天玩得超开心，下次我还想来！(≧▽≦)',
-    '谢谢招待呀，我下次再来找你玩～',
-    '我要回家啦，记得想我哦，拜拜～',
+    '你好你好！',
+    '（友好地打招呼）',
+    '嗯！',
+    '好有趣哦！',
+    '（开心地转圈）',
+    '我们做朋友吧！',
+    '今天玩得好开心，下次再来！(≧▽≦)',
+    '拜拜～记得想我哦！',
   ],
 };
+
+const VISIT_EXTRA_FALLBACKS = {
+  pet: [
+    '嘿嘿，和你一起待着就很开心呀～',
+    '今天的时间过得好快呀 (´▽`)',
+    '我会记得这次做客的！',
+  ],
+  friend: [
+    '这里真的好温暖，我很喜欢！',
+    '今天的相处让我心情超好～',
+    '下次我们还要继续一起玩！',
+  ],
+};
+
+const VISIT_FAREWELL_FALLBACKS = {
+  pet: [
+    '下次还要来玩哦！(´▽`)',
+    '今天好开心，拜拜～',
+    '路上要小心呀，下次再一起玩～',
+  ],
+  friend: [
+    '今天玩得好开心，下次再来！(≧▽≦)',
+    '拜拜～记得想我哦！',
+    '谢谢招待呀，我下次再来找你玩～',
+  ],
+};
+
 
 export function initVisitSystem() {
   injectVisitStyles();
@@ -79,6 +116,21 @@ export async function openVisitComposer(friend) {
 
   renderPreparationView();
 }
+
+function pickVisitFallback(role, scene = 'general') {
+  if (scene === 'farewell') {
+    const pool = VISIT_FAREWELL_FALLBACKS[role] || VISIT_FAREWELL_FALLBACKS.friend;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  const legacyPool = VISIT_LEGACY_FALLBACKS[role] || VISIT_LEGACY_FALLBACKS.friend;
+  const extraPool  = VISIT_EXTRA_FALLBACKS[role]  || VISIT_EXTRA_FALLBACKS.friend;
+  const merged = [...legacyPool, ...extraPool];
+
+  return merged[Math.floor(Math.random() * merged.length)];
+}
+
+
 
 function resetVisitRuntime(friend) {
   if (visitRuntime.focusTimer) {
@@ -745,12 +797,39 @@ async function finishVisitWithFarewell(btn) {
       messages: visitRuntime.messages,
     });
 
-    setInlineStatus('做客结束啦');
-    showToast('做客记录已保存', 'success');
+        visitRuntime.status = VISIT_STATUS.COMPLETED;
+    setInlineStatus('做客已经结束啦，可以手动关闭页面');
+    showToast('做客记录已保存，请手动关闭', 'success');
 
-    setTimeout(() => {
-      closeVisitComposer();
-    }, 1200);
+    const endBtnEl = document.getElementById('visit2-end-chat-btn');
+    if (endBtnEl) {
+      endBtnEl.disabled = true;
+      endBtnEl.textContent = '已结束';
+    }
+
+    const inputEl = document.getElementById('visit2-user-input');
+    const sendBtnEl = document.getElementById('visit2-user-send-btn');
+    const autoBtnEl = document.getElementById('visit2-auto-btn');
+    const stopBtnEl = document.getElementById('visit2-stop-auto-btn');
+
+    if (inputEl) {
+      inputEl.disabled = true;
+      inputEl.placeholder = '本次做客已结束';
+    }
+    if (sendBtnEl) {
+      sendBtnEl.disabled = true;
+      sendBtnEl.textContent = '已结束';
+    }
+    if (autoBtnEl) {
+      autoBtnEl.disabled = true;
+      autoBtnEl.textContent = '已结束';
+    }
+    if (stopBtnEl) {
+      stopBtnEl.disabled = true;
+    }
+
+    appendVisitMessage('system', 'system', '本次做客已结束，你可以手动关闭页面。');
+
   } catch (err) {
     showToast(`结束做客失败：${err.message}`, 'error');
     setInlineStatus(`结束失败：${err.message}`);
@@ -766,7 +845,8 @@ async function generateFarewellLine(role, friend) {
     ? buildFriendFarewellMessages(friend, pet)
     : buildPetFarewellMessages(pet, friend);
 
-  const fallback = pickFarewellFallback(role);
+  const fallback = pickVisitFallback(role, 'farewell');
+
 
   try {
     const reply = await callAI({
@@ -780,33 +860,46 @@ async function generateFarewellLine(role, friend) {
 }
 
 function buildFriendFarewellMessages(friend, pet) {
+  const pc = runtime.settings?.promptConfig || {};
+  const interactionRule = pc.friendInteraction || pc.interaction || '';
+
   const system = [
-    `你是一只名叫「${friend.name}」的电子宠物。`,
+    `你是一只名叫「${friend.name}」的电子宠物，在好友「${pet.name || '宠物'}」家玩了一段时间。`,
     friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
-    `你今天和「${pet.name || '宠物'}」一起做客聊天，已经准备回家了。`,
-    '请说一句温柔可爱的告别语，不超过30字。',
-    '语气要像宠物，不要解释，不要分点，只输出这句话本身。',
-  ].join('\n');
+    pc.friendInteraction || '',
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '现在要回家了，说一句温暖的告别语（30字以内），表达今天玩得很开心，下次还要来。可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
 
   return [
     { role: 'system', content: system },
-    { role: 'user', content: '现在要回家了，请说一句告别的话。' },
+    { role: 'user', content: '你要回家了，说一句告别的话。' },
   ];
 }
 
 function buildPetFarewellMessages(pet, friend) {
+  const { getPersonalityPrompt, getPetStatusContext } = window._petHelpers || {};
+  const personalityPrompt = getPersonalityPrompt ? getPersonalityPrompt(pet) : '';
+  const statusContext = getPetStatusContext ? getPetStatusContext(pet) : '';
+  const pc = runtime.settings?.promptConfig || {};
+  const interactionRule = pc.friendInteraction || pc.interaction || '';
+
   const system = [
     `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
-    `你的好友「${friend.name}」今天和你玩得很开心，现在要分别了。`,
-    '请说一句温柔可爱的送别语，不超过30字。',
-    '语气要自然、可爱，可以带颜文字，只输出这句话本身。',
-  ].join('\n');
+    personalityPrompt,
+    pc.petExtra || '',
+    statusContext,
+    `你的好友「${friend.name}」今天来做客，现在要回家了。`,
+    interactionRule ? `互动规则：${interactionRule}` : '',
+    '说一句依依不舍的送别语（30字以内），表达今天很开心，欢迎下次再来。可以用颜文字。只输出这句话本身。',
+  ].filter(Boolean).join('\n');
 
   return [
     { role: 'system', content: system },
-    { role: 'user', content: '请和好友说一句告别的话。' },
+    { role: 'user', content: `${friend.name} 要回家了，你怎么送别？` },
   ];
 }
+
 
 function pickFarewellFallback(role) {
   const pool = VISIT_FAREWELL_FALLBACKS[role] || VISIT_FAREWELL_FALLBACKS.friend;
@@ -999,13 +1092,12 @@ async function generateSingleLine({ speaker, friend, contextData, userText = '',
 ${userText ? `用户刚刚说：${userText}` : '请自然接一句。'}
 `;
 
-  return await safeAIText({
+   return await safeAIText({
     systemPrompt,
     userText: userPrompt,
-    fallback: speaker === 'pet'
-      ? '嘿嘿，感觉今天会很好玩呀 (≧▽≦)'
-      : '我也觉得这里好有趣，想再多玩一会儿～',
+    fallback: pickVisitFallback(speaker, 'general'),
   });
+
 }
 
 async function getVisitEasterEgg(friend, contextData = {}) {
