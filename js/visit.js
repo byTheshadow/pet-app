@@ -1159,22 +1159,38 @@ function injectVisitStyles() {
       justify-content:center;
       padding:18px;
     }
+.visit2-modal{
+  width:min(860px, 100%);
+  height:min(92vh, 920px);
+  max-height:92vh;
+  display:flex;
+  min-height:0;
+}
 
-    .visit2-modal{
-      width:min(860px, 100%);
-      max-height:92vh;
-    }
+.visit2-shell{
+  background:var(--bg-shell);
+  color:var(--text-primary);
+  border:1px solid var(--border-color);
+  border-radius:28px;
+  box-shadow:var(--shadow-shell);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  height:100%;
+  min-height:0;
+}
 
-    .visit2-shell{
-      background:var(--bg-shell);
-      color:var(--text-primary);
-      border:1px solid var(--border-color);
-      border-radius:28px;
-      box-shadow:var(--shadow-shell);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-    }
+.visit2-content{
+  flex:1;
+  min-height:0;
+  padding:18px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  background:var(--bg-screen);
+}
+
 
     .visit2-topbar{
       display:flex;
@@ -1505,15 +1521,18 @@ function injectVisitStyles() {
       padding:12px 14px;
     }
 
-    .visit2-chat-stream{
-      min-height:340px;
-      max-height:46vh;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-      padding:4px;
-    }
+   .visit2-chat-stream{
+  min-height:340px;
+  max-height:46vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  padding:4px;
+}
+
 
     .visit2-msg{
       display:flex;
@@ -1672,6 +1691,12 @@ function injectVisitStyles() {
       .visit2-content{
         padding:14px;
       }
+        .visit2-modal{
+  width:100%;
+  height:94vh;
+  max-height:94vh;
+}
+
 
       .visit2-topbar{
         padding:16px;
