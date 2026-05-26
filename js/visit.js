@@ -8,7 +8,6 @@ import {
   VISIT_OUTING_PACK_ITEMS,
   VISIT_FALLBACK_EASTER_EGGS,
   getCompatibleVisitItems,
-  getSpeciesMeta,
 } from './state.js';
 import { callAI, buildSystemPrompt } from './ai.js';
 import { savePet } from './pet.js';
@@ -24,6 +23,20 @@ const visitRuntime = {
   autoStop: false,
   focusTimer: null,
   focusEndAt: null,
+  startedContext: null,
+};
+
+const VISIT_FAREWELL_FALLBACKS = {
+  pet: [
+    '今天真的很开心，下次也要来玩哦！(´▽`)',
+    '路上要小心呀，下次再一起玩～',
+    '我会记得今天的，拜拜啦！',
+  ],
+  friend: [
+    '今天玩得超开心，下次我还想来！(≧▽≦)',
+    '谢谢招待呀，我下次再来找你玩～',
+    '我要回家啦，记得想我哦，拜拜～',
+  ],
 };
 
 export function initVisitSystem() {
@@ -37,45 +50,22 @@ export async function openVisitComposer(friend) {
   }
 
   closeVisitComposer();
-  visitRuntime.friend = friend;
-  visitRuntime.mode = VISIT_MODES.INCOMING_CHAT;
-  visitRuntime.status = VISIT_STATUS.IDLE;
-  visitRuntime.messages = [];
-  visitRuntime.intimacyGain = 0;
-  visitRuntime.autoRunning = false;
-  visitRuntime.autoStop = false;
-
-  const pet = runtime.pet || {};
-  const friendSpecies = friend.speciesGroup || 'mammal';
-
-  const toyItems = getCompatibleVisitItems(VISIT_TOY_ITEMS, friendSpecies);
-  const giftItems = getCompatibleVisitItems(VISIT_GIFT_ITEMS, friendSpecies);
-  const packItems = getCompatibleVisitItems(VISIT_OUTING_PACK_ITEMS, pet.speciesGroup || 'mammal');
+  resetVisitRuntime(friend);
 
   const overlay = document.createElement('div');
   overlay.id = 'visit2-overlay';
   overlay.innerHTML = `
-    <div class="visit2-panel">
-      <div class="visit2-header">
-        <div>
-          <div class="visit2-title">宠物做客</div>
-          <div class="visit2-sub">${pet.name || '我的宠物'} × ${friend.name}</div>
-        </div>
-        <button class="visit2-close" id="visit2-close-btn">✕</button>
-      </div>
-
-      <div class="visit2-body">
-        <div class="visit2-mode-row">
-          <button class="visit2-mode active" data-mode="${VISIT_MODES.INCOMING_CHAT}">来我家做客</button>
-          <button class="visit2-mode" data-mode="${VISIT_MODES.OUTGOING_CHAT}">去对方家做客</button>
-          <button class="visit2-mode" data-mode="${VISIT_MODES.OUTGOING_FOCUS}">做客番茄钟</button>
+    <div class="visit2-modal">
+      <div class="visit2-shell">
+        <div class="visit2-topbar">
+          <div class="visit2-topbar-left">
+            <div class="visit2-title">宠物做客</div>
+            <div class="visit2-subtitle">${escapeHtml((runtime.pet?.name || '我的宠物'))} × ${escapeHtml(friend.name || '好友')}</div>
+          </div>
+          <button class="visit2-icon-btn" id="visit2-close-btn" aria-label="关闭">✕</button>
         </div>
 
-        <div class="visit2-status" id="visit2-status">请选择本次做客方式与准备内容</div>
-
-        <div id="visit2-config-area"></div>
-
-        <div id="visit2-active-area" style="display:none;"></div>
+        <div class="visit2-content" id="visit2-content"></div>
       </div>
     </div>
   `;
@@ -87,16 +77,24 @@ export async function openVisitComposer(friend) {
     if (e.target === overlay) closeVisitComposer();
   });
 
-  overlay.querySelectorAll('.visit2-mode').forEach(btn => {
-    btn.addEventListener('click', () => {
-      overlay.querySelectorAll('.visit2-mode').forEach(x => x.classList.remove('active'));
-      btn.classList.add('active');
-      visitRuntime.mode = btn.dataset.mode;
-      renderConfigArea({ toyItems, giftItems, packItems, friend });
-    });
-  });
+  renderPreparationView();
+}
 
-  renderConfigArea({ toyItems, giftItems, packItems, friend });
+function resetVisitRuntime(friend) {
+  if (visitRuntime.focusTimer) {
+    clearInterval(visitRuntime.focusTimer);
+    visitRuntime.focusTimer = null;
+  }
+
+  visitRuntime.friend = friend;
+  visitRuntime.mode = VISIT_MODES.INCOMING_CHAT;
+  visitRuntime.status = VISIT_STATUS.IDLE;
+  visitRuntime.messages = [];
+  visitRuntime.intimacyGain = 0;
+  visitRuntime.autoRunning = false;
+  visitRuntime.autoStop = false;
+  visitRuntime.focusEndAt = null;
+  visitRuntime.startedContext = null;
 }
 
 function closeVisitComposer() {
@@ -108,105 +106,148 @@ function closeVisitComposer() {
   if (old) old.remove();
 }
 
-function renderConfigArea({ toyItems, giftItems, packItems, friend }) {
-  const config = document.getElementById('visit2-config-area');
-  const active = document.getElementById('visit2-active-area');
-  if (!config || !active) return;
+function renderPreparationView() {
+  const root = document.getElementById('visit2-content');
+  if (!root) return;
 
-  active.style.display = 'none';
-  config.style.display = 'block';
+  const pet = runtime.pet || {};
+  const friend = visitRuntime.friend || {};
+  const friendSpecies = friend.speciesGroup || 'mammal';
+  const petSpecies = pet.speciesGroup || 'mammal';
+
+  const toyItems = getCompatibleVisitItems(VISIT_TOY_ITEMS, friendSpecies);
+  const giftItems = getCompatibleVisitItems(VISIT_GIFT_ITEMS, friendSpecies);
+  const packItems = getCompatibleVisitItems(VISIT_OUTING_PACK_ITEMS, petSpecies);
+
+  root.innerHTML = `
+    <div class="visit2-prep-stack">
+      <section class="visit2-card">
+        <div class="visit2-mode-switch">
+          <button class="visit2-mode-chip active" data-mode="${VISIT_MODES.INCOMING_CHAT}">来我家做客</button>
+          <button class="visit2-mode-chip" data-mode="${VISIT_MODES.OUTGOING_CHAT}">去对方家做客</button>
+          <button class="visit2-mode-chip" data-mode="${VISIT_MODES.OUTGOING_FOCUS}">做客番茄钟</button>
+        </div>
+        <div class="visit2-soft-tip" id="visit2-soft-tip">先准备待客内容，然后进入可爱的聊天界面</div>
+      </section>
+
+      <div id="visit2-prep-body"></div>
+    </div>
+  `;
+
+  root.querySelectorAll('.visit2-mode-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.visit2-mode-chip').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      visitRuntime.mode = btn.dataset.mode;
+      renderPreparationBody({ toyItems, giftItems, packItems });
+    });
+  });
+
+  renderPreparationBody({ toyItems, giftItems, packItems });
+}
+
+function renderPreparationBody({ toyItems, giftItems, packItems }) {
+  const body = document.getElementById('visit2-prep-body');
+  if (!body) return;
 
   if (visitRuntime.mode === VISIT_MODES.INCOMING_CHAT) {
-    config.innerHTML = `
-      <div class="visit2-section">
-        <div class="visit2-section-title">为来访好友准备玩具箱</div>
-        <div class="visit2-grid">
-          ${toyItems.map(item => itemCard(item, 'toy')).join('')}
+    body.innerHTML = `
+      <section class="visit2-card">
+        <div class="visit2-section-title">玩具箱</div>
+        <div class="visit2-card-grid">
+          ${toyItems.map(item => renderSelectCard(item, 'toy')).join('')}
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-section">
+      <section class="visit2-card">
         <div class="visit2-section-title">自定义玩具（最多 2 个）</div>
-        <div class="visit2-custom-wrap">
+        <div class="visit2-field-stack">
           <input class="visit2-input" id="visit2-custom-toy-1" maxlength="16" placeholder="例如：彩虹积木" />
           <input class="visit2-input" id="visit2-custom-toy-2" maxlength="16" placeholder="例如：星星小鼓" />
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-actions">
-        <button class="visit2-primary" id="visit2-start-btn">开始做客聊天</button>
-      </div>
+      <section class="visit2-card visit2-action-card">
+        <button class="visit2-primary-btn" id="visit2-start-btn">开始做客聊天</button>
+      </section>
     `;
   }
 
   if (visitRuntime.mode === VISIT_MODES.OUTGOING_CHAT) {
-    config.innerHTML = `
-      <div class="visit2-section">
-        <div class="visit2-section-title">给 ${friend.name} 准备伴手礼</div>
-        <div class="visit2-grid">
-          ${giftItems.map(item => itemCard(item, 'gift', true)).join('')}
+    body.innerHTML = `
+      <section class="visit2-card">
+        <div class="visit2-section-title">伴手礼</div>
+        <div class="visit2-card-grid">
+          ${packSingleSelectCards(VISIT_GIFT_ITEMS, getCompatibleVisitItems(VISIT_GIFT_ITEMS, visitRuntime.friend?.speciesGroup || 'mammal'), 'gift')}
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-section">
-        <div class="visit2-section-title">整理出门包</div>
-        <div class="visit2-grid">
-          ${packItems.map(item => itemCard(item, 'pack')).join('')}
+      <section class="visit2-card">
+        <div class="visit2-section-title">出门包</div>
+        <div class="visit2-card-grid">
+          ${packItems.map(item => renderSelectCard(item, 'pack')).join('')}
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-actions">
-        <button class="visit2-primary" id="visit2-start-btn">开始去做客</button>
-      </div>
+      <section class="visit2-card visit2-action-card">
+        <button class="visit2-primary-btn" id="visit2-start-btn">开始去做客</button>
+      </section>
     `;
   }
 
   if (visitRuntime.mode === VISIT_MODES.OUTGOING_FOCUS) {
-    config.innerHTML = `
-      <div class="visit2-section">
-        <div class="visit2-section-title">给 ${friend.name} 准备伴手礼</div>
-        <div class="visit2-grid">
-          ${giftItems.map(item => itemCard(item, 'gift', true)).join('')}
+    body.innerHTML = `
+      <section class="visit2-card">
+        <div class="visit2-section-title">伴手礼</div>
+        <div class="visit2-card-grid">
+          ${packSingleSelectCards(VISIT_GIFT_ITEMS, getCompatibleVisitItems(VISIT_GIFT_ITEMS, visitRuntime.friend?.speciesGroup || 'mammal'), 'gift')}
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-section">
-        <div class="visit2-section-title">整理出门包</div>
-        <div class="visit2-grid">
-          ${packItems.map(item => itemCard(item, 'pack')).join('')}
+      <section class="visit2-card">
+        <div class="visit2-section-title">出门包</div>
+        <div class="visit2-card-grid">
+          ${packItems.map(item => renderSelectCard(item, 'pack')).join('')}
         </div>
-      </div>
+      </section>
 
-      <div class="visit2-section">
+      <section class="visit2-card">
         <div class="visit2-section-title">我的专注任务</div>
-        <input class="visit2-input" id="visit2-focus-task" maxlength="40" placeholder="例如：写报告 / 背单词 / 画图" />
-      </div>
+        <input class="visit2-input" id="visit2-focus-task" maxlength="40" placeholder="例如：写报告 / 读书 / 背单词" />
+      </section>
 
-      <div class="visit2-section">
+      <section class="visit2-card">
         <div class="visit2-section-title">番茄钟时长（分钟）</div>
         <input class="visit2-input" id="visit2-focus-minutes" type="number" min="1" max="300" value="25" placeholder="请输入分钟数" />
-      </div>
+      </section>
 
-      <div class="visit2-actions">
-        <button class="visit2-primary" id="visit2-start-btn">开始番茄钟</button>
-      </div>
+      <section class="visit2-card visit2-action-card">
+        <button class="visit2-primary-btn" id="visit2-start-btn">开始番茄钟</button>
+      </section>
     `;
   }
 
-  bindConfigActions(friend);
+  bindPreparationActions();
 }
 
-function bindConfigActions(friend) {
+function bindPreparationActions() {
   const startBtn = document.getElementById('visit2-start-btn');
   if (!startBtn) return;
 
   startBtn.addEventListener('click', async () => {
-    if (visitRuntime.mode === VISIT_MODES.INCOMING_CHAT) {
-      await startIncomingChat(friend, startBtn);
-    } else if (visitRuntime.mode === VISIT_MODES.OUTGOING_CHAT) {
-      await startOutgoingChat(friend, startBtn);
-    } else {
-      await startFocusVisit(friend, startBtn);
+    const friend = visitRuntime.friend;
+    if (!friend) return;
+
+    try {
+      if (visitRuntime.mode === VISIT_MODES.INCOMING_CHAT) {
+        await startIncomingChat(friend, startBtn);
+      } else if (visitRuntime.mode === VISIT_MODES.OUTGOING_CHAT) {
+        await startOutgoingChat(friend, startBtn);
+      } else {
+        await startFocusVisit(friend, startBtn);
+      }
+    } catch (err) {
+      showToast(`启动失败：${err.message}`, 'error');
     }
   });
 }
@@ -220,9 +261,8 @@ async function startIncomingChat(friend, btn) {
     return;
   }
 
+  setButtonLoading(btn, true, '正在准备待客...');
   try {
-    setButtonLoading(btn, true, '正在准备待客...');
-    setVisitStatus('正在布置玩具箱...');
     const intro = await generateVisitIntro({
       mode: VISIT_MODES.INCOMING_CHAT,
       friend,
@@ -230,17 +270,31 @@ async function startIncomingChat(friend, btn) {
       customToys,
     });
 
-    showToast('做客开始啦', 'success');
-    openChatScene({
+    visitRuntime.startedContext = {
+      selectedToys,
+      customToys,
+      selectedGift: null,
+      selectedPack: [],
+      focusTask: '',
+      focusMinutes: 0,
+    };
+
+    renderChatView({
       title: `${friend.name} 来做客啦`,
-      subtitle: `玩具箱已准备好`,
       intro,
-      friend,
-      contextData: { selectedToys, customToys },
     });
-  } catch (err) {
-    showToast(`开始失败：${err.message}`, 'error');
-    setVisitStatus(`开始失败：${err.message}`, 'error');
+
+    appendVisitMessage('system', 'system', '聊天开始啦，宠物们已经见面了。');
+    appendVisitMessage('friend', friend.name, intro);
+    const petReply = await generateSingleLine({
+      speaker: 'pet',
+      friend,
+      contextData: visitRuntime.startedContext,
+      mode: visitRuntime.mode,
+    });
+    appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
+    bumpIntimacy(1);
+    showToast('做客开始啦', 'success');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -255,9 +309,8 @@ async function startOutgoingChat(friend, btn) {
     return;
   }
 
+  setButtonLoading(btn, true, '正在安排出发...');
   try {
-    setButtonLoading(btn, true, '正在整理出门包...');
-    setVisitStatus('正在准备伴手礼...');
     const intro = await generateVisitIntro({
       mode: VISIT_MODES.OUTGOING_CHAT,
       friend,
@@ -265,17 +318,31 @@ async function startOutgoingChat(friend, btn) {
       selectedPack,
     });
 
-    showToast('已经出发去做客啦', 'success');
-    openChatScene({
+    visitRuntime.startedContext = {
+      selectedToys: [],
+      customToys: [],
+      selectedGift,
+      selectedPack,
+      focusTask: '',
+      focusMinutes: 0,
+    };
+
+    renderChatView({
       title: `去 ${friend.name} 家做客`,
-      subtitle: `带上了伴手礼与出门包`,
       intro,
-      friend,
-      contextData: { selectedGift, selectedPack },
     });
-  } catch (err) {
-    showToast(`开始失败：${err.message}`, 'error');
-    setVisitStatus(`开始失败：${err.message}`, 'error');
+
+    appendVisitMessage('system', 'system', '你的小宠物已经带着礼物出发了。');
+    appendVisitMessage('pet', runtime.pet?.name || '宠物', intro);
+    const friendReply = await generateSingleLine({
+      speaker: 'friend',
+      friend,
+      contextData: visitRuntime.startedContext,
+      mode: visitRuntime.mode,
+    });
+    appendVisitMessage('friend', friend.name, friendReply);
+    bumpIntimacy(1);
+    showToast('已经出发去做客啦', 'success');
   } finally {
     setButtonLoading(btn, false);
   }
@@ -296,11 +363,18 @@ async function startFocusVisit(friend, btn) {
     return;
   }
 
+  setButtonLoading(btn, true, '正在启动番茄钟...');
   try {
-    setButtonLoading(btn, true, '正在启动番茄钟...');
-    setVisitStatus('宠物正在出发...');
+    visitRuntime.startedContext = {
+      selectedToys: [],
+      customToys: [],
+      selectedGift,
+      selectedPack,
+      focusTask,
+      focusMinutes: minutes,
+    };
 
-    openFocusScene({
+    renderFocusView({
       friend,
       selectedGift,
       selectedPack,
@@ -309,141 +383,135 @@ async function startFocusVisit(friend, btn) {
     });
 
     showToast('番茄钟已开始', 'success');
-  } catch (err) {
-    showToast(`启动失败：${err.message}`, 'error');
-    setVisitStatus(`启动失败：${err.message}`, 'error');
   } finally {
     setButtonLoading(btn, false);
   }
 }
 
-function openChatScene({ title, subtitle, intro, friend, contextData }) {
-  const config = document.getElementById('visit2-config-area');
-  const active = document.getElementById('visit2-active-area');
-  if (!config || !active) return;
+function renderChatView({ title, intro }) {
+  const root = document.getElementById('visit2-content');
+  const pet = runtime.pet || {};
+  const friend = visitRuntime.friend || {};
+  if (!root) return;
 
-  config.style.display = 'none';
-  active.style.display = 'block';
   visitRuntime.status = VISIT_STATUS.ACTIVE;
   visitRuntime.messages = [];
 
-  active.innerHTML = `
-    <div class="visit2-chat-header">
-      <div>
-        <div class="visit2-section-title">${title}</div>
-        <div class="visit2-mini">${subtitle}</div>
-      </div>
-      <div class="visit2-mini" id="visit2-intimacy-text">亲密度 +0</div>
-    </div>
+  root.innerHTML = `
+    <div class="visit2-chat-layout">
+      <section class="visit2-chat-header-card">
+        <div class="visit2-chat-header-main">
+          <div class="visit2-dual-avatars">
+            <div class="visit2-entity">
+              ${renderAvatarNode('pet', pet.avatarUrl, '🐱')}
+              <div class="visit2-entity-name">${escapeHtml(pet.name || '我的宠物')}</div>
+            </div>
+            <div class="visit2-entity visit2-entity-right">
+              ${renderAvatarNode('friend', friend.avatarUrl, '🐾')}
+              <div class="visit2-entity-name">${escapeHtml(friend.name || '好友')}</div>
+            </div>
+          </div>
 
-    <div class="visit2-chat-box" id="visit2-chat-box"></div>
+          <div class="visit2-chat-header-text">
+            <div class="visit2-chat-title">${escapeHtml(title)}</div>
+            <div class="visit2-chat-sub" id="visit2-chat-sub">${escapeHtml(intro)}</div>
+          </div>
+        </div>
 
-    <div class="visit2-auto-row">
-      <input class="visit2-input small" id="visit2-auto-rounds" type="number" min="1" max="10" value="3" />
-      <button class="visit2-secondary" id="visit2-auto-btn">自动聊天</button>
-      <button class="visit2-ghost" id="visit2-stop-auto-btn">停止</button>
-    </div>
+        <div class="visit2-chat-header-actions">
+          <div class="visit2-intimacy" id="visit2-intimacy-badge">亲密度 +0</div>
+          <button class="visit2-icon-btn" id="visit2-settings-btn" aria-label="设置">⚙</button>
+        </div>
+      </section>
 
-    <div class="visit2-auto-row">
-      <input class="visit2-input" id="visit2-user-input" maxlength="80" placeholder="你也可以插一句话..." />
-      <button class="visit2-primary" id="visit2-user-send-btn">发送</button>
-    </div>
+      <section class="visit2-drawer-card" id="visit2-settings-drawer" hidden>
+        <div class="visit2-settings-grid">
+          <div class="visit2-settings-block">
+            <div class="visit2-settings-title">自动聊天轮数</div>
+            <div class="visit2-inline-row">
+              <input class="visit2-input visit2-round-input" id="visit2-auto-rounds" type="number" min="1" max="10" value="3" />
+              <button class="visit2-secondary-btn" id="visit2-auto-btn">自动聊天</button>
+              <button class="visit2-ghost-btn" id="visit2-stop-auto-btn">停止</button>
+            </div>
+          </div>
 
-    <div class="visit2-actions">
-      <button class="visit2-secondary" id="visit2-end-chat-btn">结束做客</button>
+          <div class="visit2-settings-block">
+            <div class="visit2-settings-title">本次做客准备</div>
+            <div class="visit2-setting-summary" id="visit2-setting-summary">${escapeHtml(buildSettingSummaryText(visitRuntime.startedContext || {}))}</div>
+          </div>
+
+          <div class="visit2-settings-block visit2-settings-danger">
+            <button class="visit2-danger-btn" id="visit2-end-chat-btn">结束做客</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="visit2-chat-stream-card">
+        <div class="visit2-chat-stream" id="visit2-chat-stream"></div>
+      </section>
+
+      <section class="visit2-input-card">
+        <div class="visit2-input-row">
+          <input class="visit2-input visit2-chat-input" id="visit2-user-input" maxlength="80" placeholder="你也可以插一句话..." />
+          <button class="visit2-primary-btn visit2-send-btn" id="visit2-user-send-btn">发送</button>
+        </div>
+        <div class="visit2-inline-tip" id="visit2-inline-status">准备好后就可以开始聊天啦</div>
+      </section>
     </div>
   `;
 
-  appendChatLine('system', intro);
-
-  document.getElementById('visit2-auto-btn')?.addEventListener('click', async (e) => {
-    const rounds = Number(document.getElementById('visit2-auto-rounds')?.value || 0);
-    if (!rounds || rounds < 1) {
-      showToast('请输入有效轮数', 'warn');
-      return;
-    }
-    await runAutoChat(rounds, friend, contextData, e.currentTarget);
-  });
-
-  document.getElementById('visit2-stop-auto-btn')?.addEventListener('click', () => {
-    visitRuntime.autoStop = true;
-    showToast('正在停止自动聊天...', 'info');
-  });
-
-  document.getElementById('visit2-user-send-btn')?.addEventListener('click', async () => {
-    const input = document.getElementById('visit2-user-input');
-    const text = input?.value.trim();
-    if (!text) return;
-    input.value = '';
-    appendChatLine('user', text);
-    setVisitStatus('正在生成回应...');
-    try {
-      const petReply = await generateSingleLine({
-        speaker: 'pet',
-        friend,
-        contextData,
-        userText: text,
-        mode: visitRuntime.mode,
-      });
-      appendChatLine('pet', petReply);
-
-      const friendReply = await generateSingleLine({
-        speaker: 'friend',
-        friend,
-        contextData,
-        userText: text,
-        mode: visitRuntime.mode,
-      });
-      appendChatLine('friend', friendReply);
-
-      bumpIntimacy(1);
-      setVisitStatus('回应完成');
-    } catch (err) {
-      showToast(`聊天失败：${err.message}`, 'error');
-      setVisitStatus(`聊天失败：${err.message}`, 'error');
-    }
-  });
-
-  document.getElementById('visit2-end-chat-btn')?.addEventListener('click', async () => {
-    setVisitStatus('正在结束做客...');
-    const egg = await getVisitEasterEgg(friend, contextData);
-    appendChatLine('system', `今天的做客结束啦。${egg.text}`);
-    bumpIntimacy(egg.effects?.intimacy || 2);
-    await persistVisitResult(friend, {
-      mode: visitRuntime.mode,
-      contextData,
-      egg,
-      messages: visitRuntime.messages,
-    });
-    showToast('做客记录已保存', 'success');
-  });
+  bindChatActions();
 }
 
-function openFocusScene({ friend, selectedGift, selectedPack, focusTask, minutes }) {
-  const config = document.getElementById('visit2-config-area');
-  const active = document.getElementById('visit2-active-area');
-  if (!config || !active) return;
+function renderFocusView({ friend, selectedGift, selectedPack, focusTask, minutes }) {
+  const root = document.getElementById('visit2-content');
+  if (!root) return;
 
-  config.style.display = 'none';
-  active.style.display = 'block';
   visitRuntime.status = VISIT_STATUS.FOCUS;
+
+  root.innerHTML = `
+    <div class="visit2-focus-layout">
+      <section class="visit2-chat-header-card">
+        <div class="visit2-chat-header-main">
+          <div class="visit2-dual-avatars">
+            <div class="visit2-entity">
+              ${renderAvatarNode('pet', runtime.pet?.avatarUrl, '🐱')}
+              <div class="visit2-entity-name">${escapeHtml(runtime.pet?.name || '我的宠物')}</div>
+            </div>
+            <div class="visit2-entity visit2-entity-right">
+              ${renderAvatarNode('friend', friend.avatarUrl, '🐾')}
+              <div class="visit2-entity-name">${escapeHtml(friend.name || '好友')}</div>
+            </div>
+          </div>
+
+          <div class="visit2-chat-header-text">
+            <div class="visit2-chat-title">做客番茄钟进行中</div>
+            <div class="visit2-chat-sub">${escapeHtml(runtime.pet?.name || '宠物')} 正在 ${escapeHtml(friend.name)} 家做客</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="visit2-card">
+        <div class="visit2-focus-meta">
+          <div class="visit2-focus-line">专注任务：${escapeHtml(focusTask)}</div>
+          <div class="visit2-focus-line">伴手礼：${escapeHtml(selectedGift.label)}</div>
+          <div class="visit2-focus-line">出门包：${escapeHtml(selectedPack.map(x => x.label).join('、') || '轻装出门')}</div>
+        </div>
+      </section>
+
+      <section class="visit2-card visit2-focus-card">
+        <div class="visit2-focus-time" id="visit2-focus-timer">--:--</div>
+        <div class="visit2-inline-tip" id="visit2-focus-status">宠物正在别人家里玩，你也开始专注吧</div>
+      </section>
+
+      <section class="visit2-card visit2-action-card">
+        <button class="visit2-danger-btn" id="visit2-finish-focus-btn">提前结束</button>
+      </section>
+    </div>
+  `;
 
   const endAt = Date.now() + minutes * 60 * 1000;
   visitRuntime.focusEndAt = endAt;
-
-  active.innerHTML = `
-    <div class="visit2-section-title">${runtime.pet?.name || '宠物'} 正在 ${friend.name} 家做客</div>
-    <div class="visit2-mini">专注任务：${escapeHtml(focusTask)}</div>
-    <div class="visit2-mini">伴手礼：${escapeHtml(selectedGift.label)}</div>
-    <div class="visit2-mini">出门包：${selectedPack.map(x => x.label).join('、') || '轻装出门'}</div>
-
-    <div class="visit2-focus-timer" id="visit2-focus-timer">--:--</div>
-    <div class="visit2-status" id="visit2-focus-status">宠物正在开心做客，你也开始专注吧</div>
-
-    <div class="visit2-actions">
-      <button class="visit2-secondary" id="visit2-finish-focus-btn">提前结束</button>
-    </div>
-  `;
 
   const timerEl = document.getElementById('visit2-focus-timer');
   const statusEl = document.getElementById('visit2-focus-status');
@@ -459,15 +527,17 @@ function openFocusScene({ friend, selectedGift, selectedPack, focusTask, minutes
       visitRuntime.focusTimer = null;
       if (statusEl) statusEl.textContent = '宠物回家啦，正在整理这次做客的小结...';
 
-      const egg = await getVisitEasterEgg(friend, { selectedGift, selectedPack, focusTask });
+      const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+      const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg);
+
       await persistVisitResult(friend, {
         mode: VISIT_MODES.OUTGOING_FOCUS,
-        contextData: { selectedGift, selectedPack, focusTask, minutes },
+        contextData: visitRuntime.startedContext || {},
         egg,
-        messages: [],
+        messages: [{ role: 'system', text: summary }],
       });
 
-      appendFocusSummary(friend, focusTask, minutes, egg);
+      appendFocusSummary(summary, egg.text);
       showToast('番茄钟完成，宠物回家啦', 'success');
     }
   };
@@ -480,82 +550,392 @@ function openFocusScene({ friend, selectedGift, selectedPack, focusTask, minutes
       clearInterval(visitRuntime.focusTimer);
       visitRuntime.focusTimer = null;
     }
+
+    const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+    const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg, true);
+    appendFocusSummary(summary, egg.text, true);
     showToast('番茄钟已提前结束', 'warn');
-    const egg = await getVisitEasterEgg(friend, { selectedGift, selectedPack, focusTask });
-    appendFocusSummary(friend, focusTask, minutes, egg, true);
   });
 }
 
-function appendFocusSummary(friend, focusTask, minutes, egg, early = false) {
-  const active = document.getElementById('visit2-active-area');
-  if (!active) return;
+function appendFocusSummary(summary, eggText, early = false) {
+  const root = document.querySelector('.visit2-focus-layout');
+  if (!root) return;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'visit2-summary';
-  wrap.innerHTML = `
-    <div class="visit2-section-title">${early ? '提前结束的小结' : '本次番茄钟完成'}</div>
-    <div class="visit2-mini">任务：${escapeHtml(focusTask)}</div>
-    <div class="visit2-mini">时长：${minutes} 分钟</div>
-    <div class="visit2-mini">${friend.name} 家做客反馈：${escapeHtml(egg.text)}</div>
+  const card = document.createElement('section');
+  card.className = 'visit2-card visit2-summary-card';
+  card.innerHTML = `
+    <div class="visit2-section-title">${early ? '提前结束的小结' : '做客结束啦'}</div>
+    <div class="visit2-summary-text">${escapeHtml(summary)}</div>
+    <div class="visit2-summary-mini">${escapeHtml(eggText)}</div>
   `;
-  active.appendChild(wrap);
+  root.appendChild(card);
 }
 
-async function runAutoChat(rounds, friend, contextData, btn) {
+function bindChatActions() {
+  document.getElementById('visit2-settings-btn')?.addEventListener('click', () => {
+    const drawer = document.getElementById('visit2-settings-drawer');
+    if (!drawer) return;
+    drawer.hidden = !drawer.hidden;
+  });
+
+  document.getElementById('visit2-user-send-btn')?.addEventListener('click', async () => {
+    await handleUserSend();
+  });
+
+  document.getElementById('visit2-user-input')?.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      await handleUserSend();
+    }
+  });
+
+  document.getElementById('visit2-auto-btn')?.addEventListener('click', async (e) => {
+    const rounds = Number(document.getElementById('visit2-auto-rounds')?.value || 0);
+    if (!rounds || rounds < 1) {
+      showToast('请输入有效轮数', 'warn');
+      return;
+    }
+    await runAutoChat(rounds, e.currentTarget);
+  });
+
+  document.getElementById('visit2-stop-auto-btn')?.addEventListener('click', () => {
+    visitRuntime.autoStop = true;
+    setInlineStatus('正在停止自动聊天...');
+    showToast('正在停止自动聊天...', 'info');
+  });
+
+  document.getElementById('visit2-end-chat-btn')?.addEventListener('click', async (e) => {
+    await finishVisitWithFarewell(e.currentTarget);
+  });
+}
+
+async function handleUserSend() {
+  const input = document.getElementById('visit2-user-input');
+  const text = input?.value.trim();
+  if (!text) return;
+  if (visitRuntime.autoRunning) {
+    showToast('自动聊天进行中，请先停止', 'warn');
+    return;
+  }
+
+  input.value = '';
+  appendVisitMessage('user', '你', text);
+  setInlineStatus('正在生成回应...');
+
+  try {
+    const friend = visitRuntime.friend;
+    const ctx = visitRuntime.startedContext || {};
+
+    const petReply = await generateSingleLine({
+      speaker: 'pet',
+      friend,
+      contextData: ctx,
+      userText: text,
+      mode: visitRuntime.mode,
+    });
+    appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
+
+    const friendReply = await generateSingleLine({
+      speaker: 'friend',
+      friend,
+      contextData: ctx,
+      userText: text,
+      mode: visitRuntime.mode,
+    });
+    appendVisitMessage('friend', friend.name, friendReply);
+
+    bumpIntimacy(1);
+    setInlineStatus('回应完成');
+  } catch (err) {
+    setInlineStatus(`生成失败：${err.message}`);
+    showToast(`聊天失败：${err.message}`, 'error');
+  }
+}
+
+async function runAutoChat(rounds, btn) {
   if (visitRuntime.autoRunning) {
     showToast('自动聊天已经在进行中', 'warn');
     return;
   }
 
+  const friend = visitRuntime.friend;
+  const ctx = visitRuntime.startedContext || {};
+
   try {
     visitRuntime.autoRunning = true;
     visitRuntime.autoStop = false;
     setButtonLoading(btn, true, '自动聊天中...');
-    setVisitStatus(`正在自动聊天（0/${rounds}）`);
+    setInlineStatus(`正在自动聊天（0/${rounds}）`);
 
     for (let i = 1; i <= rounds; i++) {
       if (visitRuntime.autoStop) {
-        setVisitStatus(`自动聊天已停止（完成 ${i - 1}/${rounds} 轮）`, 'warn');
+        setInlineStatus(`自动聊天已停止（${i - 1}/${rounds}）`);
         showToast('自动聊天已停止', 'warn');
         break;
       }
 
-      setVisitStatus(`正在自动聊天（${i}/${rounds}）`);
+      setInlineStatus(`正在自动聊天（${i}/${rounds}）`);
 
       const petReply = await generateSingleLine({
         speaker: 'pet',
         friend,
-        contextData,
+        contextData: ctx,
         mode: visitRuntime.mode,
       });
-      appendChatLine('pet', petReply);
+      appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
 
       const friendReply = await generateSingleLine({
         speaker: 'friend',
         friend,
-        contextData,
+        contextData: ctx,
         mode: visitRuntime.mode,
       });
-      appendChatLine('friend', friendReply);
+      appendVisitMessage('friend', friend.name, friendReply);
 
       bumpIntimacy(1);
     }
 
     if (!visitRuntime.autoStop) {
-      const egg = await getVisitEasterEgg(friend, contextData);
-      appendChatLine('system', egg.text);
+      const egg = await getVisitEasterEgg(friend, ctx);
+      appendVisitMessage('system', 'system', egg.text);
       bumpIntimacy(egg.effects?.intimacy || 1);
-      setVisitStatus('自动聊天完成');
+      setInlineStatus('自动聊天完成');
       showToast('自动聊天完成', 'success');
     }
   } catch (err) {
+    setInlineStatus(`自动聊天失败：${err.message}`);
     showToast(`自动聊天失败：${err.message}`, 'error');
-    setVisitStatus(`自动聊天失败：${err.message}`, 'error');
   } finally {
     visitRuntime.autoRunning = false;
     visitRuntime.autoStop = false;
     setButtonLoading(btn, false);
   }
+}
+
+async function finishVisitWithFarewell(btn) {
+  if (visitRuntime.autoRunning) {
+    showToast('请先停止自动聊天', 'warn');
+    return;
+  }
+
+  const friend = visitRuntime.friend;
+  if (!friend) return;
+
+  setButtonLoading(btn, true, '正在告别...');
+  setInlineStatus('正在生成告别...');
+
+  try {
+    appendVisitMessage('system', 'system', '今天的做客要结束啦。');
+
+    const friendFarewell = await generateFarewellLine('friend', friend);
+    appendVisitMessage('friend', friend.name, friendFarewell);
+
+    const petFarewell = await generateFarewellLine('pet', friend);
+    appendVisitMessage('pet', runtime.pet?.name || '宠物', petFarewell);
+
+    const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+    appendVisitMessage('system', 'system', egg.text);
+
+    bumpIntimacy(5);
+    await persistVisitResult(friend, {
+      mode: visitRuntime.mode,
+      contextData: visitRuntime.startedContext || {},
+      egg,
+      messages: visitRuntime.messages,
+    });
+
+    setInlineStatus('做客结束啦');
+    showToast('做客记录已保存', 'success');
+
+    setTimeout(() => {
+      closeVisitComposer();
+    }, 1200);
+  } catch (err) {
+    showToast(`结束做客失败：${err.message}`, 'error');
+    setInlineStatus(`结束失败：${err.message}`);
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+async function generateFarewellLine(role, friend) {
+  const pet = runtime.pet || {};
+
+  const messages = role === 'friend'
+    ? buildFriendFarewellMessages(friend, pet)
+    : buildPetFarewellMessages(pet, friend);
+
+  const fallback = pickFarewellFallback(role);
+
+  try {
+    const reply = await callAI({
+      messages,
+      stream: false,
+    });
+    return (reply || '').trim() || fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function buildFriendFarewellMessages(friend, pet) {
+  const system = [
+    `你是一只名叫「${friend.name}」的电子宠物。`,
+    friend.customPrompt || `性格：${friend.personality || '活泼可爱'}`,
+    `你今天和「${pet.name || '宠物'}」一起做客聊天，已经准备回家了。`,
+    '请说一句温柔可爱的告别语，不超过30字。',
+    '语气要像宠物，不要解释，不要分点，只输出这句话本身。',
+  ].join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: '现在要回家了，请说一句告别的话。' },
+  ];
+}
+
+function buildPetFarewellMessages(pet, friend) {
+  const system = [
+    `你是一只名叫「${pet.name || '宠物'}」的电子宠物。`,
+    `你的好友「${friend.name}」今天和你玩得很开心，现在要分别了。`,
+    '请说一句温柔可爱的送别语，不超过30字。',
+    '语气要自然、可爱，可以带颜文字，只输出这句话本身。',
+  ].join('\n');
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: '请和好友说一句告别的话。' },
+  ];
+}
+
+function pickFarewellFallback(role) {
+  const pool = VISIT_FAREWELL_FALLBACKS[role] || VISIT_FAREWELL_FALLBACKS.friend;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function appendVisitMessage(role, name, text) {
+  const stream = document.getElementById('visit2-chat-stream');
+  if (!stream) return;
+
+  const item = document.createElement('div');
+
+  if (role === 'system') {
+    item.className = 'visit2-msg visit2-msg-system';
+    item.innerHTML = `<div class="visit2-system-pill">${escapeHtml(text)}</div>`;
+  } else {
+    item.className = `visit2-msg visit2-msg-${role}`;
+
+    const avatarHtml = role === 'pet'
+      ? renderAvatarNode('pet', runtime.pet?.avatarUrl, '🐱')
+      : role === 'friend'
+        ? renderAvatarNode('friend', visitRuntime.friend?.avatarUrl, '🐾')
+        : renderAvatarNode('user', getUserAvatarUrl(), '👤');
+
+    item.innerHTML = `
+      <div class="visit2-msg-avatar-wrap">${avatarHtml}</div>
+      <div class="visit2-msg-body">
+        <div class="visit2-msg-name">${escapeHtml(name)}</div>
+        <div class="visit2-msg-bubble">${escapeHtml(text)}</div>
+      </div>
+    `;
+  }
+
+  stream.appendChild(item);
+  stream.scrollTop = stream.scrollHeight;
+  visitRuntime.messages.push({ role, name, text });
+}
+
+function renderAvatarNode(type, avatarUrl, fallback) {
+  const cls = `visit2-avatar visit2-avatar-${type}`;
+  if (avatarUrl) {
+    return `<div class="${cls}"><img src="${escapeHtml(avatarUrl)}" alt="" onerror="this.parentNode.innerHTML='${escapeHtml(fallback)}'" /></div>`;
+  }
+  return `<div class="${cls}">${escapeHtml(fallback)}</div>`;
+}
+
+function getUserAvatarUrl() {
+  const s = runtime.settings || {};
+  const u = s.userInfo || {};
+  return u.avatarUrl || u.avatar || u.photo || s.userAvatar || s.avatarUrl || '';
+}
+
+function setInlineStatus(text) {
+  const el = document.getElementById('visit2-inline-status');
+  if (el) el.textContent = text;
+}
+
+function bumpIntimacy(step = 1) {
+  visitRuntime.intimacyGain += step;
+  const badge = document.getElementById('visit2-intimacy-badge');
+  if (badge) badge.textContent = `亲密度 +${visitRuntime.intimacyGain}`;
+}
+
+function getSelectedItems(type) {
+  return Array.from(document.querySelectorAll(`.visit2-select-card[data-type="${type}"].selected`))
+    .map(el => ({
+      id: el.dataset.id,
+      label: el.dataset.label,
+      promptTag: el.dataset.promptTag || '',
+    }));
+}
+
+function getSingleSelectedItem(type) {
+  return getSelectedItems(type)[0] || null;
+}
+
+function getCustomToys() {
+  const vals = [
+    document.getElementById('visit2-custom-toy-1')?.value.trim(),
+    document.getElementById('visit2-custom-toy-2')?.value.trim(),
+  ].filter(Boolean);
+
+  return vals.slice(0, 2);
+}
+
+function renderSelectCard(item, type, single = false) {
+  return `
+    <button
+      type="button"
+      class="visit2-select-card"
+      data-id="${escapeHtml(item.id)}"
+      data-type="${escapeHtml(type)}"
+      data-label="${escapeHtml(item.label)}"
+      data-prompt-tag="${escapeHtml(item.promptTag || '')}"
+      data-single="${single ? '1' : '0'}"
+      onclick="window.__visit2ToggleSelect(this)"
+    >
+      <div class="visit2-select-icon">${item.icon}</div>
+      <div class="visit2-select-title">${escapeHtml(item.label)}</div>
+      <div class="visit2-select-desc">${escapeHtml(item.desc)}</div>
+    </button>
+  `;
+}
+
+function packSingleSelectCards(_all, compatible, type) {
+  return compatible.map(item => renderSelectCard(item, type, true)).join('');
+}
+
+window.__visit2ToggleSelect = function(el) {
+  const type = el.dataset.type;
+  const isSingle = el.dataset.single === '1';
+
+  if (isSingle) {
+    document.querySelectorAll(`.visit2-select-card[data-type="${type}"]`).forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    return;
+  }
+  el.classList.toggle('selected');
+};
+
+function buildSettingSummaryText(ctx) {
+  const arr = [];
+  if (ctx.selectedToys?.length) arr.push(`玩具：${ctx.selectedToys.map(x => x.label).join('、')}`);
+  if (ctx.customToys?.length) arr.push(`自定义：${ctx.customToys.join('、')}`);
+  if (ctx.selectedGift) arr.push(`伴手礼：${ctx.selectedGift.label}`);
+  if (ctx.selectedPack?.length) arr.push(`出门包：${ctx.selectedPack.map(x => x.label).join('、')}`);
+  if (ctx.focusTask) arr.push(`任务：${ctx.focusTask}`);
+  if (ctx.focusMinutes) arr.push(`时长：${ctx.focusMinutes} 分钟`);
+  return arr.join(' ｜ ') || '本次没有额外准备';
 }
 
 async function generateVisitIntro({ mode, friend, selectedToys = [], customToys = [], selectedGift = null, selectedPack = [] }) {
@@ -571,11 +951,11 @@ async function generateVisitIntro({ mode, friend, selectedToys = [], customToys 
   return await safeAIText({
     rolePrompt: `
 你要生成一个电子宠物做客开场。
-回复要求：
-1. 只输出一小段开场，不超过60字
-2. 可爱、自然、温暖
-3. 点到准备物品
-4. 不要解释，不要分点
+要求：
+1. 只输出一句自然的小开场
+2. 不超过50字
+3. 可爱、温柔、像聊天
+4. 点到准备的物品
 `,
     userText: `
 我的宠物：${pet.name || '小宠物'}
@@ -584,15 +964,14 @@ ${textContext}
 请生成开场。
 `,
     fallback: mode === VISIT_MODES.INCOMING_CHAT
-      ? `${friend.name} 带着好奇的小眼神来做客了，看到准备好的玩具箱后明显开心了起来。`
-      : `${pet.name || '小宠物'}带着准备好的伴手礼出发去做客啦，看起来有点兴奋又有点期待。`,
+      ? `${friend.name} 带着亮晶晶的眼神来做客了，一看到准备好的玩具就开心起来。`
+      : `${pet.name || '小宠物'}带着准备好的伴手礼出发啦，看起来期待又兴奋。`,
   });
 }
 
 async function generateSingleLine({ speaker, friend, contextData, userText = '', mode }) {
   const pet = runtime.pet || {};
   const speakerName = speaker === 'pet' ? (pet.name || '小宠物') : friend.name;
-  const speciesText = getSpeciesMeta((speaker === 'pet' ? pet.speciesGroup : friend.speciesGroup) || 'generic').label;
 
   const promptBits = [];
   if (contextData.selectedToys?.length) promptBits.push(`玩具箱：${contextData.selectedToys.map(x => x.label).join('、')}`);
@@ -602,13 +981,11 @@ async function generateSingleLine({ speaker, friend, contextData, userText = '',
 
   const rolePrompt = `
 你现在扮演一只电子宠物，名字叫 ${speakerName}。
-宠物分类：${speciesText}
-说话要求：
+要求：
 1. 只说一句话
-2. 不超过40字
-3. 可爱自然
-4. 要像宠物之间聊天，不要像客服
-5. 可以带一点颜文字
+2. 不超过32字
+3. 语气可爱自然
+4. 像宠物聊天，不要像解释说明
 `;
 
   const systemPrompt = await buildSystemPrompt({
@@ -619,13 +996,15 @@ async function generateSingleLine({ speaker, friend, contextData, userText = '',
   const userPrompt = `
 场景模式：${mode}
 互动对象：${speaker === 'pet' ? friend.name : (pet.name || '小宠物')}
-${userText ? `用户刚刚说：${userText}` : '现在请继续自然接话。'}
+${userText ? `用户刚刚说：${userText}` : '请自然接一句。'}
 `;
 
   return await safeAIText({
     systemPrompt,
     userText: userPrompt,
-    fallback: fallbackLine(speaker),
+    fallback: speaker === 'pet'
+      ? '嘿嘿，感觉今天会很好玩呀 (≧▽≦)'
+      : '我也觉得这里好有趣，想再多玩一会儿～',
   });
 }
 
@@ -635,13 +1014,14 @@ async function getVisitEasterEgg(friend, contextData = {}) {
   if (shouldTryAI) {
     try {
       const pet = runtime.pet || {};
-      const prompt = `
-请生成一个电子宠物做客中的小彩蛋。
+      const text = await safeAIText({
+        rolePrompt: '你负责生成一句宠物做客场景的小彩蛋提示。',
+        userText: `
+请生成一句宠物做客彩蛋。
 要求：
-1. 只输出一句话
-2. 不超过50字
-3. 温柔可爱
-4. 适合作为系统提示
+1. 不超过40字
+2. 温柔可爱
+3. 像系统旁白
 我的宠物：${pet.name || '小宠物'}
 好友：${friend.name}
 上下文：${JSON.stringify({
@@ -650,10 +1030,7 @@ async function getVisitEasterEgg(friend, contextData = {}) {
   toys: (contextData.selectedToys || []).map(x => x.label),
   customToys: contextData.customToys || [],
 })}
-`;
-      const text = await safeAIText({
-        rolePrompt: '你负责为宠物做客场景生成一句彩蛋提示。',
-        userText: prompt,
+`,
         fallback: null,
       });
 
@@ -670,6 +1047,30 @@ async function getVisitEasterEgg(friend, contextData = {}) {
   return VISIT_FALLBACK_EASTER_EGGS[
     Math.floor(Math.random() * VISIT_FALLBACK_EASTER_EGGS.length)
   ];
+}
+
+async function generateFocusReturnSummary(friend, ctx, egg, early = false) {
+  const pet = runtime.pet || {};
+  return await safeAIText({
+    rolePrompt: `
+你要生成一句宠物做客回家总结。
+要求：
+1. 不超过50字
+2. 像宠物回家后轻轻分享今天发生的事
+3. 温柔可爱
+`,
+    userText: `
+宠物：${pet.name || '小宠物'}
+好友：${friend.name}
+任务：${ctx.focusTask || ''}
+时长：${ctx.focusMinutes || 0}
+彩蛋：${egg?.text || ''}
+${early ? '这是提前结束的番茄钟。' : '这是完整完成的番茄钟。'}
+`,
+    fallback: early
+      ? `${pet.name || '小宠物'}提前回家了，看起来还是很想和你分享刚刚的小见闻。`
+      : `${pet.name || '小宠物'}回家啦，像是带着今天做客时的小开心一起回来了。`,
+  });
 }
 
 async function safeAIText({ rolePrompt = '', systemPrompt = '', userText = '', fallback = '' }) {
@@ -693,11 +1094,18 @@ async function persistVisitResult(friend, payload) {
   const pet = runtime.pet || {};
   const newIntimacy = Math.min(100, (friend.intimacy || 0) + visitRuntime.intimacyGain);
 
+  const recentTexts = (visitRuntime.messages || [])
+    .filter(x => x.role !== 'system')
+    .slice(-6)
+    .map(x => x.text)
+    .join(' | ')
+    .slice(0, 200);
+
   const updatedFriend = {
     ...friend,
     intimacy: newIntimacy,
     lastVisitAt: Date.now(),
-    memoryContext: buildMemorySnippet(),
+    memoryContext: recentTexts,
   };
 
   await dbSet('petFriends', updatedFriend);
@@ -725,101 +1133,6 @@ async function persistVisitResult(friend, payload) {
   });
 }
 
-function buildMemorySnippet() {
-  return visitRuntime.messages
-    .slice(-6)
-    .map(x => x.text)
-    .join(' | ')
-    .slice(0, 200);
-}
-
-function bumpIntimacy(step = 1) {
-  visitRuntime.intimacyGain += step;
-  const el = document.getElementById('visit2-intimacy-text');
-  if (el) el.textContent = `亲密度 +${visitRuntime.intimacyGain}`;
-}
-
-function appendChatLine(role, text) {
-  const box = document.getElementById('visit2-chat-box');
-  if (!box) return;
-
-  const line = document.createElement('div');
-  line.className = `visit2-line ${role}`;
-  line.textContent = text;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-
-  visitRuntime.messages.push({ role, text });
-}
-
-function setVisitStatus(text, type = 'info') {
-  const el = document.getElementById('visit2-status');
-  if (!el) return;
-  el.textContent = text;
-  el.dataset.type = type;
-}
-
-function getSelectedItems(type) {
-  return Array.from(document.querySelectorAll(`.visit2-card[data-type="${type}"].selected`))
-    .map(el => ({
-      id: el.dataset.id,
-      label: el.dataset.label,
-      promptTag: el.dataset.promptTag || '',
-    }));
-}
-
-function getSingleSelectedItem(type) {
-  return getSelectedItems(type)[0] || null;
-}
-
-function getCustomToys() {
-  const vals = [
-    document.getElementById('visit2-custom-toy-1')?.value.trim(),
-    document.getElementById('visit2-custom-toy-2')?.value.trim(),
-  ].filter(Boolean);
-
-  if (vals.length > 2) throw new Error('自定义玩具最多 2 个');
-  return vals;
-}
-
-function itemCard(item, type, single = false) {
-  return `
-    <button
-      type="button"
-      class="visit2-card"
-      data-id="${escapeHtml(item.id)}"
-      data-type="${escapeHtml(type)}"
-      data-label="${escapeHtml(item.label)}"
-      data-prompt-tag="${escapeHtml(item.promptTag || '')}"
-      data-single="${single ? '1' : '0'}"
-      onclick="window.__visit2ToggleCard(this)"
-    >
-      <div class="visit2-card-icon">${item.icon}</div>
-      <div class="visit2-card-title">${escapeHtml(item.label)}</div>
-      <div class="visit2-card-desc">${escapeHtml(item.desc)}</div>
-    </button>
-  `;
-}
-
-window.__visit2ToggleCard = function (el) {
-  const single = el.dataset.single === '1';
-  const type = el.dataset.type;
-
-  if (single) {
-    document.querySelectorAll(`.visit2-card[data-type="${type}"]`).forEach(x => x.classList.remove('selected'));
-    el.classList.add('selected');
-    return;
-  }
-
-  el.classList.toggle('selected');
-};
-
-function fallbackLine(role) {
-  if (role === 'pet') return '嘿嘿，感觉今天会很好玩呀 (≧▽≦)';
-  if (role === 'friend') return '我也觉得这里好有趣，想再多玩一会儿～';
-  return '今天好像发生了一个小小惊喜。';
-}
-
 function escapeHtml(str = '') {
   return String(str)
     .replaceAll('&', '&amp;')
@@ -836,294 +1149,591 @@ function injectVisitStyles() {
   style.id = 'visit2-style';
   style.textContent = `
     #visit2-overlay{
-      position:fixed; inset:0; z-index:9999;
-      background:rgba(20,20,24,.42);
-      display:flex; align-items:center; justify-content:center;
-      padding:18px;
-    }
-    .visit2-panel{
-      width       width:min(920px, 100%);
-      max-height:90vh;
-      overflow:auto;
-      border-radius:24px;
-      background:var(--bg-card, #fff);
-      box-shadow:0 24px 80px rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.55);
-    }
-    .visit2-header{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background:rgba(0,0,0,.18);
+      backdrop-filter:blur(8px);
       display:flex;
       align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+
+    .visit2-modal{
+      width:min(860px, 100%);
+      max-height:92vh;
+    }
+
+    .visit2-shell{
+      background:var(--bg-shell);
+      color:var(--text-primary);
+      border:1px solid var(--border-color);
+      border-radius:28px;
+      box-shadow:var(--shadow-shell);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .visit2-topbar{
+      display:flex;
       justify-content:space-between;
+      align-items:center;
       gap:16px;
-      padding:18px 20px;
-      border-bottom:1px solid rgba(0,0,0,.06);
-      position:sticky;
-      top:0;
-      background:var(--bg-card, #fff);
-      z-index:2;
-      border-radius:24px 24px 0 0;
+      padding:20px 22px;
+      border-bottom:1px solid var(--border-subtle);
+      background:var(--bg-shell);
     }
+
     .visit2-title{
-      font-size:20px;
+      font-size:24px;
       font-weight:800;
-      color:var(--text-primary, #222);
+      letter-spacing:-0.02em;
     }
-    .visit2-sub{
+
+    .visit2-subtitle{
       margin-top:4px;
       font-size:13px;
-      color:var(--text-secondary, #666);
+      color:var(--text-secondary);
     }
-    .visit2-close{
+
+    .visit2-icon-btn{
+      width:40px;
+      height:40px;
       border:none;
-      background:var(--bg-card-alt, #f5f5f7);
-      color:var(--text-primary, #222);
-      width:38px;
-      height:38px;
       border-radius:999px;
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
       cursor:pointer;
-      font-size:16px;
-      font-weight:700;
+      flex-shrink:0;
     }
-    .visit2-body{
+
+    .visit2-content{
       padding:18px;
+      overflow:auto;
+      background:var(--bg-screen);
+    }
+
+    .visit2-prep-stack,
+    .visit2-chat-layout,
+    .visit2-focus-layout{
       display:flex;
       flex-direction:column;
       gap:16px;
     }
-    .visit2-mode-row{
-      display:grid;
-      grid-template-columns:repeat(3, 1fr);
-      gap:10px;
+
+    .visit2-card,
+    .visit2-chat-header-card,
+    .visit2-drawer-card,
+    .visit2-chat-stream-card,
+    .visit2-input-card{
+      background:var(--bg-card);
+      border:1px solid var(--border-color);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow-card);
     }
-    .visit2-mode{
-      border:none;
-      border-radius:16px;
-      padding:12px 14px;
-      background:var(--bg-card-alt, #f6f6fa);
-      color:var(--text-primary, #222);
-      cursor:pointer;
-      font-weight:700;
-      transition:.2s ease;
-    }
-    .visit2-mode.active{
-      background:linear-gradient(135deg, #ffb7d5 0%, #ffd9ea 100%);
-      box-shadow:0 8px 18px rgba(255, 170, 205, .35);
-    }
-    .visit2-status{
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(255, 183, 213, .16);
-      color:var(--text-secondary, #555);
-      font-size:13px;
-      line-height:1.5;
-    }
-          .visit2-status[data-type="error"]{
-      background:rgba(255, 90, 90, .12);
-      color:#b33a3a;
-    }
-    .visit2-status[data-type="warn"]{
-      background:rgba(255, 193, 7, .14);
-      color:#946c00;
-    }
-    .visit2-status[data-type="info"]{
-      background:rgba(255, 183, 213, .16);
-      color:#666;
-    }
-    .visit2-section{
-      background:var(--bg-card-alt, #fafafe);
-      border-radius:18px;
-      padding:14px;
-      border:1px solid rgba(0,0,0,.04);
-    }
-    .visit2-section-title{
-      font-size:15px;
-      font-weight:800;
-      color:var(--text-primary, #222);
-      margin-bottom:10px;
-    }
-    .visit2-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
-      gap:12px;
-    }
-    .visit2-card{
-      border:none;
-      text-align:left;
-      border-radius:18px;
-      padding:14px;
-      background:#fff;
-      cursor:pointer;
-      box-shadow:0 8px 20px rgba(0,0,0,.05);
-      border:2px solid transparent;
-      transition:.18s ease;
-    }
-    .visit2-card:hover{
-      transform:translateY(-1px);
-    }
-    .visit2-card.selected{
-      border-color:#ff8ec2;
-      background:#fff6fb;
-      box-shadow:0 10px 24px rgba(255, 142, 194, .18);
-    }
-    .visit2-card-icon{
-      font-size:24px;
-      margin-bottom:8px;
-    }
-    .visit2-card-title{
-      font-size:14px;
-      font-weight:800;
-      color:#222;
-      margin-bottom:5px;
-    }
-    .visit2-card-desc{
-      font-size:12px;
-      line-height:1.45;
-      color:#666;
-    }
-    .visit2-custom-wrap{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-    .visit2-input{
-      width:100%;
-      border:none;
-      outline:none;
-      border-radius:14px;
-      padding:12px 14px;
-      background:#fff;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
-      font-size:14px;
-      color:#222;
-    }
-    .visit2-input.small{
-      max-width:100px;
-    }
-    .visit2-actions{
+
+    .visit2-action-card{
       display:flex;
       justify-content:flex-end;
-      gap:10px;
     }
-    .visit2-primary,
-    .visit2-secondary,
-    .visit2-ghost{
-      border:none;
-      border-radius:14px;
-      padding:12px 16px;
-      cursor:pointer;
-      font-weight:800;
-      transition:.18s ease;
-    }
-    .visit2-primary{
-      background:linear-gradient(135deg, #ff94c7 0%, #ffbedc 100%);
-      color:#5d2340;
-      box-shadow:0 10px 20px rgba(255, 148, 199, .28);
-    }
-    .visit2-secondary{
-      background:#f3f3f7;
-      color:#333;
-    }
-    .visit2-ghost{
-      background:transparent;
-      color:#666;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
-    }
-    .visit2-chat-header{
+
+    .visit2-mode-switch{
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
+      flex-wrap:wrap;
       gap:12px;
+    }
+
+    .visit2-mode-chip{
+      border:none;
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+      padding:12px 16px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    .visit2-mode-chip.active{
+      background:var(--accent-primary);
+      color:var(--text-on-accent);
+    }
+
+    .visit2-soft-tip{
+      margin-top:14px;
+      padding:12px 14px;
+      border-radius:18px;
+      background:var(--bg-card-alt);
+      color:var(--text-secondary);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    .visit2-section-title{
+      font-size:18px;
+      font-weight:800;
+      margin-bottom:14px;
+      letter-spacing:-0.02em;
+    }
+
+    .visit2-card-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+      gap:14px;
+    }
+
+    .visit2-select-card{
+      border:1px solid var(--border-color);
+      border-radius:20px;
+      background:var(--bg-card);
+      padding:16px;
+      text-align:left;
+      cursor:pointer;
+      color:var(--text-primary);
+      min-height:138px;
+      transition:transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .visit2-select-card:hover{
+      transform:translateY(-1px);
+    }
+
+    .visit2-select-card.selected{
+      border-color:var(--accent-primary);
+      background:var(--bg-card-alt);
+    }
+
+    .visit2-select-icon{
+      font-size:24px;
       margin-bottom:10px;
     }
-    .visit2-mini{
-      font-size:12px;
-      color:#6a6a78;
-      line-height:1.5;
+
+    .visit2-select-title{
+      font-size:15px;
+      font-weight:800;
+      margin-bottom:6px;
     }
-    .visit2-chat-box{
-      min-height:260px;
-      max-height:46vh;
-      overflow:auto;
-      background:#fff;
-      border-radius:20px;
-      padding:14px;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);
+
+    .visit2-select-desc{
+      font-size:12px;
+      line-height:1.65;
+      color:var(--text-secondary);
+    }
+
+    .visit2-field-stack{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .visit2-input{
+      width:100%;
+      border:1px solid var(--border-color);
+      background:var(--bg-card);
+      color:var(--text-primary);
+      border-radius:18px;
+      padding:14px 16px;
+      outline:none;
+      font-size:14px;
+    }
+
+    .visit2-input::placeholder{
+      color:var(--text-secondary);
+    }
+
+    .visit2-primary-btn,
+    .visit2-secondary-btn,
+    .visit2-ghost-btn,
+    .visit2-danger-btn{
+      border:none;
+      border-radius:18px;
+      padding:13px 18px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .visit2-primary-btn{
+      background:var(--accent-primary);
+      color:var(--text-on-accent);
+    }
+
+    .visit2-secondary-btn{
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+    }
+
+    .visit2-ghost-btn{
+      background:transparent;
+      color:var(--text-secondary);
+      border:1px solid var(--border-color);
+    }
+
+    .visit2-danger-btn{
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+      border:1px solid var(--border-color);
+    }
+
+    .visit2-chat-header-card{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:18px;
+    }
+
+    .visit2-chat-header-main{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      min-width:0;
+    }
+
+    .visit2-dual-avatars{
+      display:flex;
+      align-items:flex-start;
+      gap:14px;
+      flex-shrink:0;
+    }
+
+    .visit2-entity{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+    }
+
+    .visit2-entity-name{
+      font-size:12px;
+      color:var(--text-secondary);
+      text-align:center;
+      max-width:84px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .visit2-chat-title{
+      font-size:20px;
+      font-weight:800;
+      margin-bottom:4px;
+      letter-spacing:-0.02em;
+    }
+
+    .visit2-chat-sub{
+      font-size:13px;
+      color:var(--text-secondary);
+      line-height:1.6;
+    }
+
+    .visit2-chat-header-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
+    .visit2-intimacy{
+      font-size:13px;
+      color:var(--text-secondary);
+      padding:10px 12px;
+      border-radius:999px;
+      background:var(--bg-card-alt);
+      white-space:nowrap;
+    }
+
+    .visit2-avatar{
+      width:52px;
+      height:52px;
+      border-radius:18px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+      font-size:24px;
+      border:1px solid var(--border-color);
+    }
+
+    .visit2-avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    .visit2-drawer-card{
+      background:var(--bg-card);
+    }
+
+    .visit2-settings-grid{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .visit2-settings-block{
       display:flex;
       flex-direction:column;
       gap:10px;
     }
-    .visit2-line{
-      max-width:82%;
-      padding:10px 12px;
-      border-radius:16px;
-      line-height:1.5;
+
+    .visit2-settings-title{
       font-size:14px;
-      word-break:break-word;
-      white-space:pre-wrap;
+      font-weight:800;
     }
-    .visit2-line.system{
-      align-self:center;
-      background:#f7f7fb;
-      color:#666;
-      font-size:12px;
-      max-width:92%;
-    }
-    .visit2-line.user{
-      align-self:flex-end;
-      background:#ffe4f0;
-      color:#5c2841;
-    }
-    .visit2-line.pet{
-      align-self:flex-start;
-      background:#fff2f8;
-      color:#5d2741;
-    }
-    .visit2-line.friend{
-      align-self:flex-start;
-      background:#f1f5ff;
-      color:#2e4063;
-    }
-    .visit2-auto-row{
+
+    .visit2-inline-row{
       display:flex;
       gap:10px;
       align-items:center;
-      margin-top:10px;
+      flex-wrap:wrap;
     }
-    .visit2-focus-timer{
-      margin-top:8px;
-      font-size:44px;
-      font-weight:900;
+
+    .visit2-round-input{
+      max-width:96px;
+    }
+
+    .visit2-setting-summary{
+      font-size:13px;
+      line-height:1.7;
+      color:var(--text-secondary);
+      background:var(--bg-card-alt);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+
+    .visit2-chat-stream{
+      min-height:340px;
+      max-height:46vh;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      padding:4px;
+    }
+
+    .visit2-msg{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+    }
+
+    .visit2-msg-pet{
+      justify-content:flex-start;
+    }
+
+    .visit2-msg-friend{
+      justify-content:flex-end;
+      flex-direction:row-reverse;
+    }
+
+    .visit2-msg-user{
+      justify-content:flex-end;
+      flex-direction:row-reverse;
+    }
+
+    .visit2-msg-system{
+      justify-content:center;
+    }
+
+    .visit2-msg-avatar-wrap{
+      flex-shrink:0;
+    }
+
+    .visit2-msg-body{
+      max-width:min(74%, 520px);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .visit2-msg-pet .visit2-msg-body{
+      align-items:flex-start;
+    }
+
+    .visit2-msg-friend .visit2-msg-body,
+    .visit2-msg-user .visit2-msg-body{
+      align-items:flex-end;
+    }
+
+    .visit2-msg-name{
+      font-size:12px;
+      color:var(--text-secondary);
+      padding:0 4px;
+    }
+
+    .visit2-msg-bubble{
+      border-radius:20px;
+      padding:12px 14px;
+      line-height:1.7;
+      font-size:14px;
+      word-break:break-word;
+      border:1px solid var(--border-color);
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+    }
+
+    .visit2-msg-pet .visit2-msg-bubble{
+      background:var(--bg-card);
+    }
+
+    .visit2-msg-friend .visit2-msg-bubble{
+      background:var(--bg-card-alt);
+    }
+
+    .visit2-msg-user .visit2-msg-bubble{
+      background:var(--accent-primary);
+      color:var(--text-on-accent);
+      border-color:transparent;
+    }
+
+    .visit2-system-pill{
+      font-size:12px;
+      color:var(--text-secondary);
+      background:var(--bg-card-alt);
+      border-radius:999px;
+      padding:8px 12px;
+      line-height:1.4;
+    }
+
+    .visit2-input-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .visit2-chat-input{
+      flex:1;
+    }
+
+    .visit2-send-btn{
+      flex-shrink:0;
+      min-width:90px;
+    }
+
+    .visit2-inline-tip{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--text-secondary);
+    }
+
+    .visit2-focus-meta{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .visit2-focus-line{
+      font-size:14px;
+      color:var(--text-secondary);
+      line-height:1.7;
+    }
+
+    .visit2-focus-card{
       text-align:center;
-      color:#ff7fb7;
-      letter-spacing:1px;
+      padding-top:24px;
+      padding-bottom:24px;
     }
-    .visit2-summary{
-      margin-top:14px;
-      padding:14px;
-      border-radius:18px;
-      background:#fff8fc;
-      border:1px solid rgba(255, 148, 199, .18);
+
+    .visit2-focus-time{
+      font-size:52px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:0.04em;
+      margin-bottom:12px;
     }
+
+    .visit2-summary-card{
+      margin-top:4px;
+    }
+
+    .visit2-summary-text{
+      font-size:14px;
+      line-height:1.8;
+      color:var(--text-primary);
+      margin-bottom:10px;
+    }
+
+    .visit2-summary-mini{
+      font-size:12px;
+      line-height:1.7;
+      color:var(--text-secondary);
+    }
+
     .is-loading{
-      opacity:.86;
+      opacity:.7;
       pointer-events:none;
     }
-    @media (max-width: 720px){
-      .visit2-mode-row{
-        grid-template-columns:1fr;
+
+    @media (max-width: 768px){
+      .visit2-content{
+        padding:14px;
       }
-      .visit2-grid{
-        grid-template-columns:1fr 1fr;
+
+      .visit2-topbar{
+        padding:16px;
       }
-      .visit2-custom-wrap{
-        grid-template-columns:1fr;
-      }
-      .visit2-auto-row{
+
+      .visit2-chat-header-card{
         flex-direction:column;
         align-items:stretch;
       }
-      .visit2-line{
-        max-width:92%;
+
+      .visit2-chat-header-main{
+        align-items:flex-start;
+      }
+
+      .visit2-chat-header-actions{
+        justify-content:space-between;
+      }
+
+      .visit2-card-grid{
+        grid-template-columns:1fr 1fr;
+      }
+
+      .visit2-input-row{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .visit2-send-btn{
+        width:100%;
+      }
+
+      .visit2-inline-row{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .visit2-round-input{
+        max-width:none;
+      }
+
+      .visit2-msg-body{
+        max-width:84%;
+      }
+    }
+
+    @media (max-width: 520px){
+      .visit2-card-grid{
+        grid-template-columns:1fr;
+      }
+
+      .visit2-title{
+        font-size:22px;
+      }
+
+      .visit2-chat-title{
+        font-size:18px;
+      }
+
+      .visit2-avatar{
+        width:46px;
+        height:46px;
+        border-radius:16px;
       }
     }
   `;
