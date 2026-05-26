@@ -24,7 +24,9 @@ const visitRuntime = {
   focusTimer: null,
   focusEndAt: null,
   startedContext: null,
+  typingMap: new Map(),
 };
+// === 区块结束：visitRuntime ===
 
 const VISIT_LEGACY_FALLBACKS = {
   pet: [
@@ -138,6 +140,8 @@ function resetVisitRuntime(friend) {
     visitRuntime.focusTimer = null;
   }
 
+  clearAllVisitTypingIndicators();
+
   visitRuntime.friend = friend;
   visitRuntime.mode = VISIT_MODES.INCOMING_CHAT;
   visitRuntime.status = VISIT_STATUS.IDLE;
@@ -148,6 +152,7 @@ function resetVisitRuntime(friend) {
   visitRuntime.focusEndAt = null;
   visitRuntime.startedContext = null;
 }
+// === 区块结束：resetVisitRuntime ===
 
 function closeVisitComposer() {
   if (visitRuntime.focusTimer) {
@@ -335,16 +340,16 @@ async function startIncomingChat(friend, btn) {
       title: `${friend.name} 来做客啦`,
       intro,
     });
+appendVisitMessage('system', 'system', '聊天开始啦，宠物们已经见面了。');
+appendVisitMessage('friend', friend.name, intro);
 
-    appendVisitMessage('system', 'system', '聊天开始啦，宠物们已经见面了。');
-    appendVisitMessage('friend', friend.name, intro);
-    const petReply = await generateSingleLine({
-      speaker: 'pet',
-      friend,
-      contextData: visitRuntime.startedContext,
-      mode: visitRuntime.mode,
-    });
-    appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
+await generateVisitLineWithTyping({
+  speaker: 'pet',
+  friend,
+  contextData: visitRuntime.startedContext,
+  mode: visitRuntime.mode,
+});
+// === 区块结束：来访开场消息 ===
     bumpIntimacy(1);
     showToast('做客开始啦', 'success');
   } finally {
@@ -383,16 +388,16 @@ async function startOutgoingChat(friend, btn) {
       title: `去 ${friend.name} 家做客`,
       intro,
     });
+appendVisitMessage('system', 'system', '你的小宠物已经带着礼物出发了。');
+appendVisitMessage('pet', runtime.pet?.name || '宠物', intro);
 
-    appendVisitMessage('system', 'system', '你的小宠物已经带着礼物出发了。');
-    appendVisitMessage('pet', runtime.pet?.name || '宠物', intro);
-    const friendReply = await generateSingleLine({
-      speaker: 'friend',
-      friend,
-      contextData: visitRuntime.startedContext,
-      mode: visitRuntime.mode,
-    });
-    appendVisitMessage('friend', friend.name, friendReply);
+await generateVisitLineWithTyping({
+  speaker: 'friend',
+  friend,
+  contextData: visitRuntime.startedContext,
+  mode: visitRuntime.mode,
+});
+// === 区块结束：出访开场消息 ===
     bumpIntimacy(1);
     showToast('已经出发去做客啦', 'success');
   } finally {
@@ -678,24 +683,22 @@ async function handleUserSend() {
   try {
     const friend = visitRuntime.friend;
     const ctx = visitRuntime.startedContext || {};
+await generateVisitLineWithTyping({
+  speaker: 'pet',
+  friend,
+  contextData: ctx,
+  userText: text,
+  mode: visitRuntime.mode,
+});
 
-    const petReply = await generateSingleLine({
-      speaker: 'pet',
-      friend,
-      contextData: ctx,
-      userText: text,
-      mode: visitRuntime.mode,
-    });
-    appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
-
-    const friendReply = await generateSingleLine({
-      speaker: 'friend',
-      friend,
-      contextData: ctx,
-      userText: text,
-      mode: visitRuntime.mode,
-    });
-    appendVisitMessage('friend', friend.name, friendReply);
+await generateVisitLineWithTyping({
+  speaker: 'friend',
+  friend,
+  contextData: ctx,
+  userText: text,
+  mode: visitRuntime.mode,
+});
+// === 区块结束：用户发言后的双回应 ===
 
     bumpIntimacy(1);
     setInlineStatus('回应完成');
@@ -729,21 +732,20 @@ async function runAutoChat(rounds, btn) {
 
       setInlineStatus(`正在自动聊天（${i}/${rounds}）`);
 
-      const petReply = await generateSingleLine({
-        speaker: 'pet',
-        friend,
-        contextData: ctx,
-        mode: visitRuntime.mode,
-      });
-      appendVisitMessage('pet', runtime.pet?.name || '宠物', petReply);
+     await generateVisitLineWithTyping({
+  speaker: 'pet',
+  friend,
+  contextData: ctx,
+  mode: visitRuntime.mode,
+});
 
-      const friendReply = await generateSingleLine({
-        speaker: 'friend',
-        friend,
-        contextData: ctx,
-        mode: visitRuntime.mode,
-      });
-      appendVisitMessage('friend', friend.name, friendReply);
+await generateVisitLineWithTyping({
+  speaker: 'friend',
+  friend,
+  contextData: ctx,
+  mode: visitRuntime.mode,
+});
+// === 区块结束：自动聊天单轮 ===
 
       bumpIntimacy(1);
     }
@@ -778,13 +780,11 @@ async function finishVisitWithFarewell(btn) {
   setInlineStatus('正在生成告别...');
 
   try {
-    appendVisitMessage('system', 'system', '今天的做客要结束啦。');
+   appendVisitMessage('system', 'system', '今天的做客要结束啦。');
 
-    const friendFarewell = await generateFarewellLine('friend', friend);
-    appendVisitMessage('friend', friend.name, friendFarewell);
-
-    const petFarewell = await generateFarewellLine('pet', friend);
-    appendVisitMessage('pet', runtime.pet?.name || '宠物', petFarewell);
+await generateFarewellLineWithTyping('friend', friend);
+await generateFarewellLineWithTyping('pet', friend);
+// === 区块结束：做客告别消息 ===
 
     const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
     appendVisitMessage('system', 'system', egg.text);
@@ -830,12 +830,15 @@ async function finishVisitWithFarewell(btn) {
 
     appendVisitMessage('system', 'system', '本次做客已结束，你可以手动关闭页面。');
 
-  } catch (err) {
+   } catch (err) {
+    clearAllVisitTypingIndicators();
     showToast(`结束做客失败：${err.message}`, 'error');
     setInlineStatus(`结束失败：${err.message}`);
   } finally {
+    clearAllVisitTypingIndicators();
     setButtonLoading(btn, false);
   }
+// === 区块结束：结束做客收尾 ===
 }
 
 async function generateFarewellLine(role, friend) {
@@ -905,19 +908,17 @@ function pickFarewellFallback(role) {
   const pool = VISIT_FAREWELL_FALLBACKS[role] || VISIT_FAREWELL_FALLBACKS.friend;
   return pool[Math.floor(Math.random() * pool.length)];
 }
-
 function appendVisitMessage(role, name, text) {
   const stream = document.getElementById('visit2-chat-stream');
-  if (!stream) return;
+  if (!stream) return null;
 
   const item = document.createElement('div');
+  item.className = `visit2-msg visit2-msg-${role} is-entering`;
+  item.dataset.role = role;
 
   if (role === 'system') {
-    item.className = 'visit2-msg visit2-msg-system';
     item.innerHTML = `<div class="visit2-system-pill">${escapeHtml(text)}</div>`;
   } else {
-    item.className = `visit2-msg visit2-msg-${role}`;
-
     const avatarHtml = role === 'pet'
       ? renderAvatarNode('pet', runtime.pet?.avatarUrl, '🐱')
       : role === 'friend'
@@ -934,9 +935,130 @@ function appendVisitMessage(role, name, text) {
   }
 
   stream.appendChild(item);
-  stream.scrollTop = stream.scrollHeight;
+
+  requestAnimationFrame(() => {
+    item.classList.remove('is-entering');
+  });
+
+  scrollVisitStreamToBottom();
   visitRuntime.messages.push({ role, name, text });
+  return item;
 }
+// === 区块结束：appendVisitMessage ===
+function scrollVisitStreamToBottom() {
+  const stream = document.getElementById('visit2-chat-stream');
+  if (!stream) return;
+  stream.scrollTop = stream.scrollHeight;
+}
+// === 区块结束：scrollVisitStreamToBottom ===
+function appendVisitTypingIndicator(role, name = '') {
+  const stream = document.getElementById('visit2-chat-stream');
+  if (!stream || role === 'system') return null;
+
+  removeVisitTypingIndicator(role);
+
+  const item = document.createElement('div');
+  item.className = `visit2-msg visit2-msg-${role} visit2-msg-typing is-entering`;
+  item.dataset.role = role;
+  item.dataset.typing = '1';
+
+  const avatarHtml = role === 'pet'
+    ? renderAvatarNode('pet', runtime.pet?.avatarUrl, '🐱')
+    : role === 'friend'
+      ? renderAvatarNode('friend', visitRuntime.friend?.avatarUrl, '🐾')
+      : renderAvatarNode('user', getUserAvatarUrl(), '👤');
+
+  item.innerHTML = `
+    <div class="visit2-msg-avatar-wrap">${avatarHtml}</div>
+    <div class="visit2-msg-body">
+      <div class="visit2-msg-name">${escapeHtml(name)}</div>
+      <div class="visit2-msg-bubble visit2-typing-bubble" aria-label="正在输入">
+        <span class="visit2-typing-dots">
+          <span class="visit2-typing-dot"></span>
+          <span class="visit2-typing-dot"></span>
+          <span class="visit2-typing-dot"></span>
+        </span>
+      </div>
+    </div>
+  `;
+
+  stream.appendChild(item);
+
+  requestAnimationFrame(() => {
+    item.classList.remove('is-entering');
+  });
+
+  visitRuntime.typingMap.set(role, item);
+  scrollVisitStreamToBottom();
+  return item;
+}
+// === 区块结束：appendVisitTypingIndicator ===
+
+function removeVisitTypingIndicator(roleOrNode) {
+  if (!roleOrNode) return;
+
+  if (roleOrNode instanceof HTMLElement) {
+    roleOrNode.remove();
+    return;
+  }
+
+  const node = visitRuntime.typingMap.get(roleOrNode);
+  if (node) {
+    node.remove();
+    visitRuntime.typingMap.delete(roleOrNode);
+  }
+}
+// === 区块结束：removeVisitTypingIndicator ===
+
+async function generateVisitLineWithTyping({
+  speaker,
+  friend,
+  contextData,
+  userText = '',
+  mode,
+}) {
+  const name = speaker === 'pet'
+    ? (runtime.pet?.name || '宠物')
+    : (friend?.name || '好友');
+
+  appendVisitTypingIndicator(speaker, name);
+
+  try {
+    const reply = await generateSingleLine({
+      speaker,
+      friend,
+      contextData,
+      userText,
+      mode,
+    });
+    removeVisitTypingIndicator(speaker);
+    appendVisitMessage(speaker, name, reply);
+    return reply;
+  } catch (err) {
+    removeVisitTypingIndicator(speaker);
+    throw err;
+  }
+}
+// === 区块结束：generateVisitLineWithTyping ===
+
+async function generateFarewellLineWithTyping(role, friend) {
+  const name = role === 'pet'
+    ? (runtime.pet?.name || '宠物')
+    : (friend?.name || '好友');
+
+  appendVisitTypingIndicator(role, name);
+
+  try {
+    const reply = await generateFarewellLine(role, friend);
+    removeVisitTypingIndicator(role);
+    appendVisitMessage(role, name, reply);
+    return reply;
+  } catch (err) {
+    removeVisitTypingIndicator(role);
+    throw err;
+  }
+}
+// === 区块结束：generateFarewellLineWithTyping ===
 
 function renderAvatarNode(type, avatarUrl, fallback) {
   const cls = `visit2-avatar visit2-avatar-${type}`;
@@ -1700,6 +1822,115 @@ function injectVisitStyles() {
       color:var(--text-on-accent);
       border-color:transparent;
     }
+          .visit2-msg{
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      transition:opacity .22s ease, transform .22s ease;
+      will-change:transform, opacity;
+    }
+
+    .visit2-msg.is-entering{
+      opacity:0;
+      transform:translateY(10px);
+    }
+
+    .visit2-msg-avatar-wrap{
+      flex-shrink:0;
+      transform-origin:bottom center;
+      animation:visit2AvatarPop .28s cubic-bezier(.2,.9,.2,1);
+    }
+
+    .visit2-msg-body{
+      max-width:min(74%, 520px);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .visit2-msg-bubble{
+      border-radius:20px;
+      padding:12px 14px;
+      line-height:1.7;
+      font-size:14px;
+      word-break:break-word;
+      border:1px solid var(--border-color);
+      background:var(--bg-card-alt);
+      color:var(--text-primary);
+      box-shadow:0 6px 16px rgba(0,0,0,.04);
+    }
+
+    .visit2-msg-system .visit2-system-pill{
+      animation:visit2SystemFade .22s ease;
+    }
+
+    .visit2-msg-typing .visit2-msg-bubble{
+      min-width:62px;
+      padding:12px 14px;
+    }
+
+    .visit2-typing-bubble{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
+
+    .visit2-typing-dots{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .visit2-typing-dot{
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:currentColor;
+      opacity:.35;
+      animation:visit2TypingBounce 1s infinite ease-in-out;
+    }
+
+    .visit2-typing-dot:nth-child(2){
+      animation-delay:.16s;
+    }
+
+    .visit2-typing-dot:nth-child(3){
+      animation-delay:.32s;
+    }
+
+    @keyframes visit2AvatarPop{
+      0%{
+        transform:scale(.86);
+        opacity:0;
+      }
+      100%{
+        transform:scale(1);
+        opacity:1;
+      }
+    }
+
+    @keyframes visit2TypingBounce{
+      0%, 80%, 100%{
+        transform:translateY(0);
+        opacity:.3;
+      }
+      40%{
+        transform:translateY(-4px);
+        opacity:1;
+      }
+    }
+
+    @keyframes visit2SystemFade{
+      0%{
+        opacity:0;
+        transform:translateY(6px);
+      }
+      100%{
+        opacity:1;
+        transform:translateY(0);
+      }
+    }
+
 
     .visit2-system-pill{
       font-size:12px;
