@@ -16,9 +16,24 @@ export const DEFAULT_PET = {
   bond:        50,
   level:       1,
   exp:         0,
+
+  // 宠物房间 MVP：不升级 IndexedDB，只作为 pet 对象的子字段保存
+  room: {
+    location: 'petPage', // 'petPage' | 'room'
+    preset: 'mammal_cozy',
+    style: 'cozy_nest',
+    bed: 'soft_cushion',
+    toy: 'bell_ball',
+    decor: 'moon_lamp',
+    environment: 'warm',
+    facility: 'blanket',
+    updatedAt: Date.now(),
+  },
+
   lastOnlineAt: Date.now(),
   createdAt:   Date.now(),
 };
+
 
 // ── 默认设置 ─────────────────────────────────────────────────
 export const DEFAULT_SETTINGS = {

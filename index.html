@@ -64,6 +64,16 @@
           <div class="scene-deco scene-deco-3"></div>
 
           <div id="emotion-bubble"></div>
+          <!-- 宠物不在主页面时的提示层 -->
+<div id="pet-away-panel" class="pet-away-panel" hidden>
+  <div class="pet-away-icon">🚪</div>
+  <div class="pet-away-title">宠物当前不在</div>
+  <div class="pet-away-desc" id="pet-away-desc">它正在自己的房间里休息。</div>
+  <div class="pet-away-actions">
+    <button class="btn btn-primary btn-sm" id="btn-room-call-back" type="button">叫它回来</button>
+    <button class="btn btn-ghost btn-sm" id="btn-room-focus" type="button">看看房间</button>
+  </div>
+</div>
 
           <div id="pet-avatar-wrap">
             <!-- CSS 宠物（无头像时显示） -->
@@ -160,6 +170,96 @@
     <span class="pet-quick-label">来信</span>
   </button>
 </div>
+<!-- 宠物房间 MVP -->
+<section class="pet-room-card" id="pet-room-card">
+  <div class="pet-room-card-header">
+    <div>
+      <div class="pet-room-kicker">Pet Room</div>
+      <div class="pet-room-title">
+        <span id="pet-room-owner-name">小幽</span>的房间
+      </div>
+    </div>
+    <div class="pet-room-status-badge" id="pet-room-location-badge">在你身边</div>
+  </div>
+
+  <div class="pet-room-summary" id="pet-room-summary">
+    正在加载房间...
+  </div>
+
+  <div class="pet-room-grid" id="pet-room-grid">
+    <div class="pet-room-item">
+      <span>风格</span>
+      <strong id="room-summary-style">-</strong>
+    </div>
+    <div class="pet-room-item">
+      <span>睡觉区</span>
+      <strong id="room-summary-bed">-</strong>
+    </div>
+    <div class="pet-room-item">
+      <span>玩具</span>
+      <strong id="room-summary-toy">-</strong>
+    </div>
+    <div class="pet-room-item">
+      <span>装饰</span>
+      <strong id="room-summary-decor">-</strong>
+    </div>
+  </div>
+
+  <div class="pet-room-actions">
+    <button class="btn btn-primary btn-sm" id="btn-room-send" type="button">回房间休息</button>
+    <button class="btn btn-ghost btn-sm" id="btn-room-return" type="button">叫它回来</button>
+    <button class="btn btn-ghost btn-sm" id="btn-room-toggle-editor" type="button">布置房间</button>
+  </div>
+
+  <div class="pet-room-editor" id="pet-room-editor" hidden>
+    <div class="pet-room-editor-head">
+      <div>
+        <div class="pet-room-editor-title">布置房间</div>
+        <div class="pet-room-editor-desc">选择文字物品，不包含贴图。保存后会写入宠物本地数据。</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-room-apply-preset" type="button">使用动物预设</button>
+    </div>
+
+    <div class="pet-room-form">
+      <label class="pet-room-field">
+        <span>房间风格</span>
+        <select id="room-style-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>睡觉区域</span>
+        <select id="room-bed-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>玩具</span>
+        <select id="room-toy-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>装饰</span>
+        <select id="room-decor-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>环境</span>
+        <select id="room-environment-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>特别设施</span>
+        <select id="room-facility-select"></select>
+      </label>
+    </div>
+
+    <div class="pet-room-editor-status" id="pet-room-editor-status" aria-live="polite"></div>
+
+    <div class="pet-room-editor-actions">
+      <button class="btn btn-primary" id="btn-room-save" type="button">保存房间布置</button>
+    </div>
+  </div>
+</section>
+
 
 <!-- 聊天入口（替换原来的 pet-chat-area + pet-input-row） -->
 <button class="chat-open-btn" id="btn-open-chat">
@@ -1231,6 +1331,7 @@ async function init() {
   fillSettingsForms();
 
   bindPetActions();
+  bindRoomSystem();
   bindDiarySystem();
   bindNavigation();
   bindSettingsTabs();
@@ -1252,9 +1353,11 @@ bus.on(EVENTS.PET_UPDATED, (pet) => {
   updateAllStatusBars(pet);
   renderPetAvatar(pet);
   updateMoodCard(pet);
+  renderRoomUI(pet);
   const chatPetNameEl = document.getElementById('chat-open-petname');
   if (chatPetNameEl) chatPetNameEl.textContent = pet?.name || '宠物';
 });
+
   bus.on(EVENTS.PET_SICK, ({ damage, reason, health }) => {
     // 情绪气泡
     const bubble = document.getElementById('emotion-bubble');
@@ -1324,9 +1427,11 @@ function renderPetUI() {
   renderPetAvatar(pet);
   updateAllStatusBars(pet);
   updateMoodCard(pet);
+  renderRoomUI(pet);
   const nameTag = document.getElementById('pet-name-tag');
   if (nameTag) nameTag.textContent = pet.name || '小幽';
 }
+
 
 function updateMoodCard(pet) {
   const el = document.getElementById('mood-card-text');
@@ -1918,6 +2023,442 @@ function showLocalReaction(action) {
     setTimeout(() => bubble.classList.remove('show'), 4000);
   }
 }
+// ══════════════════════════════════════════════════════════════
+// 宠物房间 MVP —— 文字布置 + 动物预设 + 位置状态
+// 不升级 IndexedDB，只保存到 runtime.pet.room
+// ══════════════════════════════════════════════════════════════
+
+const ROOM_LOCATION = {
+  PET_PAGE: 'petPage',
+  ROOM: 'room',
+};
+
+const ROOM_OPTIONS = {
+  style: [
+    { id: 'cozy_nest', label: '软软小窝' },
+    { id: 'forest_cabin', label: '森林小屋' },
+    { id: 'sunny_terrarium', label: '暖阳爬宠房' },
+    { id: 'aqua_corner', label: '水波小屋' },
+    { id: 'tree_perch', label: '树梢小屋' },
+    { id: 'minimal_black_white', label: '极简黑白房' },
+  ],
+  bed: [
+    { id: 'soft_cushion', label: '软垫窝' },
+    { id: 'fluffy_blanket', label: '绒毛毯' },
+    { id: 'rock_cave', label: '岩洞小窝' },
+    { id: 'shell_bed', label: '贝壳窝' },
+    { id: 'woven_nest', label: '藤编巢' },
+    { id: 'moss_pad', label: '苔藓垫' },
+  ],
+  toy: [
+    { id: 'bell_ball', label: '铃铛球' },
+    { id: 'chew_rope', label: '咬咬绳' },
+    { id: 'bubble_stone', label: '气泡石' },
+    { id: 'tiny_mirror', label: '小镜子' },
+    { id: 'wood_branch', label: '磨爪树枝' },
+    { id: 'quiet_book', label: '安静绘本' },
+  ],
+  decor: [
+    { id: 'moon_lamp', label: '月亮灯' },
+    { id: 'small_plant', label: '小盆栽' },
+    { id: 'coral_piece', label: '珊瑚摆件' },
+    { id: 'cloud_mobile', label: '云朵挂饰' },
+    { id: 'warm_stone', label: '暖石摆设' },
+    { id: 'photo_wall', label: '回忆照片墙' },
+  ],
+  environment: [
+    { id: 'warm', label: '温暖舒适' },
+    { id: 'dry_warm', label: '温暖干燥' },
+    { id: 'humid', label: '湿润清凉' },
+    { id: 'bright_air', label: '通风明亮' },
+    { id: 'quiet_dim', label: '安静微暗' },
+  ],
+  facility: [
+    { id: 'blanket', label: '小毯子' },
+    { id: 'heat_lamp', label: '恒温灯' },
+    { id: 'shallow_water', label: '浅水碟' },
+    { id: 'water_grass', label: '水草角落' },
+    { id: 'perch', label: '栖木' },
+    { id: 'toy_box', label: '玩具箱' },
+  ],
+};
+
+const ROOM_PRESETS = {
+  mammal: {
+    preset: 'mammal_cozy',
+    style: 'cozy_nest',
+    bed: 'soft_cushion',
+    toy: 'bell_ball',
+    decor: 'moon_lamp',
+    environment: 'warm',
+    facility: 'blanket',
+  },
+  reptile: {
+    preset: 'reptile_terrarium',
+    style: 'sunny_terrarium',
+    bed: 'rock_cave',
+    toy: 'wood_branch',
+    decor: 'warm_stone',
+    environment: 'dry_warm',
+    facility: 'heat_lamp',
+  },
+  amphibian: {
+    preset: 'amphibian_moss',
+    style: 'forest_cabin',
+    bed: 'moss_pad',
+    toy: 'bubble_stone',
+    decor: 'small_plant',
+    environment: 'humid',
+    facility: 'shallow_water',
+  },
+  fish: {
+    preset: 'fish_aqua',
+    style: 'aqua_corner',
+    bed: 'shell_bed',
+    toy: 'bubble_stone',
+    decor: 'coral_piece',
+    environment: 'humid',
+    facility: 'water_grass',
+  },
+  bird: {
+    preset: 'bird_perch',
+    style: 'tree_perch',
+    bed: 'woven_nest',
+    toy: 'tiny_mirror',
+    decor: 'cloud_mobile',
+    environment: 'bright_air',
+    facility: 'perch',
+  },
+  generic: {
+    preset: 'generic_cozy',
+    style: 'cozy_nest',
+    bed: 'fluffy_blanket',
+    toy: 'quiet_book',
+    decor: 'photo_wall',
+    environment: 'quiet_dim',
+    facility: 'toy_box',
+  },
+};
+
+function _getDefaultRoomForPet(pet = runtime.pet) {
+  const species = pet?.speciesGroup || 'generic';
+  const preset = ROOM_PRESETS[species] || ROOM_PRESETS.generic;
+  return {
+    location: ROOM_LOCATION.PET_PAGE,
+    ...preset,
+    updatedAt: Date.now(),
+  };
+}
+
+function _normalizeRoom(room, pet = runtime.pet) {
+  const fallback = _getDefaultRoomForPet(pet);
+  return {
+    ...fallback,
+    ...(room || {}),
+    location: room?.location === ROOM_LOCATION.ROOM ? ROOM_LOCATION.ROOM : ROOM_LOCATION.PET_PAGE,
+  };
+}
+
+function _getRoomOptionLabel(type, id) {
+  const list = ROOM_OPTIONS[type] || [];
+  return list.find(item => item.id === id)?.label || id || '-';
+}
+
+function _fillRoomSelect(selectId, type) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.innerHTML = '';
+  (ROOM_OPTIONS[type] || []).forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.label;
+    select.appendChild(option);
+  });
+}
+
+function _fillRoomSelectsOnce() {
+  _fillRoomSelect('room-style-select', 'style');
+  _fillRoomSelect('room-bed-select', 'bed');
+  _fillRoomSelect('room-toy-select', 'toy');
+  _fillRoomSelect('room-decor-select', 'decor');
+  _fillRoomSelect('room-environment-select', 'environment');
+  _fillRoomSelect('room-facility-select', 'facility');
+}
+
+function _setRoomFormValues(room) {
+  const map = {
+    'room-style-select': room.style,
+    'room-bed-select': room.bed,
+    'room-toy-select': room.toy,
+    'room-decor-select': room.decor,
+    'room-environment-select': room.environment,
+    'room-facility-select': room.facility,
+  };
+
+  Object.entries(map).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+}
+
+function _readRoomFormValues() {
+  return {
+    style: document.getElementById('room-style-select')?.value || 'cozy_nest',
+    bed: document.getElementById('room-bed-select')?.value || 'soft_cushion',
+    toy: document.getElementById('room-toy-select')?.value || 'bell_ball',
+    decor: document.getElementById('room-decor-select')?.value || 'moon_lamp',
+    environment: document.getElementById('room-environment-select')?.value || 'warm',
+    facility: document.getElementById('room-facility-select')?.value || 'blanket',
+  };
+}
+
+function _setRoomInlineStatus(message, type = 'info') {
+  const el = document.getElementById('pet-room-editor-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.dataset.type = type;
+}
+
+function _isPetInRoom(pet = runtime.pet) {
+  return _normalizeRoom(pet?.room, pet).location === ROOM_LOCATION.ROOM;
+}
+
+function renderRoomUI(pet = runtime.pet) {
+  if (!pet) return;
+
+  const room = _normalizeRoom(pet.room, pet);
+  const petName = pet.name || '宠物';
+  const inRoom = room.location === ROOM_LOCATION.ROOM;
+
+  const ownerNameEl = document.getElementById('pet-room-owner-name');
+  if (ownerNameEl) ownerNameEl.textContent = petName;
+
+  const badge = document.getElementById('pet-room-location-badge');
+  if (badge) {
+    badge.textContent = inRoom ? '在房间休息' : '在你身边';
+    badge.dataset.location = inRoom ? 'room' : 'petPage';
+  }
+
+  const summary = document.getElementById('pet-room-summary');
+  if (summary) {
+    summary.textContent = inRoom
+      ? `${petName}正在房间里休息。房间是「${_getRoomOptionLabel('style', room.style)}」，环境是「${_getRoomOptionLabel('environment', room.environment)}」。`
+      : `${petName}现在在主页面等你。房间已经布置好，随时可以回去休息。`;
+  }
+
+  const styleEl = document.getElementById('room-summary-style');
+  const bedEl = document.getElementById('room-summary-bed');
+  const toyEl = document.getElementById('room-summary-toy');
+  const decorEl = document.getElementById('room-summary-decor');
+
+  if (styleEl) styleEl.textContent = _getRoomOptionLabel('style', room.style);
+  if (bedEl) bedEl.textContent = _getRoomOptionLabel('bed', room.bed);
+  if (toyEl) toyEl.textContent = _getRoomOptionLabel('toy', room.toy);
+  if (decorEl) decorEl.textContent = _getRoomOptionLabel('decor', room.decor);
+
+  _setRoomFormValues(room);
+
+  const awayPanel = document.getElementById('pet-away-panel');
+  const awayDesc = document.getElementById('pet-away-desc');
+  const avatarWrap = document.getElementById('pet-avatar-wrap');
+  const emotionBubble = document.getElementById('emotion-bubble');
+
+  if (awayPanel) awayPanel.hidden = !inRoom;
+  if (awayDesc) awayDesc.textContent = `${petName}正在自己的房间里休息。`;
+  if (avatarWrap) avatarWrap.classList.toggle('is-away', inRoom);
+  if (emotionBubble && inRoom) emotionBubble.classList.remove('show');
+
+  document.body.classList.toggle('pet-is-in-room', inRoom);
+
+  const sendBtn = document.getElementById('btn-room-send');
+  const returnBtn = document.getElementById('btn-room-return');
+  const callBackBtn = document.getElementById('btn-room-call-back');
+
+  if (sendBtn) sendBtn.disabled = inRoom;
+  if (returnBtn) returnBtn.disabled = !inRoom;
+  if (callBackBtn) callBackBtn.disabled = !inRoom;
+
+  // 宠物在房间时，主互动按钮禁用，避免用户以为能在主页面互动
+  ['btn-feed', 'btn-play', 'btn-clean', 'btn-heal', 'btn-open-chat'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('is-disabled-by-room', inRoom);
+    btn.disabled = inRoom;
+  });
+}
+
+async function _saveRoomPatch(roomPatch, feedback = {}) {
+  const pet = runtime.pet;
+  if (!pet) throw new Error('宠物数据未加载');
+
+  const currentRoom = _normalizeRoom(pet.room, pet);
+  const nextRoom = {
+    ...currentRoom,
+    ...roomPatch,
+    updatedAt: Date.now(),
+  };
+
+  await savePet({ room: nextRoom });
+
+  if (feedback.success) {
+    showToast(feedback.success, 'success');
+  }
+
+  return nextRoom;
+}
+
+async function sendPetToRoom(btn) {
+  showToast('正在让宠物回房间...', 'info');
+  if (btn) setButtonLoading(btn, true, '正在回房间...');
+
+  try {
+    await _saveRoomPatch(
+      { location: ROOM_LOCATION.ROOM },
+      { success: `${runtime.pet?.name || '宠物'}已经回房间休息啦` }
+    );
+    _appendChatMsg?.('system', `${runtime.pet?.name || '宠物'}回房间休息了 🛏️`);
+  } catch (err) {
+    showToast('切换失败：' + err.message, 'error');
+    logError('app', 'sendPetToRoom failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderRoomUI(runtime.pet);
+  }
+}
+
+async function callPetBackFromRoom(btn) {
+  showToast('正在叫宠物回来...', 'info');
+  if (btn) setButtonLoading(btn, true, '正在回来...');
+
+  try {
+    await _saveRoomPatch(
+      { location: ROOM_LOCATION.PET_PAGE },
+      { success: `${runtime.pet?.name || '宠物'}回到你身边啦` }
+    );
+    _appendChatMsg?.('system', `${runtime.pet?.name || '宠物'}从房间回来了 🐾`);
+    showLocalReaction?.('greet');
+  } catch (err) {
+    showToast('叫回失败：' + err.message, 'error');
+    logError('app', 'callPetBackFromRoom failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderRoomUI(runtime.pet);
+  }
+}
+
+async function saveRoomFromEditor(btn) {
+  showToast('正在保存房间布置...', 'info');
+  _setRoomInlineStatus('正在保存房间布置...', 'loading');
+  if (btn) setButtonLoading(btn, true, '正在保存...');
+
+  try {
+    const currentRoom = _normalizeRoom(runtime.pet?.room, runtime.pet);
+    const formValues = _readRoomFormValues();
+
+    await _saveRoomPatch({
+      ...formValues,
+      location: currentRoom.location,
+    });
+
+    _setRoomInlineStatus('房间布置已保存', 'success');
+    showToast('房间布置已保存', 'success');
+    _appendChatMsg?.('system', '你重新布置了宠物房间 🏠');
+  } catch (err) {
+    _setRoomInlineStatus('保存失败：' + err.message, 'error');
+    showToast('保存房间失败：' + err.message, 'error');
+    logError('app', 'saveRoomFromEditor failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderRoomUI(runtime.pet);
+  }
+}
+
+async function applySpeciesRoomPreset(btn) {
+  showToast('正在应用房间预设...', 'info');
+  _setRoomInlineStatus('正在应用适合它的房间预设...', 'loading');
+  if (btn) setButtonLoading(btn, true, '应用中...');
+
+  try {
+    const pet = runtime.pet;
+    const currentRoom = _normalizeRoom(pet?.room, pet);
+    const species = pet?.speciesGroup || 'generic';
+    const preset = ROOM_PRESETS[species] || ROOM_PRESETS.generic;
+
+    const nextRoom = {
+      ...currentRoom,
+      ...preset,
+      location: currentRoom.location,
+      updatedAt: Date.now(),
+    };
+
+    _setRoomFormValues(nextRoom);
+    await savePet({ room: nextRoom });
+
+    const meta = getSpeciesMeta(species);
+    _setRoomInlineStatus(`已应用「${meta.label}」房间预设`, 'success');
+    showToast(`已应用适合${meta.label}的房间预设`, 'success');
+  } catch (err) {
+    _setRoomInlineStatus('应用预设失败：' + err.message, 'error');
+    showToast('应用预设失败：' + err.message, 'error');
+    logError('app', 'applySpeciesRoomPreset failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderRoomUI(runtime.pet);
+  }
+}
+
+function bindRoomSystem() {
+  _fillRoomSelectsOnce();
+  renderRoomUI(runtime.pet);
+
+  document.getElementById('btn-room-toggle-editor')?.addEventListener('click', () => {
+    const editor = document.getElementById('pet-room-editor');
+    if (!editor) return;
+
+    const willOpen = editor.hidden;
+    editor.hidden = !willOpen;
+
+    if (willOpen) {
+      showToast('正在打开房间布置...', 'info');
+      _setRoomInlineStatus('可以开始布置房间啦', 'success');
+      renderRoomUI(runtime.pet);
+      showToast('可以开始布置房间啦', 'success');
+    }
+  });
+
+  document.getElementById('btn-room-save')?.addEventListener('click', (e) => {
+    saveRoomFromEditor(e.currentTarget);
+  });
+
+  document.getElementById('btn-room-apply-preset')?.addEventListener('click', (e) => {
+    applySpeciesRoomPreset(e.currentTarget);
+  });
+
+  document.getElementById('btn-room-send')?.addEventListener('click', (e) => {
+    sendPetToRoom(e.currentTarget);
+  });
+
+  document.getElementById('btn-room-return')?.addEventListener('click', (e) => {
+    callPetBackFromRoom(e.currentTarget);
+  });
+
+  document.getElementById('btn-room-call-back')?.addEventListener('click', (e) => {
+    callPetBackFromRoom(e.currentTarget);
+  });
+
+  document.getElementById('btn-room-focus')?.addEventListener('click', () => {
+    const card = document.getElementById('pet-room-card');
+    if (card) {
+      showToast('正在定位宠物房间...', 'info');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('room-card-pulse');
+      setTimeout(() => card.classList.remove('room-card-pulse'), 900);
+      showToast('已定位到宠物房间', 'success');
+    }
+  });
+}
+
 // ══════════════════════════════════════════════════════════════
 // 聊天全屏 Modal
 // ══════════════════════════════════════════════════════════════

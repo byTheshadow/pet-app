@@ -2723,6 +2723,330 @@
   line-height: 1.6;
   color: var(--text-secondary);
 }
+/* ============================================================
+   Pet Room MVP
+   ============================================================ */
+
+.pet-away-panel {
+  position: absolute;
+  inset: 18px;
+  z-index: 8;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68)),
+    var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 18px;
+}
+
+[data-theme="mono"] .pet-away-panel {
+  background:
+    linear-gradient(135deg, rgba(30,30,30,0.9), rgba(30,30,30,0.72)),
+    var(--bg-card);
+}
+
+.pet-away-panel[hidden] {
+  display: none !important;
+}
+
+.pet-away-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.pet-away-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.pet-away-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.pet-away-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#pet-avatar-wrap.is-away {
+  opacity: 0.22;
+  filter: grayscale(0.35) blur(1px);
+  pointer-events: none;
+}
+
+.pet-is-in-room #mood-card-text::after {
+  content: " · 房间休息中";
+}
+
+.pet-room-card {
+  margin: 12px 16px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 210, 225, 0.32), transparent 32%),
+    var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+[data-theme="mono"] .pet-room-card {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255,255,255,0.08), transparent 32%),
+    var(--bg-card);
+}
+
+.pet-room-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pet-room-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.pet-room-title {
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.pet-room-status-badge {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border-subtle);
+}
+
+.pet-room-status-badge[data-location="room"] {
+  color: #8a5a00;
+  background: rgba(255, 213, 128, 0.28);
+}
+
+[data-theme="mono"] .pet-room-status-badge[data-location="room"] {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.12);
+}
+
+.pet-room-summary {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pet-room-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pet-room-item {
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+}
+
+.pet-room-item span {
+  display: block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+}
+
+.pet-room-item strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pet-room-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.pet-room-actions .btn {
+  flex: 1;
+  min-width: 96px;
+}
+
+.pet-room-editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.pet-room-editor[hidden] {
+  display: none !important;
+}
+
+.pet-room-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pet-room-editor-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pet-room-editor-desc {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.pet-room-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pet-room-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pet-room-field span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.pet-room-field select {
+  width: 100%;
+  min-height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-alt);
+  color: var(--text-primary);
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.pet-room-field select:focus {
+  border-color: var(--accent, #ff8fb3);
+  box-shadow: 0 0 0 3px rgba(255, 143, 179, 0.16);
+}
+
+.pet-room-editor-status {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.pet-room-editor-status[data-type="loading"] {
+  color: var(--text-secondary);
+}
+
+.pet-room-editor-status[data-type="success"] {
+  color: #168a4a;
+}
+
+.pet-room-editor-status[data-type="error"] {
+  color: #d14343;
+}
+
+.pet-room-editor-actions {
+  margin-top: 10px;
+}
+
+.pet-room-editor-actions .btn {
+  width: 100%;
+}
+
+.is-disabled-by-room {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.room-card-pulse {
+  animation: roomCardPulse 0.85s ease;
+}
+
+@keyframes roomCardPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: var(--shadow-card);
+  }
+  45% {
+    transform: scale(1.015);
+    box-shadow: 0 10px 28px rgba(255, 143, 179, 0.22);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+@media (max-width: 360px) {
+  .pet-room-grid,
+  .pet-room-form {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-room-editor-head {
+    flex-direction: column;
+  }
+
+  .pet-away-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .pet-away-actions .btn {
+    width: 100%;
+  }
+}
+
 
 
 
