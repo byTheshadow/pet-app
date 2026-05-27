@@ -594,10 +594,14 @@ function renderFocusView({ friend, selectedGift, selectedPack, focusTask, minute
     if (diff <= 0) {
       clearInterval(visitRuntime.focusTimer);
       visitRuntime.focusTimer = null;
-      if (statusEl) statusEl.textContent = '宠物回家啦，正在整理这次做客的小结...';
+      if (statusEl) statusEl.textContent = '宠物回家啦，正在触发小彩蛋...';
 
-      const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
-      const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg);
+const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+
+if (statusEl) statusEl.textContent = '小彩蛋已出现，正在整理这次做客的小结...';
+
+const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg);
+
 
       await persistVisitResult(friend, {
         mode: VISIT_MODES.OUTGOING_FOCUS,
@@ -620,10 +624,17 @@ function renderFocusView({ friend, selectedGift, selectedPack, focusTask, minute
       visitRuntime.focusTimer = null;
     }
 
-    const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
-    const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg, true);
-    appendFocusSummary(summary, egg.text, true);
-    showToast('番茄钟已提前结束', 'warn');
+    const statusEl = document.getElementById('visit2-focus-status');
+if (statusEl) statusEl.textContent = '正在触发提前结束的小彩蛋...';
+
+const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+
+if (statusEl) statusEl.textContent = '小彩蛋已出现，正在生成提前结束小结...';
+
+const summary = await generateFocusReturnSummary(friend, visitRuntime.startedContext || {}, egg, true);
+appendFocusSummary(summary, egg.text, true);
+showToast('番茄钟已提前结束，小彩蛋已出现', 'warn');
+
   });
 }
 
@@ -763,12 +774,13 @@ await generateVisitLineWithTyping({
     }
 
     if (!visitRuntime.autoStop) {
-      const egg = await getVisitEasterEgg(friend, ctx);
-      appendVisitMessage('system', 'system', egg.text);
-      bumpIntimacy(egg.effects?.intimacy || 1);
-      setInlineStatus('自动聊天完成');
-      showToast('自动聊天完成', 'success');
-    }
+  setInlineStatus('正在触发小彩蛋...');
+  const egg = await getVisitEasterEgg(friend, ctx);
+  appendVisitMessage('system', 'system', egg.text);
+  bumpIntimacy(egg.effects?.intimacy || 1);
+  setInlineStatus('自动聊天完成，小彩蛋已出现');
+  showToast('自动聊天完成，小彩蛋已出现', 'success');
+}
   } catch (err) {
     setInlineStatus(`自动聊天失败：${err.message}`);
     showToast(`自动聊天失败：${err.message}`, 'error');
@@ -798,8 +810,11 @@ await generateFarewellLineWithTyping('friend', friend);
 await generateFarewellLineWithTyping('pet', friend);
 // === 区块结束：做客告别消息 ===
 
-    const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
-    appendVisitMessage('system', 'system', egg.text);
+    setInlineStatus('正在触发告别小彩蛋...');
+const egg = await getVisitEasterEgg(friend, visitRuntime.startedContext || {});
+appendVisitMessage('system', 'system', egg.text);
+setInlineStatus('告别小彩蛋已出现');
+
 
     bumpIntimacy(5);
     await persistVisitResult(friend, {
@@ -1103,8 +1118,20 @@ function getSelectedItems(type) {
       id: el.dataset.id,
       label: el.dataset.label,
       promptTag: el.dataset.promptTag || '',
+      tags: safeParseVisitTags(el.dataset.tags),
+      species: safeParseVisitTags(el.dataset.species),
     }));
 }
+function safeParseVisitTags(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
 
 function getSingleSelectedItem(type) {
   return getSelectedItems(type)[0] || null;
@@ -1128,9 +1155,12 @@ function renderSelectCard(item, type, single = false) {
       data-type="${escapeHtml(type)}"
       data-label="${escapeHtml(item.label)}"
       data-prompt-tag="${escapeHtml(item.promptTag || '')}"
+      data-tags="${escapeHtml(JSON.stringify(item.tags || []))}"
+      data-species="${escapeHtml(JSON.stringify(item.species || []))}"
       data-single="${single ? '1' : '0'}"
       onclick="window.__visit2ToggleSelect(this)"
     >
+
       <div class="visit2-select-icon">${item.icon}</div>
       <div class="visit2-select-title">${escapeHtml(item.label)}</div>
       <div class="visit2-select-desc">${escapeHtml(item.desc)}</div>
@@ -1233,27 +1263,206 @@ ${userText ? `用户刚刚说：${userText}` : '请自然接一句。'}
   });
 
 }
+function normalizeVisitModeTag(mode) {
+  if (mode === VISIT_MODES.INCOMING_CHAT) return 'incoming';
+  if (mode === VISIT_MODES.OUTGOING_CHAT) return 'outgoing';
+  if (mode === VISIT_MODES.OUTGOING_FOCUS) return 'focus';
+  return '';
+}
+
+function buildVisitEggMatchTags(contextData = {}, mode = visitRuntime.mode, friend = null) {
+  const tags = new Set();
+
+  const modeShort = normalizeVisitModeTag(mode);
+  if (mode) tags.add(`mode:${mode}`);
+  if (modeShort) tags.add(modeShort);
+
+  if (mode === VISIT_MODES.INCOMING_CHAT) tags.add('toy');
+
+  if (mode === VISIT_MODES.OUTGOING_CHAT || mode === VISIT_MODES.OUTGOING_FOCUS) {
+    tags.add('gift');
+    tags.add('pack');
+  }
+
+  if (mode === VISIT_MODES.OUTGOING_FOCUS) {
+    tags.add('focus');
+  }
+
+  const petSpecies = runtime.pet?.speciesGroup || '';
+  const friendSpecies = friend?.speciesGroup || '';
+
+  if (petSpecies) {
+    tags.add(`species:${petSpecies}`);
+    tags.add(petSpecies);
+  }
+
+  if (friendSpecies) {
+    tags.add(`friend:${friendSpecies}`);
+    tags.add(`species:${friendSpecies}`);
+    tags.add(friendSpecies);
+  }
+
+  if (petSpecies && friendSpecies) {
+    tags.add(`pair:${petSpecies}-${friendSpecies}`);
+    tags.add(`pair:${friendSpecies}-${petSpecies}`);
+  }
+
+  const pushItemTags = (prefix, item) => {
+    if (!item) return;
+
+    if (item.id) {
+      tags.add(prefix);
+      tags.add(`${prefix}:${item.id}`);
+    }
+
+    if (Array.isArray(item.tags)) {
+      item.tags.forEach(tag => {
+        if (!tag) return;
+        const value = String(tag);
+        tags.add(value);
+        tags.add(`${prefix}:${value}`);
+      });
+    }
+
+    if (Array.isArray(item.species)) {
+      item.species.forEach(sp => {
+        if (!sp) return;
+        tags.add(`item-species:${sp}`);
+        tags.add(`${prefix}-species:${sp}`);
+      });
+    }
+
+    if (item.promptTag) {
+      String(item.promptTag)
+        .split(/[，,、\s]+/)
+        .map(x => x.trim())
+        .filter(Boolean)
+        .forEach(word => tags.add(word));
+    }
+  };
+
+  (contextData.selectedToys || []).forEach(item => pushItemTags('toy', item));
+
+  if (contextData.selectedGift) {
+    pushItemTags('gift', contextData.selectedGift);
+  }
+
+  (contextData.selectedPack || []).forEach(item => pushItemTags('pack', item));
+
+  (contextData.customToys || []).forEach(name => {
+    if (!name) return;
+    tags.add('toy');
+    tags.add('custom-toy');
+    tags.add(String(name).trim());
+  });
+
+  return tags;
+}
+
+function getVisitEggScore(egg, matchTags, mode) {
+  if (!egg) return -999;
+
+  if (Array.isArray(egg.modes) && egg.modes.length && !egg.modes.includes(mode)) {
+    return -999;
+  }
+
+  const eggTags = Array.isArray(egg.tags) ? egg.tags : [];
+  let score = 0;
+
+  if (!Array.isArray(egg.modes) || !egg.modes.length) {
+    score += 1;
+  } else if (egg.modes.includes(mode)) {
+    score += 6;
+  }
+
+  eggTags.forEach(tag => {
+    if (!tag) return;
+    if (matchTags.has(tag)) score += 4;
+  });
+
+  eggTags.forEach(tag => {
+    if (/^(toy|gift|pack):/.test(tag) && matchTags.has(tag)) {
+      score += 8;
+    }
+  });
+
+  return score;
+}
+
+function pickWeightedVisitEgg(candidates) {
+  if (!candidates.length) return null;
+
+  const weighted = candidates.map(item => ({
+    egg: item.egg,
+    weight: Math.max(1, item.score + (item.egg.weight || 0)),
+  }));
+
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * total;
+
+  for (const item of weighted) {
+    roll -= item.weight;
+    if (roll <= 0) return item.egg;
+  }
+
+  return weighted[weighted.length - 1].egg;
+}
+
+function pickContextualVisitEgg(friend, contextData = {}, mode = visitRuntime.mode) {
+  const matchTags = buildVisitEggMatchTags(contextData, mode, friend);
+
+  const scored = VISIT_FALLBACK_EASTER_EGGS
+    .map(egg => ({
+      egg,
+      score: getVisitEggScore(egg, matchTags, mode),
+    }))
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const bestScore = scored[0]?.score || 0;
+
+  const candidates = scored.filter(item => {
+    return item.score >= Math.max(1, bestScore - 6);
+  });
+
+  return pickWeightedVisitEgg(candidates) || VISIT_FALLBACK_EASTER_EGGS[
+    Math.floor(Math.random() * VISIT_FALLBACK_EASTER_EGGS.length)
+  ];
+}
 
 async function getVisitEasterEgg(friend, contextData = {}) {
+  const mode = visitRuntime.mode || contextData.mode || VISIT_MODES.INCOMING_CHAT;
+  const fallbackEgg = pickContextualVisitEgg(friend, contextData, mode);
   const shouldTryAI = Math.random() < 0.45;
 
   if (shouldTryAI) {
     try {
       const pet = runtime.pet || {};
+
       const text = await safeAIText({
         rolePrompt: '你负责生成一句宠物做客场景的小彩蛋提示。',
         userText: `
-请生成一句宠物做客彩蛋。
+请根据“候选彩蛋”和“上下文”生成一句宠物做客彩蛋。
+
 要求：
 1. 不超过40字
 2. 温柔可爱
 3. 像系统旁白
+4. 不要解释规则
+5. 优先体现当前模式、玩具、礼物或出门包
+6. 只输出一句话
+
 我的宠物：${pet.name || '小宠物'}
-好友：${friend.name}
+好友：${friend?.name || '好友'}
+模式：${mode}
+候选彩蛋：${fallbackEgg?.text || ''}
 上下文：${JSON.stringify({
   gift: contextData.selectedGift?.label || '',
+  giftTags: contextData.selectedGift?.tags || [],
   pack: (contextData.selectedPack || []).map(x => x.label),
+  packTags: (contextData.selectedPack || []).flatMap(x => x.tags || []),
   toys: (contextData.selectedToys || []).map(x => x.label),
+  toyTags: (contextData.selectedToys || []).flatMap(x => x.tags || []),
   customToys: contextData.customToys || [],
 })}
 `,
@@ -1262,18 +1471,21 @@ async function getVisitEasterEgg(friend, contextData = {}) {
 
       if (text) {
         return {
-          id: 'ai_egg',
+          id: `ai_${fallbackEgg?.id || 'egg'}`,
           text,
-          effects: { intimacy: 2, mood: 1 },
+          effects: fallbackEgg?.effects || { intimacy: 2, mood: 1 },
+          sourceEggId: fallbackEgg?.id || '',
+          tags: fallbackEgg?.tags || [],
         };
       }
-    } catch (_) {}
+    } catch (err) {
+      console.warn('[visit] easter egg AI failed, use contextual fallback', err);
+    }
   }
 
-  return VISIT_FALLBACK_EASTER_EGGS[
-    Math.floor(Math.random() * VISIT_FALLBACK_EASTER_EGGS.length)
-  ];
+  return fallbackEgg;
 }
+
 
 async function generateFocusReturnSummary(friend, ctx, egg, early = false) {
   const pet = runtime.pet || {};
