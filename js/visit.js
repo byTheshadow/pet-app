@@ -1425,9 +1425,16 @@ function pickContextualVisitEgg(friend, contextData = {}, mode = visitRuntime.mo
     return item.score >= Math.max(1, bestScore - 6);
   });
 
-  return pickWeightedVisitEgg(candidates) || VISIT_FALLBACK_EASTER_EGGS[
+   return pickWeightedVisitEgg(candidates) || VISIT_FALLBACK_EASTER_EGGS[
     Math.floor(Math.random() * VISIT_FALLBACK_EASTER_EGGS.length)
-  ];
+  ] || {
+    id: 'default_visit_egg',
+    text: '一个小小的温柔瞬间悄悄发生了。',
+    effects: { intimacy: 1, mood: 1 },
+    modes: [mode],
+    tags: ['soft'],
+  };
+
 }
 
 async function getVisitEasterEgg(friend, contextData = {}) {
