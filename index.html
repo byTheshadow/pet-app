@@ -6813,6 +6813,15 @@ function _formatDiaryDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
 }
+function _escapeDiaryHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 
 /**
  * 查询今天是否已有日记
@@ -7017,13 +7026,13 @@ function _renderDiaryHistoryList(records = []) {
 
     const preview = record.summary || record.content || '（日记内容为空）';
 
-    item.innerHTML = `
-      <div class="diary-history-main">
-        <div class="diary-history-date">${escapeHtml(titleDate)}</div>
-        <div class="diary-history-preview">${escapeHtml(preview)}</div>
-      </div>
-      <div class="diary-history-arrow">›</div>
-    `;
+   item.innerHTML = `
+  <div class="diary-history-main">
+    <div class="diary-history-date">${_escapeDiaryHtml(titleDate)}</div>
+    <div class="diary-history-preview">${_escapeDiaryHtml(preview)}</div>
+  </div>
+  <div class="diary-history-arrow">›</div>
+`;
 
     item.addEventListener('click', () => {
       diaryState.currentRecord = record;
@@ -7057,7 +7066,7 @@ async function _loadDiaryHistoryTab() {
         <div class="diary-empty">
           <div class="diary-empty-icon">⚠️</div>
           <div class="diary-empty-title">历史日记加载失败</div>
-          <div class="diary-empty-text">${escapeHtml(err.message || '请稍后再试')}</div>
+          <div class="diary-empty-text">${_escapeDiaryHtml(err.message || '请稍后再试')}</div>
         </div>
       `;
     }
