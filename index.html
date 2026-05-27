@@ -7280,7 +7280,9 @@ async function _triggerDiaryGeneration() {
   const summary = await _generateDiarySummary(content);
 
   // 存入 DB
+  const today = _getTodayStr();
   const now = Date.now();
+
   const record = {
     id:        now + Math.random(),
     type:      'diary',
@@ -7302,13 +7304,18 @@ async function _triggerDiaryGeneration() {
     logError('app', `Save diary failed: ${err.message}`);
   }
 
-  diaryState.isGenerating = false;
+   diaryState.isGenerating = false;
 
   // 恢复重新生成按钮
   const regenBtn = document.getElementById('diary-regen-btn');
-  if (regenBtn) { regenBtn.disabled = false; regenBtn.textContent = '🔄 重新生成'; }
+  if (regenBtn) {
+    regenBtn.disabled = false;
+    regenBtn.textContent = '🔄 重新生成';
+  }
 
+  _updateDiaryHeaderDate(record);
   _renderDiaryContent(content);
+
 }
 
 /** 切换编辑模式 */
