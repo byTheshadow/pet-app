@@ -1501,6 +1501,217 @@ export const VISIT_FALLBACK_EASTER_EGGS = [
     modes: [VISIT_MODES.OUTGOING_FOCUS, VISIT_MODES.OUTGOING_CHAT],
     tags: ['pack', 'dreamy', 'calm', 'glow'],
   },
+   // === 更多彩蛋 ===
+  {
+    id: 'toy_ball_bounce_dance',
+    text: '小球弹跳着滚到它们脚边，它们轻轻推了一下，开心地追上去。',
+    effects: { mood: 3, intimacy: 2 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:ball', 'playful', 'chase']
+  },
+  {
+    id: 'toy_pond_set_splash',
+    text: '小爪子拨动池塘里的水花，水珠在阳光下闪闪发光，它们玩得好专注。',
+    effects: { mood: 3, clean: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:pond_set', 'water', 'gentle']
+  },
+  {
+    id: 'toy_warm_stone_cuddle',
+    text: '它们蜷缩在暖石边，眯着眼睛发出轻柔的呼噜声，看起来很安心。',
+    effects: { intimacy: 2, mood: 2, health: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:warm_stone', 'cozy', 'warm']
+  },
+  {
+    id: 'toy_feather_wand_flutter',
+    text: '羽毛逗猫棒轻轻一抖，它们立刻竖起耳朵，扑过来抱住晃动的羽毛。',
+    effects: { mood: 4, intimacy: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:feather_wand', 'playful', 'chase']
+  },
+  {
+    id: 'toy_storybook_read',
+    text: '它们趴在故事书旁边，翻动的书页发出沙沙声，像是真的在听故事。',
+    effects: { intimacy: 3, mood: 2 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:storybook', 'calm', 'dreamy']
+  },
+  {
+    id: 'toy_plush_snuggle',
+    text: '它们用脑袋蹭了蹭软乎乎的毛绒玩具，然后轻轻叼到窝里一起休息。',
+    effects: { intimacy: 2, mood: 2, clean: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:plush', 'soft', 'cozy']
+  },
+  {
+    id: 'toy_yarn_ball_unroll',
+    text: '毛线球被拨弄得慢慢散开，它们踩着线头绕圈，玩得不亦乐乎。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:toy_yarn_ball', 'playful', 'chase']
+  },
+  {
+    id: 'toy_crinkly_duck_squeak',
+    text: '捏一下鸭子玩具，发出可爱的嘎吱声，它们歪着头，又轻轻碰了一下。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:toy_crinkly_duck', 'sound', 'gentle']
+  },
+  {
+    id: 'toy_shell_rattle_shake',
+    text: '贝壳摇铃发出海浪般的沙沙声，它们好奇地拨动，眼睛亮晶晶的。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:toy_shell_rattle', 'sound', 'calm']
+  },
+  {
+    id: 'toy_bubble_maker_floating',
+    text: '一串泡泡飘到空中，它们跳起来轻轻戳破，又去追下一颗。',
+    effects: { mood: 4, intimacy: 1, clean: 1 },
+    modes: [VISIT_MODES.INCOMING_CHAT],
+    tags: ['toy', 'toy:toy_bubble_maker', 'magical', 'playful', 'chase']
+  },
+  {
+    id: 'gift_snack_box_share',
+    text: '打开零食盒子，它们凑过来用湿湿的鼻子碰碰你的手，然后小口小口吃。',
+    effects: { intimacy: 3, mood: 2 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'gift:snack_box', 'sweet', 'bond']
+  },
+  {
+    id: 'gift_cozy_blanket',
+    text: '毛毯铺开，它们立刻钻进去，只露出一个毛茸茸的尾巴尖。',
+    effects: { mood: 2, intimacy: 2, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'soft', 'cozy', 'warm']
+  },
+  {
+    id: 'gift_sunbeam_cushion',
+    text: '阳光垫子放在窗边，它们伸个懒腰躺上去，眼睛慢慢眯成一条线。',
+    effects: { mood: 3, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'warm', 'calm', 'secure']
+  },
+  {
+    id: 'gift_herb_sachet',
+    text: '闻到你带来的草药香包，它们轻轻嗅了嗅，打了个小小的哈欠。',
+    effects: { mood: 2, health: 2 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'calm', 'gentle', 'dreamy']
+  },
+  {
+    id: 'gift_jingly_bell_collar',
+    text: '给小项圈挂上铃铛，每一步都发出清脆的叮当声，它们得意地走来走去。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'sound', 'playful', 'interactive']
+  },
+  {
+    id: 'gift_fluffy_mouse_toy',
+    text: '一只软绵绵的小老鼠玩具，它们叼起来抛到空中，又扑住它。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'toy', 'playful', 'chase']
+  },
+  {
+    id: 'gift_scratcher_lounge',
+    text: '新的猫抓板带小窝，它们抓了几下，然后舒服地窝在里面打盹。',
+    effects: { mood: 2, intimacy: 2, clean: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'cozy', 'secure', 'gentle']
+  },
+  {
+    id: 'gift_starry_night_light',
+    text: '小夜灯投出星空，它们抬头看着光点，安静地依偎在你身边。',
+    effects: { mood: 2, intimacy: 3 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['gift', 'dreamy', 'calm', 'bond']
+  },
+  {
+    id: 'pack_bubble_jelly_bell_ring',
+    text: '从包里掏出果冻铃铛，轻轻一摇，它们就竖着耳朵跑过来。',
+    effects: { mood: 3, intimacy: 2 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_bubble_jelly_bell', 'sound', 'playful']
+  },
+  {
+    id: 'pack_mossy_snug_hideout_enter',
+    text: '苔藓小屋铺开，它们钻进去探索一番，然后露出半张脸张望你。',
+    effects: { mood: 2, intimacy: 2, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_mossy_snug_hideout', 'hide', 'cozy']
+  },
+  {
+    id: 'pack_sunny_pebble_buddy_warm',
+    text: '暖阳小石放在它们身边，它们贴着石头闭眼，像在晒太阳。',
+    effects: { mood: 2, health: 2 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_sunny_pebble_buddy', 'warm', 'gentle']
+  },
+  {
+    id: 'pack_chirpy_whisper_ball_tweet',
+    text: '啾语球发出小鸟般的叫声，它们好奇地轻推，又侧耳倾听。',
+    effects: { mood: 3, intimacy: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_chirpy_whisper_ball', 'sound', 'playful']
+  },
+  {
+    id: 'pack_ripple_dream_bottle_glow',
+    text: '涟漪梦境瓶微微发光，它们盯着瓶里流动的光影，慢慢安静下来。',
+    effects: { mood: 3, intimacy: 1, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_ripple_dream_bottle', 'dreamy', 'calm']
+  },
+  {
+    id: 'pack_snuggle_leaf_tent_crawl',
+    text: '树叶帐篷搭好后，它们钻进去躺下，伸出一只小爪子搭在外边。',
+    effects: { mood: 2, intimacy: 3 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'pack:pack_snuggle_leaf_tent', 'cozy', 'hide']
+  },
+  {
+    id: 'pack_cloud_fluff_bed',
+    text: '云朵软垫铺开，它们在上边翻滚一圈，然后满足地缩成团。',
+    effects: { mood: 3, health: 1, clean: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'soft', 'cozy', 'secure']
+  },
+  {
+    id: 'pack_starlight_wand_dot',
+    text: '星光棒轻轻一点，空中出现小光点，它们兴奋地跳着去抓。',
+    effects: { mood: 4, intimacy: 1 },
+    modes: [VISIT_MODES.OUTGOING_CHAT, VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['pack', 'magical', 'playful', 'chase']
+  },
+  {
+    id: 'focus_timer_25min_purr',
+    text: '番茄钟嘀嗒走着，它们安静趴在你手边，发出轻轻的呼噜声。',
+    effects: { intimacy: 3, mood: 2 },
+    modes: [VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['focus', 'calm', 'bond', 'secure']
+  },
+  {
+    id: 'focus_completion_flower_grow',
+    text: '专注完成啦，它们推给你一朵小花，然后快乐地原地转圈。',
+    effects: { mood: 3, intimacy: 2, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['focus', 'surprise', 'sweet', 'bond']
+  },
+  {
+    id: 'focus_break_reminder_stretch',
+    text: '到休息时间啦，它们伸个懒腰，然后轻轻蹭蹭你的手提醒你。',
+    effects: { mood: 2, intimacy: 2, health: 1 },
+    modes: [VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['focus', 'gentle', 'interactive', 'warm']
+  },
+  {
+    id: 'focus_deep_work_blanket',
+    text: '你专心工作时，它们安静趴在旁边，小尾巴偶尔轻轻扫过你的手腕。',
+    effects: { intimacy: 3, mood: 1, clean: 1 },
+    modes: [VISIT_MODES.OUTGOING_FOCUS],
+    tags: ['focus', 'cozy', 'calm', 'secure']
+  }
 ];
 
 
