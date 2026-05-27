@@ -972,10 +972,21 @@
       <button class="diary-close-btn" id="diary-close-btn" aria-label="关闭">✕</button>
     </div>
 
+    <!-- Tab -->
+    <div class="diary-tabs" id="diary-tabs">
+      <button class="diary-tab active" id="diary-tab-today" data-tab="today" type="button">
+        今日
+      </button>
+      <button class="diary-tab" id="diary-tab-history" data-tab="history" type="button">
+        历史
+      </button>
+    </div>
+
     <!-- 内容区 -->
     <div class="diary-body" id="diary-body">
-      <!-- 生成中 / 内容 / 编辑框 动态渲染 -->
+      <!-- 生成中 / 内容 / 编辑框 / 历史列表 动态渲染 -->
     </div>
+
 
     <!-- 底部操作 -->
     <div class="diary-footer" id="diary-footer">
@@ -6785,7 +6796,10 @@ const diaryState = {
   isEditing:    false,
   currentRecord: null,   // 当前打开的日记记录（来自 DB）
   todayDate: '',         // 'YYYY-MM-DD'
+  activeTab: 'today',    // 'today' | 'history'
+  historyRecords: [],
 };
+
 
 /** 获取今天的日期字符串 */
 function _getTodayStr() {
@@ -6807,8 +6821,18 @@ function _formatDiaryDate(dateStr) {
 async function _getTodayDiary() {
   const today = _getTodayStr();
   const records = await dbQuery('sceneHistory', r => r.type === 'diary' && r.date === today);
-  return records.length > 0 ? records[0] : null;
+
+  return records
+    .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))[0] || null;
 }
+
+async function _getDiaryHistoryRecords() {
+  const records = await dbQuery('sceneHistory', r => r.type === 'diary');
+
+  return records
+    .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+}
+
 
 /**
  * 用 AI 生成宠物日记正文
@@ -6905,6 +6929,173 @@ async function _generateDiarySummary(content) {
   // 简单截取前30字作为摘要（避免额外 AI 调用）
   return content.slice(0, 30) + (content.length > 30 ? '…' : '');
 }
+function _setDiaryActiveTab(tab) {
+  diaryState.activeTab = tab;
+
+  document.querySelectorAll('.diary-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  const editBtn = document.getElementById('diary-edit-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+
+  if (tab === 'history') {
+    if (editBtn) editBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (regenBtn) regenBtn.style.display = 'none';
+  }
+}
+
+function _updateDiaryHeaderDate(record = null) {
+  const dateEl = document.getElementById('diary-header-date');
+  if (!dateEl) return;
+
+  if (record?.date) {
+    dateEl.textContent = _formatDiaryDate(record.date);
+  } else {
+    dateEl.textContent = _formatDiaryDate(diaryState.todayDate || _getTodayStr());
+  }
+}
+
+function _renderDiaryHistoryLoading() {
+  const body = document.getElementById('diary-body');
+  const editBtn = document.getElementById('diary-edit-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+
+  if (!body) return;
+
+  body.innerHTML = `
+    <div class="diary-loading">
+      <div class="diary-loading-icon">📚</div>
+      <div class="diary-loading-text">正在加载历史日记…</div>
+      <div class="diary-loading-dots">${createTypingIndicator().outerHTML}</div>
+    </div>
+  `;
+
+  if (editBtn) editBtn.style.display = 'none';
+  if (saveBtn) saveBtn.style.display = 'none';
+  if (regenBtn) regenBtn.style.display = 'none';
+}
+
+function _renderDiaryHistoryEmpty() {
+  const body = document.getElementById('diary-body');
+  if (!body) return;
+
+  body.innerHTML = `
+    <div class="diary-empty">
+      <div class="diary-empty-icon">📝</div>
+      <div class="diary-empty-title">还没有历史日记</div>
+      <div class="diary-empty-text">生成第一篇日记后，它会出现在这里。</div>
+    </div>
+  `;
+}
+
+function _renderDiaryHistoryList(records = []) {
+  const body = document.getElementById('diary-body');
+  if (!body) return;
+
+  if (!records.length) {
+    _renderDiaryHistoryEmpty();
+    return;
+  }
+
+  body.innerHTML = '';
+
+  const list = document.createElement('div');
+  list.className = 'diary-history-list';
+
+  records.forEach(record => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'diary-history-item';
+
+    const titleDate = record.date
+      ? _formatDiaryDate(record.date)
+      : new Date(record.createdAt || Date.now()).toLocaleDateString('zh-CN');
+
+    const preview = record.summary || record.content || '（日记内容为空）';
+
+    item.innerHTML = `
+      <div class="diary-history-main">
+        <div class="diary-history-date">${escapeHtml(titleDate)}</div>
+        <div class="diary-history-preview">${escapeHtml(preview)}</div>
+      </div>
+      <div class="diary-history-arrow">›</div>
+    `;
+
+    item.addEventListener('click', () => {
+      diaryState.currentRecord = record;
+      diaryState.isEditing = false;
+      _updateDiaryHeaderDate(record);
+      _renderDiaryContent(record.content || '（日记内容为空）', {
+        fromHistory: true,
+      });
+      showToast('已打开历史日记', 'success');
+    });
+
+    list.appendChild(item);
+  });
+
+  body.appendChild(list);
+}
+
+async function _loadDiaryHistoryTab() {
+  _setDiaryActiveTab('history');
+  _renderDiaryHistoryLoading();
+
+  try {
+    const records = await _getDiaryHistoryRecords();
+    diaryState.historyRecords = records;
+    _renderDiaryHistoryList(records);
+    showToast('历史日记已加载', 'success');
+  } catch (err) {
+    const body = document.getElementById('diary-body');
+    if (body) {
+      body.innerHTML = `
+        <div class="diary-empty">
+          <div class="diary-empty-icon">⚠️</div>
+          <div class="diary-empty-title">历史日记加载失败</div>
+          <div class="diary-empty-text">${escapeHtml(err.message || '请稍后再试')}</div>
+        </div>
+      `;
+    }
+    showToast('历史日记加载失败：' + err.message, 'error');
+    logError('app', `Load diary history failed: ${err.message}`);
+  }
+}
+
+async function _loadDiaryTodayTab() {
+  _setDiaryActiveTab('today');
+  _updateDiaryHeaderDate();
+
+  diaryState.isEditing = false;
+  diaryState.isGenerating = false;
+
+  const editBtn = document.getElementById('diary-edit-btn');
+  const regenBtn = document.getElementById('diary-regen-btn');
+  const saveBtn = document.getElementById('diary-save-btn');
+
+  if (editBtn) editBtn.style.display = '';
+  if (regenBtn) regenBtn.style.display = '';
+  if (saveBtn) saveBtn.style.display = 'none';
+
+  try {
+    const existing = await _getTodayDiary();
+
+    if (existing) {
+      diaryState.currentRecord = existing;
+      _renderDiaryContent(existing.content || '（日记内容为空）');
+    } else {
+      diaryState.currentRecord = null;
+      await _triggerDiaryGeneration();
+    }
+  } catch (err) {
+    showToast('今日日记加载失败：' + err.message, 'error');
+    logError('app', `Load today diary failed: ${err.message}`);
+  }
+}
 
 /**
  * 打开日记 Modal
@@ -6917,34 +7108,28 @@ async function openDiaryModal() {
   diaryState.isEditing    = false;
   diaryState.isGenerating = false;
   diaryState.todayDate    = _getTodayStr();
+  diaryState.activeTab    = 'today';
 
-  // 更新顶栏日期
-  const dateEl = document.getElementById('diary-header-date');
-  if (dateEl) dateEl.textContent = _formatDiaryDate(diaryState.todayDate);
+  _updateDiaryHeaderDate();
 
   overlay.classList.add('show');
   _bindDiaryModal();
 
-  // 检查今天是否已有日记
-  const existing = await _getTodayDiary();
+  showToast('正在打开宠物日记…', 'info');
 
-  if (existing) {
-    diaryState.currentRecord = existing;
-    _renderDiaryContent(existing.content || '（日记内容为空）');
-  } else {
-    // 没有日记，自动生成
-    diaryState.currentRecord = null;
-    await _triggerDiaryGeneration();
-  }
+  await _loadDiaryTodayTab();
 }
 
 /** 关闭日记 Modal */
 function closeDiaryModal() {
   const overlay = document.getElementById('diary-modal-overlay');
   overlay?.classList.remove('show');
+
   diaryState.isEditing    = false;
   diaryState.isGenerating = false;
+  diaryState.activeTab    = 'today';
 }
+
 
 /** 绑定 Modal 内部事件（每次打开时重新绑定） */
 function _bindDiaryModal() {
@@ -6986,10 +7171,35 @@ function _bindDiaryModal() {
       diaryState.isEditing = false;
       await _triggerDiaryGeneration();
     });
+      // Tab：今日
+  const todayTab = document.getElementById('diary-tab-today');
+  todayTab?.replaceWith(todayTab.cloneNode(true));
+  document.getElementById('diary-tab-today')
+    ?.addEventListener('click', async () => {
+      if (diaryState.isGenerating) {
+        showToast('日记正在生成中，请稍等', 'warning');
+        return;
+      }
+      showToast('正在加载今日日记…', 'info');
+      await _loadDiaryTodayTab();
+    });
+
+  // Tab：历史
+  const historyTab = document.getElementById('diary-tab-history');
+  historyTab?.replaceWith(historyTab.cloneNode(true));
+  document.getElementById('diary-tab-history')
+    ?.addEventListener('click', async () => {
+      if (diaryState.isGenerating) {
+        showToast('日记正在生成中，请稍等', 'warning');
+        return;
+      }
+      await _loadDiaryHistoryTab();
+    });
+
 }
 
 /** 渲染日记内容（阅读模式） */
-function _renderDiaryContent(text) {
+function _renderDiaryContent(text, options = {}) {
   const body    = document.getElementById('diary-body');
   const editBtn = document.getElementById('diary-edit-btn');
   const saveBtn = document.getElementById('diary-save-btn');
@@ -7007,7 +7217,12 @@ function _renderDiaryContent(text) {
   // 按钮状态
   if (editBtn)  editBtn.style.display  = '';
   if (saveBtn)  saveBtn.style.display  = 'none';
-  if (regenBtn) regenBtn.style.display = '';
+
+  // 历史日记允许编辑保存，但不显示“重新生成”，避免误操作覆盖今日逻辑
+  if (regenBtn) regenBtn.style.display = options.fromHistory ? 'none' : '';
+
+  diaryState.isEditing = false;
+
 
   diaryState.isEditing = false;
 }
@@ -7065,21 +7280,24 @@ async function _triggerDiaryGeneration() {
   const summary = await _generateDiarySummary(content);
 
   // 存入 DB
-  const today = _getTodayStr();
+  const now = Date.now();
   const record = {
-    id:        Date.now() + Math.random(),
+    id:        now + Math.random(),
     type:      'diary',
     date:      today,
     content,
     summary,
     petName:   runtime.pet?.name || '',
-    createdAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
   };
 
+
   try {
-    await dbAppend('sceneHistory', record);
+        await dbAppend('sceneHistory', record);
     diaryState.currentRecord = record;
     logInfo('app', `Pet diary generated for ${today}`);
+    showToast('日记已生成并保存', 'success');
   } catch (err) {
     logError('app', `Save diary failed: ${err.message}`);
   }
@@ -7150,10 +7368,18 @@ async function _saveDiaryEdit() {
   try {
     const record = diaryState.currentRecord;
     if (record) {
-      // 更新已有记录（summary 清空，下次注入时跳过或重新生成）
-      const updated = { ...record, content: newContent, summary: '' };
+           const updatedSummary = await _generateDiarySummary(newContent);
+
+      const updated = {
+        ...record,
+        content: newContent,
+        summary: updatedSummary,
+        updatedAt: Date.now(),
+      };
+
       await dbSet('sceneHistory', updated);
       diaryState.currentRecord = updated;
+
     }
 
     showToast('日记已保存 ✓', 'success');
