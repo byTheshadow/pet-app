@@ -3009,6 +3009,335 @@
     width: 100%;
   }
 }
+/* ============================================================
+   FIX: Pet Room must wrap content and stay above chat button
+   ============================================================ */
+
+#page-pet #pet-room-card.pet-room-card {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+
+  width: auto;
+  height: auto !important;
+  min-height: 180px;
+
+  margin: 14px 16px 12px;
+  padding: 16px;
+
+  overflow: visible;
+  clear: both;
+
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 210, 225, 0.34), transparent 34%),
+    var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="mono"] #page-pet #pet-room-card.pet-room-card {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255,255,255,0.08), transparent 34%),
+    var(--bg-card);
+}
+
+#page-pet #pet-room-card.pet-room-card::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+#page-pet #pet-room-card .pet-room-card-header,
+#page-pet #pet-room-card .pet-room-summary,
+#page-pet #pet-room-card .pet-room-grid,
+#page-pet #pet-room-card .pet-room-actions,
+#page-pet #pet-room-card .pet-room-editor {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+#page-pet #pet-room-card .pet-room-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 10px;
+}
+
+#page-pet #pet-room-card .pet-room-main-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#page-pet #pet-room-card .pet-room-kicker {
+  display: block;
+  margin-bottom: 4px;
+
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+#page-pet #pet-room-card .pet-room-title {
+  display: block;
+
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: var(--text-primary);
+
+  white-space: normal;
+  word-break: break-word;
+}
+
+#page-pet #pet-room-card .pet-room-status-badge {
+  flex: 0 0 auto;
+
+  max-width: 120px;
+  padding: 6px 10px;
+
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--text-secondary);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#page-pet #pet-room-card .pet-room-status-badge[data-location="room"] {
+  color: #8a5a00;
+  background: rgba(255, 213, 128, 0.32);
+}
+
+[data-theme="mono"] #page-pet #pet-room-card .pet-room-status-badge[data-location="room"] {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.12);
+}
+
+#page-pet #pet-room-card .pet-room-summary {
+  display: block;
+  margin-top: 8px;
+
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+
+  white-space: normal;
+  word-break: break-word;
+}
+
+#page-pet #pet-room-card .pet-room-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  width: 100%;
+  margin-top: 12px;
+}
+
+#page-pet #pet-room-card .pet-room-item {
+  box-sizing: border-box;
+  min-width: 0;
+
+  padding: 11px 12px;
+
+  border-radius: var(--radius-md);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+}
+
+#page-pet #pet-room-card .pet-room-item span {
+  display: block;
+  margin-bottom: 5px;
+
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-room-card .pet-room-item strong {
+  display: block;
+
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: var(--text-primary);
+
+  white-space: normal;
+  word-break: break-word;
+}
+
+#page-pet #pet-room-card .pet-room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  width: 100%;
+  margin-top: 14px;
+}
+
+#page-pet #pet-room-card .pet-room-actions .btn {
+  flex: 1 1 96px;
+  min-width: 0;
+  min-height: 38px;
+
+  white-space: nowrap;
+}
+
+#page-pet #pet-room-card .pet-room-editor {
+  display: block;
+  margin-top: 14px;
+  padding-top: 14px;
+
+  border-top: 1px dashed var(--border-subtle);
+}
+
+#page-pet #pet-room-card .pet-room-editor[hidden] {
+  display: none !important;
+}
+
+#page-pet #pet-room-card .pet-room-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  margin-bottom: 12px;
+}
+
+#page-pet #pet-room-card .pet-room-editor-title {
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+#page-pet #pet-room-card .pet-room-editor-desc {
+  margin-top: 3px;
+
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-room-card .pet-room-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#page-pet #pet-room-card .pet-room-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+#page-pet #pet-room-card .pet-room-field span {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+#page-pet #pet-room-card .pet-room-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  box-sizing: border-box;
+
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-alt);
+  color: var(--text-primary);
+
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+#page-pet #pet-room-card .pet-room-editor-status {
+  min-height: 18px;
+  margin-top: 10px;
+
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-room-card .pet-room-editor-status[data-type="loading"] {
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-room-card .pet-room-editor-status[data-type="success"] {
+  color: #168a4a;
+}
+
+#page-pet #pet-room-card .pet-room-editor-status[data-type="error"] {
+  color: #d14343;
+}
+
+#page-pet #pet-room-card .pet-room-editor-actions {
+  margin-top: 10px;
+}
+
+#page-pet #pet-room-card .pet-room-editor-actions .btn {
+  width: 100%;
+  min-height: 40px;
+}
+
+/* 聊天按钮必须在房间卡片下面，不能压在房间上 */
+#page-pet #btn-open-chat.chat-open-btn {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  width: auto;
+  box-sizing: border-box;
+
+  margin: 8px 16px 0;
+  clear: both;
+}
+
+/* 小屏幕防挤压 */
+@media (max-width: 390px) {
+  #page-pet #pet-room-card .pet-room-card-header {
+    flex-wrap: wrap;
+  }
+
+  #page-pet #pet-room-card .pet-room-status-badge {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  #page-pet #pet-room-card .pet-room-grid,
+  #page-pet #pet-room-card .pet-room-form {
+    grid-template-columns: 1fr;
+  }
+
+  #page-pet #pet-room-card .pet-room-editor-head {
+    flex-direction: column;
+  }
+
+  #page-pet #pet-room-card .pet-room-editor-head .btn {
+    width: 100%;
+  }
+}
 
 
 
