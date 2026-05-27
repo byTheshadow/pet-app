@@ -327,6 +327,20 @@
                   placeholder="https://..." />
               </div>
               <div class="form-group">
+  <label class="form-label">
+    宠物分类
+    <span class="form-label-hint">会影响做客物品兼容和彩蛋触发</span>
+  </label>
+  <select class="form-select" id="set-pet-species-group">
+    <option value="mammal">🐶 哺乳动物</option>
+    <option value="amphibian">🐸 两栖动物</option>
+    <option value="reptile">🦎 爬行动物</option>
+    <option value="bird">🐦 鸟类</option>
+    <option value="fish">🐟 鱼类</option>
+    <option value="generic">🐾 通用</option>
+  </select>
+</div>
+              <div class="form-group">
                 <label class="form-label">预设性格</label>
                 <select class="form-select" id="set-pet-personality">
                   <option value="tsundere">傲娇</option>
@@ -1106,7 +1120,17 @@
 <script type="module">
 import { initGlobalErrorCapture, logInfo, logError, logWarn } from './js/logger.js';
 import { dbGet, dbSet, dbList, dbDelete, dbClear, dbAppend, dbQuery } from './js/db.js';
-import { runtime, bus, EVENTS, DEFAULT_PET, DEFAULT_SETTINGS, DEFAULT_AI_PARENT } from './js/state.js';
+import {
+  runtime,
+  bus,
+  EVENTS,
+  DEFAULT_PET,
+  DEFAULT_SETTINGS,
+  DEFAULT_AI_PARENT,
+  SPECIES_GROUPS,
+  getSpeciesMeta,
+} from './js/state.js';
+// === 区块结束：state 导入 ===
 import { initRouter, navigateTo } from './js/router.js';
 import {
   showToast, showModal, showEmotionBubble,
@@ -3002,10 +3026,11 @@ function fillSettingsForms() {
   set('set-user-friendname', u.friendName || '');
 
   // 宠物
-  set('set-pet-name',          p.name         || '');
-  set('set-pet-avatar',        p.avatarUrl    || '');
-  set('set-pet-personality',   p.personality  || 'genki');
-  set('set-pet-custom-prompt', p.customPrompt || '');
+ set('set-pet-name',          p.name         || '');
+set('set-pet-avatar',        p.avatarUrl    || '');
+set('set-pet-species-group', normalizeSpeciesGroup(p.speciesGroup || 'mammal'));
+set('set-pet-personality',   p.personality  || 'genki');
+set('set-pet-custom-prompt', p.customPrompt || '');
   set('set-decay-hunger',      s.decayRates?.hunger  ?? 2);
   set('set-decay-mood',        s.decayRates?.mood    ?? 1.5);
   set('set-decay-health',      s.decayRates?.health  ?? 0.5);
@@ -3071,11 +3096,12 @@ function bindSettingsSave() {
       btn.textContent = '保存中...';
       try {
         await savePet({
-          name:         document.getElementById('set-pet-name')?.value.trim()          || runtime.pet?.name || '小幽',
-          avatarUrl:    document.getElementById('set-pet-avatar')?.value.trim()        || '',
-          personality:  document.getElementById('set-pet-personality')?.value          || 'genki',
-          customPrompt: document.getElementById('set-pet-custom-prompt')?.value.trim() || '',
-        });
+  name:         document.getElementById('set-pet-name')?.value.trim()          || runtime.pet?.name || '小幽',
+  avatarUrl:    document.getElementById('set-pet-avatar')?.value.trim()        || '',
+  speciesGroup: normalizeSpeciesGroup(document.getElementById('set-pet-species-group')?.value || runtime.pet?.speciesGroup || 'mammal'),
+  personality:  document.getElementById('set-pet-personality')?.value          || 'genki',
+  customPrompt: document.getElementById('set-pet-custom-prompt')?.value.trim() || '',
+});
                 // 保存用户信息到 settings
         const userInfo = {
           realName:   document.getElementById('set-user-realname')?.value.trim()  || '',
@@ -3408,6 +3434,125 @@ function bindDataManagement() {
     }
   });
 }
+// ── 好友编辑 ───────────────────────────────────────
+async function openFriendEditModal(friend) {
+  if (!friend) {
+    showToast('未找到要编辑的好友', 'error');
+    return;
+  }
+
+  const overlay = document.getElementById('modal-overlay');
+  if (!overlay) {
+    showToast('编辑面板打开失败：未找到弹窗容器', 'error');
+    return;
+  }
+
+  const currentSpecies = normalizeSpeciesGroup(friend.speciesGroup || 'mammal');
+
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">编辑好友</div>
+
+      <div class="form-group">
+        <label class="form-label">名字</label>
+        <input type="text" class="form-input" id="edit-friend-name"
+          value="${String(friend.name || '').replace(/"/g, '&quot;')}"
+          placeholder="好友的名字" maxlength="20" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">性格描述</label>
+        <input type="text" class="form-input" id="edit-friend-personality"
+          value="${String(friend.personality || '').replace(/"/g, '&quot;')}"
+          placeholder="活泼可爱、喜欢玩耍..." maxlength="50" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          宠物分类
+          <span class="form-label-hint">会影响做客物品和彩蛋</span>
+        </label>
+        <select class="form-select" id="edit-friend-species-group">
+          ${getSpeciesOptionsHtml(currentSpecies)}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">头像 URL（可选）</label>
+        <input type="url" class="form-input" id="edit-friend-avatar"
+          value="${String(friend.avatarUrl || '').replace(/"/g, '&quot;')}"
+          placeholder="https://..." />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">专属提示词（可选）</label>
+        <textarea class="form-textarea" id="edit-friend-prompt"
+          placeholder="描述这只宠物的说话方式..."
+          style="min-height:60px;">${String(friend.customPrompt || '')}</textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modal-cancel-edit-friend">取消</button>
+        <button class="btn btn-primary" id="modal-confirm-edit-friend">保存</button>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('show');
+
+  setTimeout(() => {
+    document.getElementById('edit-friend-name')?.focus();
+  }, 300);
+
+  document.getElementById('modal-cancel-edit-friend')
+    ?.addEventListener('click', () => {
+      overlay.classList.remove('show');
+    });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  }, { once: true });
+
+  document.getElementById('modal-confirm-edit-friend')
+    ?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      const nameVal = document.getElementById('edit-friend-name')?.value.trim();
+
+      if (!nameVal) {
+        document.getElementById('edit-friend-name')?.classList.add('error');
+        showToast('请填写好友名字', 'warn');
+        return;
+      }
+
+      setButtonLoading(btn, true, '保存中...');
+
+      try {
+        const updatedFriend = {
+          ...friend,
+          name:         nameVal.slice(0, 20),
+          personality:  document.getElementById('edit-friend-personality')?.value.trim().slice(0, 50) || '性格神秘',
+          speciesGroup: normalizeSpeciesGroup(document.getElementById('edit-friend-species-group')?.value || friend.speciesGroup || 'mammal'),
+          avatarUrl:    document.getElementById('edit-friend-avatar')?.value.trim() || '',
+          customPrompt: document.getElementById('edit-friend-prompt')?.value.trim() || '',
+          updatedAt:    Date.now(),
+        };
+
+        await dbSet('petFriends', updatedFriend);
+        overlay.classList.remove('show');
+        showToast(`好友「${updatedFriend.name}」已保存 ✓`, 'success');
+        logInfo('app', `Friend edited: ${updatedFriend.name}`);
+        await renderFriendsList();
+      } catch (err) {
+        showToast('保存失败：' + err.message, 'error');
+        logError('app', 'Edit friend failed', { stack: err.stack });
+      } finally {
+        setButtonLoading(btn, false);
+      }
+    });
+}
+// === 区块结束：openFriendEditModal ===
+
 
 // ── 好友列表渲染 ─────────────────────────────────────────────
 async function renderFriendsList() {
@@ -3431,22 +3576,26 @@ async function renderFriendsList() {
   const frag = document.createDocumentFragment();
 
   friends.forEach(f => {
+    const speciesGroup = normalizeSpeciesGroup(f.speciesGroup || 'mammal');
+const speciesMeta = getSpeciesMeta(speciesGroup);
     const card = document.createElement('div');
     card.className = 'friend-card';
 
     // 头像
     const avatar = document.createElement('div');
     avatar.className = 'friend-avatar';
-    if (f.avatarUrl) {
-      const img = document.createElement('img');
-      img.src = f.avatarUrl;
-      img.alt = f.name || '';
-      img.onerror = () => { avatar.textContent = '🐾'; };
-      avatar.appendChild(img);
-    } else {
-      avatar.textContent = '🐾';
-    }
-
+   if (f.avatarUrl) {
+  const img = document.createElement('img');
+  img.src = f.avatarUrl;
+  img.alt = f.name || '';
+  img.onerror = () => {
+    avatar.innerHTML = '';
+    avatar.textContent = speciesMeta.icon || '🐾';
+  };
+  avatar.appendChild(img);
+} else {
+  avatar.textContent = speciesMeta.icon || '🐾';
+}
     // 信息
     const info = document.createElement('div');
     info.className = 'friend-info';
@@ -3484,13 +3633,28 @@ async function renderFriendsList() {
     intimacyRow.appendChild(bar);
     intimacyRow.appendChild(intimacyVal);
 
-    info.appendChild(name);
-    info.appendChild(personality);
-    info.appendChild(intimacyRow);
+   const speciesBadge = createSpeciesBadge(speciesGroup);
+
+info.appendChild(name);
+info.appendChild(personality);
+info.appendChild(speciesBadge);
+info.appendChild(intimacyRow);
 
     // 操作按钮
     const actions = document.createElement('div');
     actions.className = 'friend-actions';
+    const editBtn = document.createElement('button');
+editBtn.className = 'icon-btn';
+editBtn.textContent = '✏️';
+editBtn.title = '编辑好友';
+editBtn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  try {
+    await openFriendEditModal(f);
+  } catch (err) {
+    showToast('打开编辑面板失败：' + err.message, 'error');
+  }
+});
 
     const delBtn = document.createElement('button');
     delBtn.className = 'icon-btn danger';
@@ -3535,10 +3699,9 @@ visitBtn.addEventListener('click', async (e) => {
     showToast('打开做客面板失败：' + err.message, 'error');
   }
 });
+actions.appendChild(editBtn);
 actions.appendChild(visitBtn);
-
-
-    actions.appendChild(delBtn);
+actions.appendChild(delBtn);
 
     card.appendChild(avatar);
     card.appendChild(info);
@@ -3549,6 +3712,41 @@ actions.appendChild(visitBtn);
   container.innerHTML = '';
   container.appendChild(frag);
 }
+
+function normalizeSpeciesGroup(value) {
+  return SPECIES_GROUPS[value] ? value : 'mammal';
+}
+// === 区块结束：normalizeSpeciesGroup ===
+
+function getSpeciesOptionsHtml(selected = 'mammal') {
+  const current = normalizeSpeciesGroup(selected);
+
+  return Object.entries(SPECIES_GROUPS)
+    .map(([key, meta]) => `
+      <option value="${key}" ${key === current ? 'selected' : ''}>
+        ${meta.icon} ${meta.label}
+      </option>
+    `)
+    .join('');
+}
+// === 区块结束：getSpeciesOptionsHtml ===
+
+function getRandomSpeciesGroup() {
+  const keys = Object.keys(SPECIES_GROUPS);
+  if (!keys.length) return 'mammal';
+  return keys[Math.floor(Math.random() * keys.length)];
+}
+// === 区块结束：getRandomSpeciesGroup ===
+
+function createSpeciesBadge(speciesGroup = 'mammal') {
+  const meta = getSpeciesMeta(normalizeSpeciesGroup(speciesGroup));
+  const badge = document.createElement('div');
+  badge.className = 'friend-species-badge';
+  badge.textContent = `${meta.icon} ${meta.label}`;
+  return badge;
+}
+// === 区块结束：createSpeciesBadge ===
+
 
 // ── 好友页交互绑定 ───────────────────────────────────────────
 function bindFriendsPage() {
@@ -3578,6 +3776,15 @@ function bindFriendsPage() {
             <label class="form-label">性格描述</label>
             <input type="text" class="form-input" id="new-friend-personality"
               placeholder="活泼可爱、喜欢玩耍..." maxlength="50" />
+          </div>
+                    <div class="form-group">
+            <label class="form-label">
+              宠物分类
+              <span class="form-label-hint">会影响做客物品和彩蛋</span>
+            </label>
+            <select class="form-select" id="new-friend-species-group">
+              ${getSpeciesOptionsHtml('mammal')}
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">头像 URL（可选）</label>
@@ -3626,7 +3833,7 @@ function bindFriendsPage() {
             personality:  document.getElementById('new-friend-personality')?.value.trim().slice(0, 50) || '性格神秘',
             avatarUrl:    document.getElementById('new-friend-avatar')?.value.trim()   || '',
             customPrompt: document.getElementById('new-friend-prompt')?.value.trim()   || '',
-            speciesGroup: 'mammal',
+            speciesGroup: normalizeSpeciesGroup(document.getElementById('new-friend-species-group')?.value || 'mammal'),
             intimacy:     0,
             lastVisitAt:  null,
             memoryContext:'',
@@ -3671,8 +3878,10 @@ function bindFriendsPage() {
             {
               role: 'user',
               content: '请随机生成一只电子宠物好友的信息，用JSON格式返回，' +
-                       '包含字段：name(名字,10字以内), personality(性格描述,20字以内), ' +
-                       'customPrompt(角色提示词,50字以内)。只返回JSON，不要其他内容。',
+         '包含字段：name(名字,10字以内), personality(性格描述,20字以内), ' +
+         'customPrompt(角色提示词,50字以内), speciesGroup(宠物分类)。' +
+         'speciesGroup 只能从这些值中选择：mammal, amphibian, reptile, bird, fish, generic。' +
+         '只返回JSON，不要其他内容。',
             },
           ],
           stream: false,
@@ -3689,7 +3898,7 @@ function bindFriendsPage() {
           personality:  String(data.personality  || '性格神秘').slice(0, 50),
           customPrompt: String(data.customPrompt || '').slice(0, 200),
           avatarUrl:    '',
-          speciesGroup: 'mammal',
+          speciesGroup: normalizeSpeciesGroup(data.speciesGroup || getRandomSpeciesGroup()),
           intimacy:     0,
           lastVisitAt:  null,
           memoryContext:'',
