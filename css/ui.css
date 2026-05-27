@@ -2570,6 +2570,36 @@
 .letter-card-pet .letter-card-icon {
   filter: none;
 }
+/* ============================================================
+   Species Group UI
+   ============================================================ */
+.friend-species-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  border: 1px solid var(--border-color);
+}
+
+.friend-actions {
+  align-self: stretch;
+}
+
+.friend-actions .icon-btn,
+.friend-actions .visit-btn {
+  flex-shrink: 0;
+}
+/* === 区块结束：宠物分类 UI === */
+
 
 
 
