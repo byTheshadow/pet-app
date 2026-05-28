@@ -172,7 +172,120 @@
     <span class="pet-quick-label">来信</span>
   </button>
 </div>
+</section>
 
+
+
+<!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
+<section class="pet-room-card" id="pet-room-card">
+  <div class="pet-room-card-header">
+    <div class="pet-room-main-title">
+      <div class="pet-room-kicker">PET ROOM</div>
+      <div class="pet-room-title">
+        <span id="pet-room-owner-name">小幽</span>的房间
+      </div>
+    </div>
+
+    <div class="pet-room-status-badge" id="pet-room-location-badge">
+      在你身边
+    </div>
+  </div>
+
+  <div class="pet-room-summary" id="pet-room-summary">
+    正在加载房间...
+  </div>
+
+  <div class="pet-room-grid" id="pet-room-grid">
+    <div class="pet-room-item">
+      <span>风格</span>
+      <strong id="room-summary-style">-</strong>
+    </div>
+
+    <div class="pet-room-item">
+      <span>睡觉区</span>
+      <strong id="room-summary-bed">-</strong>
+    </div>
+
+    <div class="pet-room-item">
+      <span>玩具</span>
+      <strong id="room-summary-toy">-</strong>
+    </div>
+
+    <div class="pet-room-item">
+      <span>装饰</span>
+      <strong id="room-summary-decor">-</strong>
+    </div>
+  </div>
+
+  <div class="pet-room-actions">
+    <button class="btn btn-primary btn-sm" id="btn-room-send" type="button">
+      回房间休息
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-room-return" type="button">
+      叫它回来
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-room-toggle-editor" type="button">
+      布置房间
+    </button>
+  </div>
+
+  <div class="pet-room-editor" id="pet-room-editor" hidden>
+    <div class="pet-room-editor-head">
+      <div>
+        <div class="pet-room-editor-title">布置房间</div>
+        <div class="pet-room-editor-desc">
+          选择文字物品，不包含贴图。保存后会写入宠物本地数据。
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-sm" id="btn-room-apply-preset" type="button">
+        使用动物预设
+      </button>
+    </div>
+
+    <div class="pet-room-form">
+      <label class="pet-room-field">
+        <span>房间风格</span>
+        <select id="room-style-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>睡觉区域</span>
+        <select id="room-bed-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>玩具</span>
+        <select id="room-toy-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>装饰</span>
+        <select id="room-decor-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>环境</span>
+        <select id="room-environment-select"></select>
+      </label>
+
+      <label class="pet-room-field">
+        <span>特别设施</span>
+        <select id="room-facility-select"></select>
+      </label>
+    </div>
+
+    <div class="pet-room-editor-status" id="pet-room-editor-status" aria-live="polite"></div>
+
+    <div class="pet-room-editor-actions">
+      <button class="btn btn-primary" id="btn-room-save" type="button">
+        保存房间布置
+      </button>
+    </div>
+  </div>
+  
 <section class="pet-travel-card" id="pet-travel-card">
   <div class="pet-travel-card-header">
     <div class="pet-travel-main-title">
@@ -306,119 +419,6 @@
     <button class="btn btn-ghost btn-sm" id="btn-travel-return" type="button">
       接它回家
     </button>
-  </div>
-</section>
-
-
-
-<!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
-<section class="pet-room-card" id="pet-room-card">
-  <div class="pet-room-card-header">
-    <div class="pet-room-main-title">
-      <div class="pet-room-kicker">PET ROOM</div>
-      <div class="pet-room-title">
-        <span id="pet-room-owner-name">小幽</span>的房间
-      </div>
-    </div>
-
-    <div class="pet-room-status-badge" id="pet-room-location-badge">
-      在你身边
-    </div>
-  </div>
-
-  <div class="pet-room-summary" id="pet-room-summary">
-    正在加载房间...
-  </div>
-
-  <div class="pet-room-grid" id="pet-room-grid">
-    <div class="pet-room-item">
-      <span>风格</span>
-      <strong id="room-summary-style">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>睡觉区</span>
-      <strong id="room-summary-bed">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>玩具</span>
-      <strong id="room-summary-toy">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>装饰</span>
-      <strong id="room-summary-decor">-</strong>
-    </div>
-  </div>
-
-  <div class="pet-room-actions">
-    <button class="btn btn-primary btn-sm" id="btn-room-send" type="button">
-      回房间休息
-    </button>
-
-    <button class="btn btn-ghost btn-sm" id="btn-room-return" type="button">
-      叫它回来
-    </button>
-
-    <button class="btn btn-ghost btn-sm" id="btn-room-toggle-editor" type="button">
-      布置房间
-    </button>
-  </div>
-
-  <div class="pet-room-editor" id="pet-room-editor" hidden>
-    <div class="pet-room-editor-head">
-      <div>
-        <div class="pet-room-editor-title">布置房间</div>
-        <div class="pet-room-editor-desc">
-          选择文字物品，不包含贴图。保存后会写入宠物本地数据。
-        </div>
-      </div>
-
-      <button class="btn btn-ghost btn-sm" id="btn-room-apply-preset" type="button">
-        使用动物预设
-      </button>
-    </div>
-
-    <div class="pet-room-form">
-      <label class="pet-room-field">
-        <span>房间风格</span>
-        <select id="room-style-select"></select>
-      </label>
-
-      <label class="pet-room-field">
-        <span>睡觉区域</span>
-        <select id="room-bed-select"></select>
-      </label>
-
-      <label class="pet-room-field">
-        <span>玩具</span>
-        <select id="room-toy-select"></select>
-      </label>
-
-      <label class="pet-room-field">
-        <span>装饰</span>
-        <select id="room-decor-select"></select>
-      </label>
-
-      <label class="pet-room-field">
-        <span>环境</span>
-        <select id="room-environment-select"></select>
-      </label>
-
-      <label class="pet-room-field">
-        <span>特别设施</span>
-        <select id="room-facility-select"></select>
-      </label>
-    </div>
-
-    <div class="pet-room-editor-status" id="pet-room-editor-status" aria-live="polite"></div>
-
-    <div class="pet-room-editor-actions">
-      <button class="btn btn-primary" id="btn-room-save" type="button">
-        保存房间布置
-      </button>
-    </div>
   </div>
 </section>
 
