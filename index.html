@@ -2576,16 +2576,6 @@ function _setTravelCollectionModalStatus(message = '', type = '') {
 }
 
 
-function _normalizeTravelLetterItem(item = {}, fallbackDestination = '') {
-  return {
-    id: item.id || `travel-letter-fallback-${Math.random().toString(36).slice(2, 8)}`,
-    title: item.title || '旅行来信',
-    content: item.content || '这封旅行来信暂时没有正文。',
-    destination: item.destination || fallbackDestination || '',
-    createdAt: item.createdAt || null,
-    read: !!item.read,
-  };
-}
 
 function _normalizeTravelPhotoItem(item = {}, fallbackDestination = '') {
   return {
