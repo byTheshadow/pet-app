@@ -3902,13 +3902,16 @@
   }
 }
 /* ============================================================
-   Friend Invite Card V10
+   Friend Invite Card - Safe Layout
+   位置：仅用于 #pet-travel-card 内部
    ============================================================ */
 
 #page-pet #pet-travel-card .pet-travel-invite-card {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 
   margin: 0 0 16px !important;
   padding: 16px !important;
@@ -3917,7 +3920,7 @@
   background:
     linear-gradient(135deg, rgba(167, 214, 255, 0.18), rgba(200, 240, 200, 0.10)),
     var(--bg-card-alt) !important;
-  border: 1.5px solid rgba(117, 196, 255, 0.4) !important;
+  border: 1px solid rgba(117, 196, 255, 0.35) !important;
   box-shadow: 0 2px 16px rgba(117, 196, 255, 0.10) !important;
 }
 
@@ -3926,72 +3929,95 @@
 }
 
 #page-pet #pet-travel-card .invite-card-kicker {
+  display: block !important;
+  margin: 0 0 10px !important;
   font-size: 11px !important;
+  line-height: 1.2 !important;
   font-weight: 800 !important;
   letter-spacing: 0.8px !important;
   text-transform: uppercase !important;
   color: #0c5f8f !important;
-  opacity: 0.8 !important;
+  opacity: 0.82 !important;
 }
 
 #page-pet #pet-travel-card .invite-card-body {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 10px !important;
+  display: block !important;
+  min-width: 0 !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-info {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  min-width: 0 !important;
+  margin: 0 0 10px !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-avatar {
-  flex: 0 0 auto !important;
+  flex: 0 0 40px !important;
   width: 40px !important;
   height: 40px !important;
   border-radius: 999px !important;
   background: var(--bg-card) !important;
   border: 1px solid var(--border-subtle) !important;
+
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 20px !important;
   overflow: hidden !important;
 }
 
+#page-pet #pet-travel-card .invite-friend-avatar-fallback {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
+
 #page-pet #pet-travel-card .invite-friend-avatar img {
+  display: block !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-meta {
-  flex: 1 !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-name {
+  margin: 0 0 6px !important;
   font-size: 14px !important;
+  line-height: 1.35 !important;
   font-weight: 900 !important;
   color: var(--text-primary) !important;
-  margin: 0 0 5px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-tags {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 6px !important;
+  min-width: 0 !important;
 }
 
 #page-pet #pet-travel-card .invite-tag {
   display: inline-flex !important;
   align-items: center !important;
-  height: 22px !important;
+  justify-content: center !important;
+  min-height: 22px !important;
+  max-width: 100% !important;
   padding: 0 8px !important;
   border-radius: 999px !important;
   font-size: 11px !important;
+  line-height: 1.2 !important;
   font-weight: 700 !important;
+  white-space: nowrap !important;
 }
 
 #page-pet #pet-travel-card .invite-destination {
@@ -4005,9 +4031,12 @@
 }
 
 #page-pet #pet-travel-card .invite-text {
+  display: block !important;
+  margin: 0 0 12px !important;
   font-size: 13px !important;
   line-height: 1.75 !important;
   color: var(--text-primary) !important;
+  white-space: normal !important;
   word-break: break-word !important;
 }
 
@@ -4018,10 +4047,25 @@
 
 #page-pet #pet-travel-card .invite-card-actions {
   display: grid !important;
-  grid-template-columns: 1fr auto !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
 }
 
 #page-pet #pet-travel-card .invite-card-actions .btn {
+  width: 100% !important;
+  min-width: 0 !important;
   min-height: 42px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+@media (max-width: 390px) {
+  #page-pet #pet-travel-card .invite-card-actions {
+    grid-template-columns: 1fr !important;
+  }
 }
