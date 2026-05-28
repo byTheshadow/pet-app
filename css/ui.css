@@ -4080,3 +4080,23 @@
     grid-template-columns: 1fr !important;
   }
 }
+/* Food panel radius fix */
+#food-panel,
+.food-panel {
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  background: var(--bg-card) !important;
+}
+
+#food-panel .food-panel-header,
+#food-panel .food-panel-list {
+  box-sizing: border-box !important;
+}
+
+#food-panel::before,
+.food-panel::before,
+#food-panel::after,
+.food-panel::after {
+  border-radius: inherit;
+}
