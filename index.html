@@ -2649,7 +2649,6 @@ function _closeTravelCollectionModal() {
 
   _setTravelCollectionModalStatus('', '');
 }
-
 function _openTravelCollectionModalShell(titleText, type) {
   const modal = document.getElementById('travel-collection-modal');
   const title = document.getElementById('travel-collection-title');
@@ -2666,6 +2665,24 @@ function _openTravelCollectionModalShell(titleText, type) {
   title.textContent = titleText || '旅行收藏';
   body.innerHTML = '<div class="travel-collection-empty">正在加载...</div>';
 }
+function _closeTravelCollectionModal() {
+  const modal = document.getElementById('travel-collection-modal');
+  const body = document.getElementById('travel-collection-modal-body');
+  const title = document.getElementById('travel-collection-title');
+
+  if (!modal) return;
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.dataset.type = '';
+
+  if (title) title.textContent = '旅行收藏';
+  if (body) body.innerHTML = '';
+
+  _setTravelCollectionModalStatus('', '');
+}
+
+
 
 function _renderTravelLettersList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
@@ -2694,6 +2711,34 @@ function _renderTravelLettersList(travel) {
     </div>
   `;
 }
+function _renderTravelLettersList(travel) {
+  const body = document.getElementById('travel-collection-modal-body');
+  if (!body) return;
+
+  const items = (travel.letters || [])
+    .map(item => _normalizeTravelLetterItem(item, travel.destination || ''))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!items.length) {
+    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行来信</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="travel-collection-list">
+      ${items.map(item => `
+        <article class="travel-letter-card">
+          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
+          <div class="travel-letter-card-meta">
+            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+          </div>
+          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
 
 function _renderTravelPhotosList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
