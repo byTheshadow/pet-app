@@ -2576,15 +2576,6 @@ function _setTravelCollectionModalStatus(message = '', type = '') {
 }
 
 
-function _escapeHtml(value = '') {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
 function _normalizeTravelLetterItem(item = {}, fallbackDestination = '') {
   return {
     id: item.id || `travel-letter-fallback-${Math.random().toString(36).slice(2, 8)}`,
