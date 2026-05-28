@@ -307,6 +307,8 @@
       接它回家
     </button>
   </div>
+
+</section>
   <div class="travel-collection-modal" id="travel-collection-modal" hidden>
   <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
 
@@ -329,8 +331,6 @@
     </div>
   </div>
 </div>
-
-</section>
 
 
 <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
@@ -2551,19 +2551,24 @@ function _buildTravelLogText(travel) {
 
   return '旅行中，可能很快会寄回新的信件或照片。';
 }
-function _closeTravelCollectionModal() {
-  const modal = document.getElementById('travel-collection-modal');
-  const body = document.getElementById('travel-collection-modal-body');
-  const title = document.getElementById('travel-collection-title');
 
-  if (!modal) return;
-  modal.hidden = true;
-  modal.dataset.type = '';
-  if (title) title.textContent = '旅行收藏';
-  if (body) body.innerHTML = '<div class="travel-collection-empty">已关闭</div>';
-  _setTravelCollectionModalStatus('', '');
-  document.body.classList.remove('modal-open');
+function _openTravelCollectionModalShell(titleText, type) {
+  const modal = document.getElementById('travel-collection-modal');
+  const title = document.getElementById('travel-collection-title');
+  const body = document.getElementById('travel-collection-modal-body');
+
+  if (!modal || !title || !body) {
+    throw new Error('旅行弹窗节点未找到');
+  }
+
+  modal.classList.add('is-open');
+  modal.dataset.type = type || '';
+  modal.setAttribute('aria-hidden', 'false');
+
+  title.textContent = titleText;
+  body.innerHTML = '<div class="travel-collection-empty">正在加载...</div>';
 }
+
 
 function _openTravelCollectionModalShell(titleText, type) {
   const modal = document.getElementById('travel-collection-modal');

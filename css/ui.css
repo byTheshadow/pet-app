@@ -3523,9 +3523,42 @@
 }
 
 /* Modal */
-.travel-collection-modal[hidden] {
-  display: none !important;
+.travel-collection-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
 }
+
+.travel-collection-modal.is-open {
+  display: block;
+}
+
+.travel-collection-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 14, 22, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.travel-collection-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(680px, calc(100vw - 24px));
+  max-height: min(80vh, 760px);
+  margin: 8vh auto 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(167, 214, 255, 0.18), transparent 34%),
+    var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+}
+
 
 .travel-collection-modal {
   position: fixed;
