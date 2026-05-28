@@ -3082,239 +3082,312 @@
   }
 }
 /* ============================================================
-   Pet Travel MVP
+   Pet Travel MVP - layout hard fix
+   目的：
+   1. 防止旅行卡片被旧样式压扁
+   2. 让旅行卡片完整包裹所有内容
+   3. 保证它在房间卡片上方稳定显示
    ============================================================ */
 
 #page-pet #pet-travel-card.pet-travel-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
 
-  margin: 0 16px 16px;
-  padding: 18px 20px;
+  width: auto !important;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: none !important;
 
-  border-radius: 26px;
+  box-sizing: border-box !important;
+  margin: 0 16px 16px !important;
+  padding: 18px 20px 18px !important;
+
+  overflow: visible !important;
+  clear: both !important;
+
+  border-radius: 26px !important;
   background:
     radial-gradient(circle at 88% 0%, rgba(167, 214, 255, 0.26), transparent 34%),
-    var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-card);
-  box-sizing: border-box;
-  overflow: hidden;
+    var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-card) !important;
 }
 
 [data-theme="mono"] #page-pet #pet-travel-card.pet-travel-card {
   background:
     radial-gradient(circle at 88% 0%, rgba(255,255,255,0.06), transparent 34%),
-    var(--bg-card);
+    var(--bg-card) !important;
 }
 
+/* 所有旅行卡片内部模块强制回到正常文档流 */
 #page-pet #pet-travel-card > * {
-  box-sizing: border-box;
-  width: 100%;
+  position: static !important;
+  float: none !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
+/* 顶部标题行 */
 #page-pet #pet-travel-card .pet-travel-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 0 0 16px;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  min-height: 0 !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-main-title {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-kicker {
-  margin: 0 0 6px;
-  font-size: 11px;
-  line-height: 1.2;
-  font-weight: 800;
-  color: var(--text-secondary);
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  display: block !important;
+  margin: 0 0 6px !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  color: var(--text-secondary) !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-title {
-  font-size: 20px;
-  line-height: 1.25;
-  font-weight: 900;
-  color: var(--text-primary);
-  letter-spacing: -0.4px;
-  word-break: break-word;
+  display: block !important;
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.4px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-status-badge {
-  flex: 0 0 auto;
-  width: auto;
-  max-width: 128px;
-  padding: 7px 12px;
-  border-radius: var(--radius-full);
-  background: var(--bg-card-alt);
-  border: 1px solid var(--border-subtle);
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: 800;
-  color: var(--text-secondary);
-  white-space: nowrap;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: 128px !important;
+
+  padding: 7px 12px !important;
+  border-radius: var(--radius-full) !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border-subtle) !important;
+
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  color: var(--text-secondary) !important;
+
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-status-badge[data-status="traveling"] {
-  color: #0c5f8f;
-  background: rgba(117, 196, 255, 0.20);
+  color: #0c5f8f !important;
+  background: rgba(117, 196, 255, 0.20) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-status-badge[data-status="finished"] {
-  color: #8a5a00;
-  background: rgba(255, 213, 128, 0.32);
+  color: #8a5a00 !important;
+  background: rgba(255, 213, 128, 0.32) !important;
 }
 
+/* 摘要 */
 #page-pet #pet-travel-card .pet-travel-summary {
-  margin: 0 0 18px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-  word-break: break-word;
+  display: block !important;
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--text-secondary) !important;
+
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
+/* 四宫格 */
 #page-pet #pet-travel-card .pet-travel-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0 0 16px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  width: 100% !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-item {
-  min-height: 78px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: var(--bg-card-alt);
-  border: 1px solid var(--border-subtle);
+  position: static !important;
+  float: none !important;
+
+  min-width: 0 !important;
+  min-height: 78px !important;
+  box-sizing: border-box !important;
+
+  padding: 14px 16px !important;
+  border-radius: 20px !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border-subtle) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-item span {
-  display: block;
-  margin: 0 0 7px;
-  font-size: 12px;
-  line-height: 1.2;
-  color: var(--text-secondary);
+  display: block !important;
+  margin: 0 0 7px !important;
+
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  color: var(--text-secondary) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-item strong {
-  display: block;
-  font-size: 15px;
-  line-height: 1.35;
-  font-weight: 900;
-  color: var(--text-primary);
-  word-break: break-word;
+  display: block !important;
+
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
+
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
+/* 行李区 */
 #page-pet #pet-travel-card .pet-travel-bag {
-  margin: 0 0 16px;
+  display: block !important;
+  margin: 0 0 16px !important;
+  padding: 0 !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-bag-title {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 900;
-  color: var(--text-primary);
+  margin: 0 0 10px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-bag-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-bag-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: var(--bg-card-alt);
-  border: 1px solid var(--border-subtle);
-  font-size: 13px;
-  color: var(--text-primary);
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+
+  min-width: 0 !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+
+  border-radius: 16px !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border-subtle) !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-bag-item input {
-  margin: 0;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
 }
 
+/* 日志 */
 #page-pet #pet-travel-card .pet-travel-log {
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--bg-card-alt);
-  border: 1px dashed var(--border-subtle);
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--text-secondary);
+  display: block !important;
+  margin: 0 0 12px !important;
+  padding: 12px 14px !important;
+
+  border-radius: 16px !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px dashed var(--border-subtle) !important;
+
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: var(--text-secondary) !important;
+
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
+/* 行内状态 */
 #page-pet #pet-travel-card .pet-travel-inline-status {
-  min-height: 20px;
-  margin: 0 0 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-secondary);
+  display: block !important;
+  min-height: 20px !important;
+  margin: 0 0 12px !important;
+
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  color: var(--text-secondary) !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-inline-status[data-type="loading"] {
-  color: #0c5f8f;
+  color: #0c5f8f !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-inline-status[data-type="success"] {
-  color: #168a4a;
+  color: #168a4a !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-inline-status[data-type="error"] {
-  color: #d14343;
+  color: #d14343 !important;
 }
 
+/* 操作按钮 */
 #page-pet #pet-travel-card .pet-travel-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
 }
 
 #page-pet #pet-travel-card .pet-travel-actions .btn {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding-left: 8px;
-  padding-right: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 @media (max-width: 390px) {
   #page-pet #pet-travel-card.pet-travel-card {
-    padding: 16px;
+    padding: 16px !important;
   }
 
   #page-pet #pet-travel-card .pet-travel-card-header {
-    flex-wrap: wrap;
+    flex-wrap: wrap !important;
   }
 
   #page-pet #pet-travel-card .pet-travel-status-badge {
-    max-width: 100%;
+    max-width: 100% !important;
   }
 
   #page-pet #pet-travel-card .pet-travel-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
 
 @media (max-width: 360px) {
   #page-pet #pet-travel-card .pet-travel-grid,
   #page-pet #pet-travel-card .pet-travel-bag-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
