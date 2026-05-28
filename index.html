@@ -188,6 +188,34 @@
               空闲中
             </div>
           </div>
+          <!-- 好友邀请卡 V10：放在摘要上方，旅行中时隐藏 -->
+<div class="pet-travel-invite-card" id="pet-travel-invite-card" hidden>
+  <div class="invite-card-kicker">好友邀请</div>
+
+  <div class="invite-card-body">
+    <div class="invite-friend-info">
+      <div class="invite-friend-avatar">🐾</div>
+      <div class="invite-friend-meta">
+        <div class="invite-friend-name">好友名字</div>
+        <div class="invite-friend-tags">
+          <span class="invite-tag invite-destination">目的地</span>
+          <span class="invite-tag invite-duration">时长</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="invite-text" aria-live="polite">正在写邀请消息...</div>
+  </div>
+
+  <div class="invite-card-actions">
+    <button class="btn btn-primary btn-sm" id="btn-travel-invite-accept" type="button">
+      接受邀请
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btn-travel-invite-dismiss" type="button">
+      婉拒
+    </button>
+  </div>
+</div>
 
           <div class="pet-travel-summary" id="pet-travel-summary">
             今天要不要给小幽准备一次旅行？
@@ -225,34 +253,6 @@
   </div>
 </div>
 
- <!-- 好友邀请卡 V10：放在摘要上方，旅行中时隐藏 -->
-<div class="pet-travel-invite-card" id="pet-travel-invite-card" hidden>
-  <div class="invite-card-kicker">好友邀请</div>
-
-  <div class="invite-card-body">
-    <div class="invite-friend-info">
-      <div class="invite-friend-avatar">🐾</div>
-      <div class="invite-friend-meta">
-        <div class="invite-friend-name">好友名字</div>
-        <div class="invite-friend-tags">
-          <span class="invite-tag invite-destination">目的地</span>
-          <span class="invite-tag invite-duration">时长</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="invite-text" aria-live="polite">正在写邀请消息...</div>
-  </div>
-
-  <div class="invite-card-actions">
-    <button class="btn btn-primary btn-sm" id="btn-travel-invite-accept" type="button">
-      接受邀请
-    </button>
-    <button class="btn btn-ghost btn-sm" id="btn-travel-invite-dismiss" type="button">
-      婉拒
-    </button>
-  </div>
-</div>
 
 
 <!-- 景点安排区 -->
