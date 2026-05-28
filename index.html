@@ -2570,6 +2570,85 @@ function _buildTravelLogText(travel) {
   return '旅行中，可能很快会寄回新的信件或照片。';
 }
 
+function _setTravelCollectionModalStatus(message = '', type = '') {
+  const el = document.getElementById('travel-collection-modal-status');
+  if (!el) return;
+  el.textContent = message;
+  if (type) {
+    el.dataset.type = type;
+  } else {
+    delete el.dataset.type;
+  }
+}
+
+function _formatTravelCollectionTime(ts) {
+  if (!ts) return '时间未知';
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
+function _escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function _normalizeTravelLetterItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-letter-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    title: item.title || '旅行来信',
+    content: item.content || '这封旅行来信暂时没有正文。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+    read: !!item.read,
+  };
+}
+
+function _normalizeTravelPhotoItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-photo-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    title: item.title || '旅行照片',
+    content: item.content || '这是一张来自旅途中的文字照片。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+    read: !!item.read,
+  };
+}
+
+function _normalizeTravelSouvenirItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-souvenir-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    name: item.name || '旅行纪念品',
+    desc: item.desc || '这是一份来自旅途的纪念品。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+  };
+}
+
+function _closeTravelCollectionModal() {
+  const modal = document.getElementById('travel-collection-modal');
+  const body = document.getElementById('travel-collection-modal-body');
+  const title = document.getElementById('travel-collection-title');
+
+  if (!modal) return;
+
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.dataset.type = '';
+
+  if (title) title.textContent = '旅行收藏';
+  if (body) body.innerHTML = '';
+
+  _setTravelCollectionModalStatus('', '');
+}
 
 function _openTravelCollectionModalShell(titleText, type) {
   const modal = document.getElementById('travel-collection-modal');
@@ -2580,13 +2659,41 @@ function _openTravelCollectionModalShell(titleText, type) {
     throw new Error('旅行弹窗节点未找到');
   }
 
-  modal.hidden = false;
-  modal.dataset.type = type;
-  title.textContent = titleText;
+  modal.classList.add('is-open');
+  modal.dataset.type = type || '';
+  modal.setAttribute('aria-hidden', 'false');
+
+  title.textContent = titleText || '旅行收藏';
   body.innerHTML = '<div class="travel-collection-empty">正在加载...</div>';
-  document.body.classList.add('modal-open');
 }
 
+function _renderTravelLettersList(travel) {
+  const body = document.getElementById('travel-collection-modal-body');
+  if (!body) return;
+
+  const items = (travel.letters || [])
+    .map(item => _normalizeTravelLetterItem(item, travel.destination || ''))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!items.length) {
+    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行来信</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="travel-collection-list">
+      ${items.map(item => `
+        <article class="travel-letter-card">
+          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
+          <div class="travel-letter-card-meta">
+            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+          </div>
+          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
 
 function _renderTravelPhotosList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
@@ -2680,28 +2787,27 @@ async function openTravelCollectionModal(type, btn) {
 
     _setTravelInlineStatus(`${titleMap[type] || '旅行收藏'}已打开`, 'success');
     _setTravelCollectionModalStatus(`${titleMap[type] || '旅行收藏'}已加载完成`, 'success');
-} catch (err) {
-  console.error('[travel modal error]', err);
+  } catch (err) {
+    console.error('[travel modal error]', err);
 
-  _setTravelInlineStatus('打开失败：' + err.message, 'error');
-  _setTravelCollectionModalStatus('加载失败：' + err.message, 'error');
-  showToast('打开失败：' + err.message, 'error');
+    _setTravelInlineStatus('打开失败：' + err.message, 'error');
+    _setTravelCollectionModalStatus('加载失败：' + err.message, 'error');
+    showToast('打开失败：' + err.message, 'error');
 
-  const body = document.getElementById('travel-collection-modal-body');
-  const modal = document.getElementById('travel-collection-modal');
-  if (modal) {
-    modal.classList.add('is-open');
-    modal.setAttribute('aria-hidden', 'false');
+    const body = document.getElementById('travel-collection-modal-body');
+    const modal = document.getElementById('travel-collection-modal');
+    if (modal) {
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    if (body) {
+      body.innerHTML = `<div class="travel-collection-empty">加载失败：${_escapeHtml(err.message)}</div>`;
+    }
+
+    logError?.('app', 'openTravelCollectionModal failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
   }
-  if (body) {
-    body.innerHTML = `<div class="travel-collection-empty">加载失败：${_escapeHtml(err.message)}</div>`;
-  }
-
-  logError?.('app', 'openTravelCollectionModal failed', { stack: err.stack });
-} finally {
-  if (btn) setButtonLoading(btn, false);
-}
-
 }
 
 function renderTravelUI(pet = runtime.pet) {
