@@ -172,6 +172,7 @@
     <span class="pet-quick-label">来信</span>
   </button>
 </div>
+
 <section class="pet-travel-card" id="pet-travel-card">
   <div class="pet-travel-card-header">
     <div class="pet-travel-main-title">
@@ -258,7 +259,21 @@
         </label>
       </div>
 
-        <div class="pet-travel-collections" id="pet-travel-collections">
+      <div class="pet-travel-bag-editor-actions">
+        <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
+          保存行李
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pet-travel-log" id="pet-travel-log">
+    暂时还没有旅行消息。
+  </div>
+
+  <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
+
+  <div class="pet-travel-collections" id="pet-travel-collections">
     <div class="pet-travel-collections-head">
       <div class="pet-travel-collections-title">旅行收藏</div>
       <div class="pet-travel-collections-desc">查看旅行途中寄回来的内容</div>
@@ -279,21 +294,6 @@
     </div>
   </div>
 
-
-      <div class="pet-travel-bag-editor-actions">
-        <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
-          保存行李
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div class="pet-travel-log" id="pet-travel-log">
-    暂时还没有旅行消息。
-  </div>
-
-  <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
-
   <div class="pet-travel-actions">
     <button class="btn btn-primary btn-sm" id="btn-travel-buy-ticket" type="button">
       买票旅行
@@ -307,30 +307,8 @@
       接它回家
     </button>
   </div>
-
 </section>
-  <div class="travel-collection-modal" id="travel-collection-modal" hidden>
-  <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
 
-  <div class="travel-collection-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="travel-collection-title">
-    <div class="travel-collection-modal-header">
-      <div>
-        <div class="travel-collection-modal-kicker">PET TRAVEL</div>
-        <div class="travel-collection-modal-title" id="travel-collection-title">旅行收藏</div>
-      </div>
-
-      <button class="travel-collection-modal-close" id="btn-travel-collection-close" type="button" aria-label="关闭">
-        ✕
-      </button>
-    </div>
-
-    <div class="travel-collection-modal-status" id="travel-collection-modal-status" aria-live="polite"></div>
-
-    <div class="travel-collection-modal-body" id="travel-collection-modal-body">
-      <div class="travel-collection-empty">正在加载...</div>
-    </div>
-  </div>
-</div>
 
 
 <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
