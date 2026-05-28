@@ -193,31 +193,69 @@
             今天要不要给小幽准备一次旅行？
           </div>
 
-          <div class="pet-travel-grid" id="pet-travel-grid">
-            <div class="pet-travel-item">
-              <span>旅行目的地</span>
-              <div class="pet-travel-select-wrap">
-                <select id="travel-destination-select" class="pet-travel-select">
-                  <option value="random">随机目的地</option>
-                </select>
-              </div>
-            </div>
+        <div class="pet-travel-grid" id="pet-travel-grid">
+  <div class="pet-travel-item">
+    <span>旅行目的地</span>
+    <div class="pet-travel-select-wrap">
+      <select id="travel-destination-select" class="pet-travel-select">
+        <option value="random">随机目的地</option>
+      </select>
+    </div>
+  </div>
 
-            <div class="pet-travel-item">
-              <span>预计返程</span>
-              <strong id="travel-summary-return-time">-</strong>
-            </div>
+  <div class="pet-travel-item">
+    <span>旅行时长</span>
+    <div class="pet-travel-select-wrap">
+      <select id="travel-duration-select" class="pet-travel-select">
+        <option value="20">20 分钟（短途）</option>
+        <option value="60">1 小时（普通）</option>
+        <option value="120">2 小时（深度）</option>
+        <option value="240">4 小时（长途）</option>
+      </select>
+    </div>
+  </div>
 
-            <div class="pet-travel-item">
-              <span>收到信件</span>
-              <strong id="travel-summary-letters">0</strong>
-            </div>
+  <div class="pet-travel-item">
+    <span>预计返程</span>
+    <strong id="travel-summary-return-time">-</strong>
+  </div>
 
-            <div class="pet-travel-item">
-              <span>收到照片</span>
-              <strong id="travel-summary-photos">0</strong>
-            </div>
-          </div>
+  <div class="pet-travel-item">
+    <span>信件 / 照片</span>
+    <strong id="travel-summary-letters-photos">0 / 0</strong>
+  </div>
+</div>
+
+<!-- 景点安排区 -->
+<div class="pet-travel-itinerary-card" id="pet-travel-itinerary-card">
+  <div class="pet-travel-itinerary-head">
+    <div>
+      <div class="pet-travel-itinerary-title">景点安排</div>
+      <div class="pet-travel-itinerary-desc">
+        最多选 3 个，会影响旅行途中寄回的内容
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-itinerary" type="button">
+      安排景点
+    </button>
+  </div>
+
+  <div class="pet-travel-itinerary-summary" id="pet-travel-itinerary-summary">
+    暂未安排景点，旅行内容将随机生成
+  </div>
+
+  <div class="pet-travel-itinerary-editor" id="pet-travel-itinerary-editor" hidden>
+    <div class="pet-travel-spot-list" id="pet-travel-spot-list">
+      <!-- 由JS动态填充 -->
+    </div>
+    <div class="pet-travel-itinerary-actions">
+      <button class="btn btn-primary btn-sm" id="btn-travel-save-itinerary" type="button">
+        保存景点安排
+      </button>
+    </div>
+  </div>
+</div>
+           
 
           <div class="pet-travel-bag-summary-card">
             <div class="pet-travel-bag-summary-head">
@@ -2261,16 +2299,36 @@ const TRAVEL_SOUVENIRS = {
   '薄荷山谷': ['薄荷香包', '山谷风铃', '青绿叶书签'],
   '星砂海岸': ['星砂瓶', '海岸石片', '夜光贝饰'],
 };
+// 景点库：每个目的地对应可选景点
+const TRAVEL_SPOTS = {
+  '海盐小镇': ['盐田晒场', '渔港码头', '贝壳博物馆', '海边灯塔', '小镇集市'],
+  '月光森林': ['萤火虫谷', '古树广场', '月光湖畔', '森林小屋', '星空观测台'],
+  '云朵车站': ['候车长廊', '云朵咖啡馆', '小站广场', '铁路博物馆', '天台花园'],
+  '薄荷山谷': ['薄荷田', '山谷瀑布', '草药集市', '风铃小径', '山顶茶馆'],
+  '星砂海岸': ['星砂滩', '珊瑚礁区', '海岸栈道', '日落观景台', '海边集市'],
+};
+
+// 默认景点（随机目的地时用）
+const TRAVEL_SPOTS_DEFAULT = ['广场', '小公园', '街角咖啡馆', '古老书店', '集市'];
+
+// 时长对应的内容上限
+const TRAVEL_DURATION_LIMITS = {
+  20:  { maxLetters: 1, maxPhotos: 1, maxSouvenirs: 1 },
+  60:  { maxLetters: 2, maxPhotos: 2, maxSouvenirs: 2 },
+  120: { maxLetters: 3, maxPhotos: 3, maxSouvenirs: 3 },
+  240: { maxLetters: 5, maxPhotos: 5, maxSouvenirs: 4 },
+};
 
 function _createDefaultTravelState() {
   return {
     status: TRAVEL_STATUS.IDLE,
-   source: null,
+    source: null,
     destination: null,
     selectedDestination: 'random',
+    selectedDuration: 60,        // 新增：默认1小时
+    itinerary: [],               // 新增：已选景点列表
     startedAt: null,
     endsAt: null,
-
     bag: {
       snack: false,
       toy: false,
@@ -2292,6 +2350,8 @@ function _normalizeTravel(travel = {}) {
   return {
     ...base,
     ...travel,
+    selectedDuration: travel?.selectedDuration || 60,
+    itinerary: Array.isArray(travel?.itinerary) ? travel.itinerary : [],
     bag: {
       ...base.bag,
       ...(travel?.bag || {}),
@@ -2301,6 +2361,7 @@ function _normalizeTravel(travel = {}) {
     souvenirs: Array.isArray(travel?.souvenirs) ? travel.souvenirs : [],
   };
 }
+
 function _getDestinationOptions() {
   return [
     { id: 'random', label: '随机目的地' },
@@ -2354,6 +2415,64 @@ function _getBagOptionMeta() {
     { id: 'medicine', label: '营养剂', icon: '💊' },
     { id: 'photoBook', label: '小相册', icon: '📷' },
   ];
+}
+
+// 获取某目的地的景点列表
+function _getSpotsForDestination(destinationLabel) {
+  if (!destinationLabel) return TRAVEL_SPOTS_DEFAULT;
+  return TRAVEL_SPOTS[destinationLabel] || TRAVEL_SPOTS_DEFAULT;
+}
+
+// 获取已选景点的摘要文字
+function _getItinerarySummary(itinerary = []) {
+  if (!itinerary.length) return '暂未安排景点，旅行内容将随机生成';
+  if (itinerary.length <= 3) return itinerary.join(' → ');
+  return itinerary.slice(0, 3).join(' → ') + ` 等 ${itinerary.length} 处`;
+}
+
+// 根据时长获取内容上限
+function _getDurationLimits(durationMinutes) {
+  const key = Number(durationMinutes);
+  return TRAVEL_DURATION_LIMITS[key] || TRAVEL_DURATION_LIMITS[60];
+}
+
+// 填充景点选择器
+function _fillSpotListForDestination(destinationLabel, selectedItinerary = []) {
+  const listEl = document.getElementById('pet-travel-spot-list');
+  if (!listEl) return;
+
+  const spots = _getSpotsForDestination(destinationLabel);
+
+  listEl.innerHTML = spots.map(spot => {
+    const checked = selectedItinerary.includes(spot) ? 'checked' : '';
+    return `
+      <label class="pet-travel-spot-item">
+        <input type="checkbox" class="travel-spot-checkbox" value="${_escapeHtml(spot)}" ${checked} />
+        <span>${_escapeHtml(spot)}</span>
+      </label>
+    `;
+  }).join('');
+
+  // 最多选3个：超过后禁用未选中的
+  listEl.addEventListener('change', _onSpotCheckboxChange);
+}
+
+function _onSpotCheckboxChange() {
+  const listEl = document.getElementById('pet-travel-spot-list');
+  if (!listEl) return;
+  const checkboxes = listEl.querySelectorAll('.travel-spot-checkbox');
+  const checked = Array.from(checkboxes).filter(cb => cb.checked);
+  checkboxes.forEach(cb => {
+    if (!cb.checked) {
+      cb.disabled = checked.length >= 3;
+    }
+  });
+}
+
+function _readItineraryFromForm() {
+  const listEl = document.getElementById('pet-travel-spot-list');
+  if (!listEl) return [];
+  return Array.from(listEl.querySelectorAll('.travel-spot-checkbox:checked')).map(cb => cb.value);
 }
 
 function _getSelectedBagSummary(bag = {}) {
@@ -2617,7 +2736,6 @@ if (modal.contains(document.activeElement)) {
 }
 
 
-
 function _renderTravelLettersList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
   if (!body) return;
@@ -2633,19 +2751,26 @@ function _renderTravelLettersList(travel) {
 
   body.innerHTML = `
     <div class="travel-collection-list">
-      ${items.map(item => `
-        <article class="travel-letter-card">
-          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
-          <div class="travel-letter-card-meta">
-            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+      ${items.map((item, idx) => `
+        <article class="travel-letter-card travel-expandable-card" data-idx="${idx}">
+          <div class="travel-card-summary" role="button" tabindex="0" aria-expanded="false">
+            <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
+            <div class="travel-letter-card-meta">
+              ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+              ${item.spot ? `<span class="travel-card-spot-tag">${_escapeHtml(item.spot)}</span>` : ''}
+            </div>
+            <div class="travel-card-expand-hint">点击阅读全文 ›</div>
           </div>
-          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
+          <div class="travel-card-detail" hidden>
+            <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
+          </div>
         </article>
       `).join('')}
     </div>
   `;
-}
 
+  _bindExpandableCards(body);
+}
 function _renderTravelPhotosList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
   if (!body) return;
@@ -2661,16 +2786,23 @@ function _renderTravelPhotosList(travel) {
 
   body.innerHTML = `
     <div class="travel-collection-list">
-      ${items.map(item => `
-        <article class="travel-photo-card">
-          <div class="travel-photo-card-scene">${_escapeHtml(item.destination || '旅行途中')}</div>
-          <div class="travel-photo-card-title">${_escapeHtml(item.title)}</div>
-          <div class="travel-photo-card-meta">${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}</div>
-          <div class="travel-photo-card-content">${_escapeHtml(item.content)}</div>
+      ${items.map((item, idx) => `
+        <article class="travel-photo-card travel-expandable-card" data-idx="${idx}">
+          <div class="travel-card-summary" role="button" tabindex="0" aria-expanded="false">
+            <div class="travel-photo-card-scene">${_escapeHtml(item.scene || item.destination || '旅行途中')}</div>
+            <div class="travel-photo-card-title">${_escapeHtml(item.title)}</div>
+            <div class="travel-photo-card-meta">${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}</div>
+            <div class="travel-card-expand-hint">点击查看照片描述 ›</div>
+          </div>
+          <div class="travel-card-detail" hidden>
+            <div class="travel-photo-card-content">${_escapeHtml(item.content)}</div>
+          </div>
         </article>
       `).join('')}
     </div>
   `;
+
+  _bindExpandableCards(body);
 }
 
 function _renderTravelSouvenirsList(travel) {
@@ -2699,6 +2831,38 @@ function _renderTravelSouvenirsList(travel) {
       `).join('')}
     </div>
   `;
+}
+function _bindExpandableCards(container) {
+  container.querySelectorAll('.travel-expandable-card').forEach(card => {
+    const summary = card.querySelector('.travel-card-summary');
+    const detail = card.querySelector('.travel-card-detail');
+    if (!summary || !detail) return;
+
+    const toggle = () => {
+      const isOpen = !detail.hidden;
+      detail.hidden = isOpen;
+      summary.setAttribute('aria-expanded', String(!isOpen));
+      card.classList.toggle('is-expanded', !isOpen);
+
+      const hint = summary.querySelector('.travel-card-expand-hint');
+      if (hint) {
+        const isLetter = card.classList.contains('travel-letter-card');
+        if (isOpen) {
+          hint.textContent = isLetter ? '点击阅读全文 ›' : '点击查看照片描述 ›';
+        } else {
+          hint.textContent = '收起 ‹';
+        }
+      }
+    };
+
+    summary.addEventListener('click', toggle);
+    summary.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  });
 }
 
 async function openTravelCollectionModal(type, btn) {
@@ -2811,33 +2975,61 @@ function renderTravelUI(pet = runtime.pet) {
 const letterCount = travel.letters.length || 0;
 const photoCount = travel.photos.length || 0;
 const souvenirCount = travel.souvenirs.length || 0;
+const limits = _getDurationLimits(travel.selectedDuration || 60);
 
 if (returnTimeEl) {
   returnTimeEl.textContent = travel.endsAt ? _formatTravelTime(travel.endsAt) : '-';
 }
 
-if (lettersEl) {
-  lettersEl.textContent = String(letterCount);
+// 合并信件/照片显示
+const lettersPhotosEl = document.getElementById('travel-summary-letters-photos');
+if (lettersPhotosEl) {
+  lettersPhotosEl.textContent = `${letterCount} / ${photoCount}`;
 }
 
-if (photosEl) {
-  photosEl.textContent = String(photoCount);
-}
+// 兼容旧节点（如果还在DOM里就也更新）
+if (lettersEl) lettersEl.textContent = String(letterCount);
+if (photosEl) photosEl.textContent = String(photoCount);
 
 if (openLettersBtn) {
   openLettersBtn.textContent = `信件（${letterCount}）`;
 }
-
 if (openPhotosBtn) {
   openPhotosBtn.textContent = `照片（${photoCount}）`;
 }
-
 if (openSouvenirsBtn) {
   openSouvenirsBtn.textContent = `纪念品（${souvenirCount}）`;
 }
 
-if (logEl) {
-  logEl.textContent = _buildTravelLogText(travel);
+// 时长选择器
+const durationSelect = document.getElementById('travel-duration-select');
+if (durationSelect) {
+  durationSelect.value = String(travel.selectedDuration || 60);
+  durationSelect.disabled = isTraveling;
+}
+
+// 景点摘要
+const itinerarySummaryEl = document.getElementById('pet-travel-itinerary-summary');
+if (itinerarySummaryEl) {
+  itinerarySummaryEl.textContent = _getItinerarySummary(travel.itinerary);
+}
+
+// 景点编辑器按钮
+const toggleItineraryBtn = document.getElementById('btn-travel-toggle-itinerary');
+if (toggleItineraryBtn) {
+  toggleItineraryBtn.disabled = isTraveling;
+  const editor = document.getElementById('pet-travel-itinerary-editor');
+  toggleItineraryBtn.textContent = editor?.hidden ? '安排景点' : '收起景点';
+}
+
+// 景点编辑器内容区禁用
+const itineraryEditor = document.getElementById('pet-travel-itinerary-editor');
+if (itineraryEditor) {
+  itineraryEditor.querySelectorAll('input, button:not(#btn-travel-save-itinerary)').forEach(el => {
+    el.disabled = isTraveling;
+  });
+  const saveItineraryBtn = document.getElementById('btn-travel-save-itinerary');
+  if (saveItineraryBtn) saveItineraryBtn.disabled = isTraveling;
 }
 
 if (bagSummaryText) {
@@ -2929,7 +3121,55 @@ async function saveTravelDestination(value) {
     renderTravelUI(runtime.pet);
   }
 }
+function isTravelingNow(pet = runtime.pet) {
+  return _normalizeTravel(pet?.travel).status === TRAVEL_STATUS.TRAVELING;
+}
 
+async function saveTravelDuration(minutes) {
+  const validMinutes = [20, 60, 120, 240].includes(minutes) ? minutes : 60;
+  const labelMap = { 20: '20分钟短途', 60: '1小时普通', 120: '2小时深度', 240: '4小时长途' };
+
+  showToast('正在保存旅行时长...', 'info');
+  _setTravelInlineStatus('正在保存旅行时长...', 'loading');
+
+  try {
+    await saveTravelPatch({ selectedDuration: validMinutes });
+    _setTravelInlineStatus(`旅行时长已设置为「${labelMap[validMinutes]}」`, 'success');
+    showToast(`旅行时长已设置为「${labelMap[validMinutes]}」`, 'success');
+  } catch (err) {
+    _setTravelInlineStatus('保存时长失败：' + err.message, 'error');
+    showToast('保存时长失败：' + err.message, 'error');
+    logError('app', 'saveTravelDuration failed', { stack: err.stack });
+  } finally {
+    renderTravelUI(runtime.pet);
+  }
+}
+
+async function saveTravelItinerary(btn) {
+  showToast('正在保存景点安排...', 'info');
+  _setTravelInlineStatus('正在保存景点安排...', 'loading');
+  if (btn) setButtonLoading(btn, true, '保存中...');
+
+  try {
+    const itinerary = _readItineraryFromForm();
+    await saveTravelPatch({ itinerary });
+
+    const summary = _getItinerarySummary(itinerary);
+    _setTravelInlineStatus(`景点安排已保存：${summary}`, 'success');
+    showToast('景点安排已保存', 'success');
+
+    // 保存后收起编辑器
+    const editor = document.getElementById('pet-travel-itinerary-editor');
+    if (editor) editor.hidden = true;
+  } catch (err) {
+    _setTravelInlineStatus('保存景点失败：' + err.message, 'error');
+    showToast('保存景点失败：' + err.message, 'error');
+    logError('app', 'saveTravelItinerary failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI(runtime.pet);
+  }
+}
 
 
 async function startPetTravel(btn) {
@@ -2950,8 +3190,10 @@ async function startPetTravel(btn) {
     const destination = _resolveTravelDestination(currentTravel);
     const selectedDestination = currentTravel.selectedDestination || 'random';
     const now = Date.now();
-    const duration = 1000 * 60 * 20; // 20分钟，MVP 好测试
-    const bag = _readTravelBagFromForm();
+    const selectedDuration = Number(document.getElementById('travel-duration-select')?.value) || 60;
+const duration = 1000 * 60 * selectedDuration;
+const itinerary = _readItineraryFromForm();
+   const bag = _readTravelBagFromForm();
 
 
     if (_normalizeRoom(pet.room, pet).location === ROOM_LOCATION.ROOM) {
@@ -2970,6 +3212,8 @@ async function startPetTravel(btn) {
         source: 'user_ticket',
         destination,
         selectedDestination,
+        selectedDuration,        // 新增
+    itinerary,               // 新增
         startedAt: now,
         endsAt: now + duration,
         bag,
@@ -2995,39 +3239,69 @@ async function startPetTravel(btn) {
 function _buildTravelLetter(travel, petName) {
   const destination = travel.destination || '远方';
   const bag = travel.bag || {};
-  const lines = [
-    `来自${destination}的来信`,
-    `${petName}说：我今天在${destination}看到了很特别的风景。`,
-  ];
+  const itinerary = travel.itinerary || [];
+
+  const spot = itinerary.length
+    ? itinerary[Math.floor(Math.random() * itinerary.length)]
+    : null;
+
+  const lines = [`来自${destination}的来信`];
+
+  if (spot) {
+    const spotLines = [
+      `${petName}说：我今天去了${destination}的「${spot}」，那里比想象中还要有趣。`,
+      `${petName}在「${spot}」停留了好一会儿，舍不得离开。`,
+      `「${spot}」的景色让${petName}忍不住多看了几眼，特别想和你分享。`,
+    ];
+    lines.push(spotLines[Math.floor(Math.random() * spotLines.length)]);
+  } else {
+    lines.push(`${petName}说：我今天在${destination}看到了很特别的风景。`);
+  }
 
   if (bag.snack) lines.push('路上带的零食很好吃，我有乖乖补充体力。');
   if (bag.toy) lines.push('我还带了玩具，休息的时候玩了一会儿。');
   if (bag.blanket) lines.push('小毯子暖暖的，晚上睡得很安心。');
   if (bag.medicine) lines.push('把营养剂也带上了，觉得很有安全感。');
 
-   return {
+  return {
     id: `travel-letter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: 'letter',
-    title: `来自${destination}的来信`,
-    content: lines.join(' '),
+    title: spot ? `来自${destination}「${spot}」的来信` : `来自${destination}的来信`,
+    content: lines.slice(1).join(' '),
     destination,
+    spot: spot || null,
     createdAt: Date.now(),
     read: false,
   };
-
 }
-
 function _buildTravelPhoto(travel, petName) {
   const destination = travel.destination || '远方';
+  const itinerary = travel.itinerary || [];
 
-  const titles = [
+  const spot = itinerary.length
+    ? itinerary[Math.floor(Math.random() * itinerary.length)]
+    : null;
+
+  const sceneLabel = spot ? `${destination} · ${spot}` : destination;
+
+  const titlePool = spot ? [
+    `${spot}的午后时光`,
+    `${petName}在「${spot}」`,
+    `${spot}的一角`,
+    `${destination}·${spot}`,
+  ] : [
     `${destination}的风景角落`,
     `${petName}寄回来的旅行照片`,
     `${destination}的小发现`,
     `在${destination}的安静时刻`,
   ];
 
-  const descriptions = [
+  const descPool = spot ? [
+    `${petName}站在${spot}门口，风把耳朵边的小毛吹得轻轻晃动。这里比导览图上描述的更温柔一些。`,
+    `${spot}的光线落在${petName}身上，像是${destination}专门为它留下的一帧安静。`,
+    `在${spot}，${petName}放慢了脚步，停下来望向远处，脚边是细碎的光影。`,
+    `${petName}在${spot}附近找到了一个安静的角落，这一刻看起来特别像被认真保存下来的旅途瞬间。`,
+  ] : [
     `${petName}站在${destination}的路边，风把耳朵边的小毛吹得轻轻晃动，远处的光落在它身上，看起来像一张很温柔的旅行照片。`,
     `${destination}的空气很安静，${petName}抱着一路带去的小期待站在那里，像是刚刚发现了什么新鲜的小秘密。`,
     `${petName}在${destination}停下来望向远处，脚边是细碎的光影，这一刻看起来特别像被认真保存下来的旅途瞬间。`,
@@ -3037,9 +3311,11 @@ function _buildTravelPhoto(travel, petName) {
   return {
     id: `travel-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: 'photo',
-    title: titles[Math.floor(Math.random() * titles.length)],
-    content: descriptions[Math.floor(Math.random() * descriptions.length)],
+    title: titlePool[Math.floor(Math.random() * titlePool.length)],
+    content: descPool[Math.floor(Math.random() * descPool.length)],
     destination,
+    spot: spot || null,
+    scene: sceneLabel,
     createdAt: Date.now(),
     read: false,
   };
@@ -3052,47 +3328,46 @@ async function receiveTravelUpdate(btn) {
   if (btn) setButtonLoading(btn, true, '接收中...');
 
   try {
-    const pet = runtime.pet;
-    if (!pet) throw new Error('宠物数据未加载');
+   const limits = _getDurationLimits(travel.selectedDuration || 60);
+const currentLetterCount = travel.letters.length;
+const currentPhotoCount = travel.photos.length;
+const photoBonus = travel.bag?.photoBook ? 0.25 : 0;
+const roll = Math.random();
 
-    const travel = _normalizeTravel(pet.travel);
-    if (travel.status !== TRAVEL_STATUS.TRAVELING) {
-      throw new Error('宠物当前没有在旅行');
-    }
+const canSendLetter = currentLetterCount < limits.maxLetters;
+const canSendPhoto = currentPhotoCount < limits.maxPhotos;
 
-    const petName = pet.name || '宠物';
-    const photoBonus = travel.bag?.photoBook ? 0.25 : 0;
-    const roll = Math.random();
+let nextTravel = travel;
 
-    let nextTravel = travel;
-
-    if (roll < 0.45) {
-      const letter = _buildTravelLetter(travel, petName);
-      nextTravel = {
-        ...travel,
-        letters: [...travel.letters, letter],
-        lastLetterAt: Date.now(),
-      };
-      await saveTravelPatch(nextTravel);
-      _setTravelInlineStatus('收到一封旅行来信', 'success');
-      showToast('收到一封旅行来信', 'success');
-      _appendChatMsg?.('system', `✉️ 收到${petName}从「${travel.destination}」寄来的来信`);
-    } else if (roll < 0.75 + photoBonus) {
-      const photo = _buildTravelPhoto(travel, petName);
-      nextTravel = {
-        ...travel,
-        photos: [...travel.photos, photo],
-        lastPhotoAt: Date.now(),
-      };
-      await saveTravelPatch(nextTravel);
-      _setTravelInlineStatus('收到一张旅行照片', 'success');
-      showToast('收到一张旅行照片', 'success');
-      _appendChatMsg?.('system', `📷 收到${petName}从「${travel.destination}」寄回的旅行照片`);
-    } else {
-      _setTravelInlineStatus('暂时还没有新的旅行消息', 'success');
-      showToast('暂时还没有新的旅行消息', 'info');
-    }
-  } catch (err) {
+if (!canSendLetter && !canSendPhoto) {
+  _setTravelInlineStatus('旅行消息已经都寄出来了，等它回家吧', 'success');
+  showToast('旅行消息已经都寄出来了，等它回家吧', 'info');
+} else if (canSendLetter && (!canSendPhoto || roll < 0.45)) {
+  const letter = _buildTravelLetter(travel, petName);
+  nextTravel = {
+    ...travel,
+    letters: [...travel.letters, letter],
+    lastLetterAt: Date.now(),
+  };
+  await saveTravelPatch(nextTravel);
+  _setTravelInlineStatus('收到一封旅行来信', 'success');
+  showToast('收到一封旅行来信', 'success');
+  _appendChatMsg?.('system', `✉️ 收到${petName}从「${travel.destination}」寄来的来信`);
+} else if (canSendPhoto) {
+  const photo = _buildTravelPhoto(travel, petName);
+  nextTravel = {
+    ...travel,
+    photos: [...travel.photos, photo],
+    lastPhotoAt: Date.now(),
+  };
+  await saveTravelPatch(nextTravel);
+  _setTravelInlineStatus('收到一张旅行照片', 'success');
+  showToast('收到一张旅行照片', 'success');
+  _appendChatMsg?.('system', `📷 收到${petName}从「${travel.destination}」寄回的旅行照片`);
+} else {
+  _setTravelInlineStatus('暂时还没有新的旅行消息', 'success');
+  showToast('暂时还没有新的旅行消息', 'info');
+}
     _setTravelInlineStatus('接收失败：' + err.message, 'error');
     showToast('接收失败：' + err.message, 'error');
     logError('app', 'receiveTravelUpdate failed', { stack: err.stack });
@@ -3134,7 +3409,11 @@ async function returnPetFromTravel(btn) {
 
     const petName = pet.name || '宠物';
     const destination = travel.destination || '远方';
-    const souvenirCount = 1 + Math.floor(Math.random() * 3);
+    const limits = _getDurationLimits(travel.selectedDuration || 60);
+const souvenirCount = Math.min(
+  limits.maxSouvenirs,
+  1 + Math.floor(Math.random() * limits.maxSouvenirs)
+);
     const newSouvenirs = _buildSouvenirs(destination, souvenirCount);
 
     const moodBonus = travel.bag?.snack ? 6 : 3;
@@ -3234,6 +3513,40 @@ function bindTravelSystem() {
   document.getElementById('travel-collection-modal-backdrop')?.addEventListener('click', () => {
     _closeTravelCollectionModal();
   });
+  // 时长选择器
+document.getElementById('travel-duration-select')?.addEventListener('change', (e) => {
+  saveTravelDuration(Number(e.currentTarget.value));
+});
+
+// 景点安排：展开/收起
+document.getElementById('btn-travel-toggle-itinerary')?.addEventListener('click', () => {
+  const editor = document.getElementById('pet-travel-itinerary-editor');
+  if (!editor) return;
+
+  const willOpen = editor.hidden;
+  editor.hidden = !willOpen;
+
+  const travel = _normalizeTravel(runtime.pet?.travel);
+  const destinationLabel = isTravelingNow()
+    ? travel.destination
+    : _getSelectedTravelDestinationLabel(travel);
+
+  if (willOpen) {
+    _fillSpotListForDestination(destinationLabel, travel.itinerary || []);
+    _onSpotCheckboxChange();
+    _setTravelInlineStatus('选择最多 3 个景点', 'success');
+    showToast('选择最多 3 个景点', 'info');
+  } else {
+    _setTravelInlineStatus('已收起景点安排', 'success');
+  }
+
+  renderTravelUI(runtime.pet);
+});
+
+// 保存景点安排
+document.getElementById('btn-travel-save-itinerary')?.addEventListener('click', (e) => {
+  saveTravelItinerary(e.currentTarget);
+});
 
 }
 

@@ -3738,3 +3738,166 @@
     max-height: 88vh;
   }
 }
+/* ============================================================
+   Travel Itinerary & Duration — 景点安排 + 时长选择
+   ============================================================ */
+
+#page-pet #pet-travel-card .pet-travel-itinerary-card {
+  display: block !important;
+  margin: 0 0 16px !important;
+  padding: 14px 16px !important;
+  border-radius: 20px !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 8px !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-title {
+  margin: 0 0 4px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-desc {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: var(--text-secondary) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-summary {
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--text-secondary) !important;
+  word-break: break-word !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-editor {
+  display: block !important;
+  margin: 12px 0 0 !important;
+  padding: 12px 0 0 !important;
+  border-top: 1px dashed var(--border-subtle) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-editor[hidden] {
+  display: none !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-spot-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-spot-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 8px 12px !important;
+  border-radius: 14px !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+  cursor: pointer !important;
+  transition: background 0.15s, border-color 0.15s !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-spot-item:has(input:checked) {
+  background: rgba(117, 196, 255, 0.14) !important;
+  border-color: rgba(117, 196, 255, 0.5) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-spot-item:has(input:disabled:not(:checked)) {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-spot-item input {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-itinerary-actions .btn {
+  width: 100% !important;
+  min-height: 44px !important;
+}
+
+/* ============================================================
+   Travel Expandable Cards — 展开/收起交互
+   ============================================================ */
+
+.travel-expandable-card .travel-card-summary {
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.travel-expandable-card .travel-card-summary:focus-visible {
+  outline: 2px solid var(--color-accent, #75c4ff);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.travel-expandable-card .travel-card-expand-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.travel-expandable-card .travel-card-summary:hover .travel-card-expand-hint {
+  opacity: 1;
+}
+
+.travel-expandable-card .travel-card-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+  animation: travel-detail-in 0.18s ease;
+}
+
+.travel-expandable-card .travel-card-detail[hidden] {
+  display: none;
+}
+
+@keyframes travel-detail-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.travel-expandable-card.is-expanded {
+  border-color: rgba(117, 196, 255, 0.35);
+}
+
+/* 景点标签 */
+.travel-card-spot-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(117, 196, 255, 0.16);
+  font-size: 11px;
+  font-weight: 700;
+  color: #0c5f8f;
+  vertical-align: middle;
+}
+
+/* 时长选择器格子：让它占满两列 */
+@media (max-width: 360px) {
+  #page-pet #pet-travel-card .pet-travel-spot-list {
+    grid-template-columns: 1fr !important;
+  }
+}
