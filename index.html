@@ -258,6 +258,28 @@
         </label>
       </div>
 
+        <div class="pet-travel-collections" id="pet-travel-collections">
+    <div class="pet-travel-collections-head">
+      <div class="pet-travel-collections-title">旅行收藏</div>
+      <div class="pet-travel-collections-desc">查看旅行途中寄回来的内容</div>
+    </div>
+
+    <div class="pet-travel-collection-actions">
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-letters" type="button">
+        信件（0）
+      </button>
+
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-photos" type="button">
+        照片（0）
+      </button>
+
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-souvenirs" type="button">
+        纪念品（0）
+      </button>
+    </div>
+  </div>
+
+
       <div class="pet-travel-bag-editor-actions">
         <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
           保存行李
@@ -285,6 +307,29 @@
       接它回家
     </button>
   </div>
+  <div class="travel-collection-modal" id="travel-collection-modal" hidden>
+  <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
+
+  <div class="travel-collection-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="travel-collection-title">
+    <div class="travel-collection-modal-header">
+      <div>
+        <div class="travel-collection-modal-kicker">PET TRAVEL</div>
+        <div class="travel-collection-modal-title" id="travel-collection-title">旅行收藏</div>
+      </div>
+
+      <button class="travel-collection-modal-close" id="btn-travel-collection-close" type="button" aria-label="关闭">
+        ✕
+      </button>
+    </div>
+
+    <div class="travel-collection-modal-status" id="travel-collection-modal-status" aria-live="polite"></div>
+
+    <div class="travel-collection-modal-body" id="travel-collection-modal-body">
+      <div class="travel-collection-empty">正在加载...</div>
+    </div>
+  </div>
+</div>
+
 </section>
 
 
@@ -2317,6 +2362,66 @@ function _setTravelInlineStatus(message = '', type = '') {
   if (type) el.dataset.type = type;
   else delete el.dataset.type;
 }
+function _setTravelCollectionModalStatus(message = '', type = '') {
+  const el = document.getElementById('travel-collection-modal-status');
+  if (!el) return;
+  el.textContent = message;
+  if (type) el.dataset.type = type;
+  else delete el.dataset.type;
+}
+
+function _formatTravelCollectionTime(ts) {
+  if (!ts) return '时间未知';
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
+function _escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function _normalizeTravelLetterItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-letter-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    title: item.title || '旅行来信',
+    content: item.content || '这封旅行来信暂时没有正文。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+    read: !!item.read,
+  };
+}
+
+function _normalizeTravelPhotoItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-photo-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    title: item.title || '旅行照片',
+    content: item.content || '这是一张来自旅途中的文字照片。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+    read: !!item.read,
+  };
+}
+
+function _normalizeTravelSouvenirItem(item = {}, fallbackDestination = '') {
+  return {
+    id: item.id || `travel-souvenir-fallback-${Math.random().toString(36).slice(2, 8)}`,
+    name: item.name || '旅行纪念品',
+    desc: item.desc || '这是一份来自旅途的纪念品。',
+    destination: item.destination || fallbackDestination || '',
+    createdAt: item.createdAt || null,
+  };
+}
+
 
 function _readTravelBagFromForm() {
   return {
@@ -2446,6 +2551,173 @@ function _buildTravelLogText(travel) {
 
   return '旅行中，可能很快会寄回新的信件或照片。';
 }
+function _closeTravelCollectionModal() {
+  const modal = document.getElementById('travel-collection-modal');
+  const body = document.getElementById('travel-collection-modal-body');
+  const title = document.getElementById('travel-collection-title');
+
+  if (!modal) return;
+  modal.hidden = true;
+  modal.dataset.type = '';
+  if (title) title.textContent = '旅行收藏';
+  if (body) body.innerHTML = '<div class="travel-collection-empty">已关闭</div>';
+  _setTravelCollectionModalStatus('', '');
+  document.body.classList.remove('modal-open');
+}
+
+function _openTravelCollectionModalShell(titleText, type) {
+  const modal = document.getElementById('travel-collection-modal');
+  const title = document.getElementById('travel-collection-title');
+  const body = document.getElementById('travel-collection-modal-body');
+
+  if (!modal || !title || !body) {
+    throw new Error('旅行弹窗节点未找到');
+  }
+
+  modal.hidden = false;
+  modal.dataset.type = type;
+  title.textContent = titleText;
+  body.innerHTML = '<div class="travel-collection-empty">正在加载...</div>';
+  document.body.classList.add('modal-open');
+}
+
+function _renderTravelLettersList(travel) {
+  const body = document.getElementById('travel-collection-modal-body');
+  if (!body) return;
+
+  const items = (travel.letters || [])
+    .map(item => _normalizeTravelLetterItem(item, travel.destination || ''))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!items.length) {
+    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行来信</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="travel-collection-list">
+      ${items.map(item => `
+        <article class="travel-letter-card">
+          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
+          <div class="travel-letter-card-meta">
+            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+          </div>
+          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function _renderTravelPhotosList(travel) {
+  const body = document.getElementById('travel-collection-modal-body');
+  if (!body) return;
+
+  const items = (travel.photos || [])
+    .map(item => _normalizeTravelPhotoItem(item, travel.destination || ''))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!items.length) {
+    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行照片</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="travel-collection-list">
+      ${items.map(item => `
+        <article class="travel-photo-card">
+          <div class="travel-photo-card-scene">${_escapeHtml(item.destination || '旅行途中')}</div>
+          <div class="travel-photo-card-title">${_escapeHtml(item.title)}</div>
+          <div class="travel-photo-card-meta">${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}</div>
+          <div class="travel-photo-card-content">${_escapeHtml(item.content)}</div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function _renderTravelSouvenirsList(travel) {
+  const body = document.getElementById('travel-collection-modal-body');
+  if (!body) return;
+
+  const items = (travel.souvenirs || [])
+    .map(item => _normalizeTravelSouvenirItem(item, travel.destination || ''))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (!items.length) {
+    body.innerHTML = '<div class="travel-collection-empty">这次旅行还没有带回纪念品</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="travel-collection-list">
+      ${items.map(item => `
+        <article class="travel-souvenir-card">
+          <div class="travel-souvenir-card-title">${_escapeHtml(item.name)}</div>
+          <div class="travel-souvenir-card-meta">
+            ${_escapeHtml(item.destination || '旅行归来')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
+          </div>
+          <div class="travel-souvenir-card-content">${_escapeHtml(item.desc)}</div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function openTravelCollectionModal(type, btn) {
+  const titleMap = {
+    letters: '旅行信件',
+    photos: '旅行照片',
+    souvenirs: '旅行纪念品',
+  };
+
+  const loadingMap = {
+    letters: '正在打开旅行信件...',
+    photos: '正在打开旅行照片...',
+    souvenirs: '正在打开旅行纪念品...',
+  };
+
+  try {
+    if (btn) setButtonLoading(btn, true, '打开中...');
+    _setTravelInlineStatus(loadingMap[type] || '正在打开旅行收藏...', 'loading');
+    _setTravelCollectionModalStatus(loadingMap[type] || '正在打开旅行收藏...', 'loading');
+    showToast(loadingMap[type] || '正在打开旅行收藏...', 'info');
+
+    const pet = runtime.pet;
+    if (!pet) throw new Error('宠物数据未加载');
+
+    const travel = _normalizeTravel(pet.travel);
+    _openTravelCollectionModalShell(titleMap[type] || '旅行收藏', type);
+
+    if (type === 'letters') {
+      _renderTravelLettersList(travel);
+    } else if (type === 'photos') {
+      _renderTravelPhotosList(travel);
+    } else if (type === 'souvenirs') {
+      _renderTravelSouvenirsList(travel);
+    } else {
+      throw new Error('未知的旅行收藏类型');
+    }
+
+    _setTravelInlineStatus(`${titleMap[type] || '旅行收藏'}已打开`, 'success');
+    _setTravelCollectionModalStatus(`${titleMap[type] || '旅行收藏'}已加载完成`, 'success');
+  } catch (err) {
+    _setTravelInlineStatus('打开失败：' + err.message, 'error');
+    _setTravelCollectionModalStatus('加载失败：' + err.message, 'error');
+    showToast('打开失败：' + err.message, 'error');
+
+    const body = document.getElementById('travel-collection-modal-body');
+    const modal = document.getElementById('travel-collection-modal');
+    if (modal) modal.hidden = false;
+    if (body) {
+      body.innerHTML = `<div class="travel-collection-empty">加载失败：${_escapeHtml(err.message)}</div>`;
+    }
+
+    logError?.('app', 'openTravelCollectionModal failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+  }
+}
 
 function renderTravelUI(pet = runtime.pet) {
   if (!pet) return;
@@ -2474,6 +2746,10 @@ function renderTravelUI(pet = runtime.pet) {
   const returnBtn = document.getElementById('btn-travel-return');
   const saveBagBtn = document.getElementById('btn-travel-save-bag');
 
+    const openLettersBtn = document.getElementById('btn-travel-open-letters');
+  const openPhotosBtn = document.getElementById('btn-travel-open-photos');
+  const openSouvenirsBtn = document.getElementById('btn-travel-open-souvenirs');
+
   if (ownerNameEl) ownerNameEl.textContent = petName;
 
   if (badgeEl) {
@@ -2490,12 +2766,41 @@ function renderTravelUI(pet = runtime.pet) {
       summaryEl.textContent = `今天要不要给${petName}准备一次旅行？你可以先选好目的地，再帮它整理行李。`;
     }
   }
+const letterCount = travel.letters.length || 0;
+const photoCount = travel.photos.length || 0;
+const souvenirCount = travel.souvenirs.length || 0;
 
-  if (returnTimeEl) returnTimeEl.textContent = travel.endsAt ? _formatTravelTime(travel.endsAt) : '-';
-  if (lettersEl) lettersEl.textContent = String(travel.letters.length || 0);
-  if (photosEl) photosEl.textContent = String(travel.photos.length || 0);
-  if (logEl) logEl.textContent = _buildTravelLogText(travel);
-  if (bagSummaryText) bagSummaryText.textContent = _getSelectedBagSummary(travel.bag);
+if (returnTimeEl) {
+  returnTimeEl.textContent = travel.endsAt ? _formatTravelTime(travel.endsAt) : '-';
+}
+
+if (lettersEl) {
+  lettersEl.textContent = String(letterCount);
+}
+
+if (photosEl) {
+  photosEl.textContent = String(photoCount);
+}
+
+if (openLettersBtn) {
+  openLettersBtn.textContent = `信件（${letterCount}）`;
+}
+
+if (openPhotosBtn) {
+  openPhotosBtn.textContent = `照片（${photoCount}）`;
+}
+
+if (openSouvenirsBtn) {
+  openSouvenirsBtn.textContent = `纪念品（${souvenirCount}）`;
+}
+
+if (logEl) {
+  logEl.textContent = _buildTravelLogText(travel);
+}
+
+if (bagSummaryText) {
+  bagSummaryText.textContent = _getSelectedBagSummary(travel.bag);
+}
 
   _writeTravelBagToForm(travel.bag);
 
@@ -2658,33 +2963,46 @@ function _buildTravelLetter(travel, petName) {
   if (bag.blanket) lines.push('小毯子暖暖的，晚上睡得很安心。');
   if (bag.medicine) lines.push('把营养剂也带上了，觉得很有安全感。');
 
-  return {
+   return {
     id: `travel-letter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: 'letter',
     title: `来自${destination}的来信`,
     content: lines.join(' '),
+    destination,
     createdAt: Date.now(),
     read: false,
   };
+
 }
 
 function _buildTravelPhoto(travel, petName) {
   const destination = travel.destination || '远方';
+
   const titles = [
     `${destination}的风景角落`,
     `${petName}寄回来的旅行照片`,
     `${destination}的小发现`,
+    `在${destination}的安静时刻`,
+  ];
+
+  const descriptions = [
+    `${petName}站在${destination}的路边，风把耳朵边的小毛吹得轻轻晃动，远处的光落在它身上，看起来像一张很温柔的旅行照片。`,
+    `${destination}的空气很安静，${petName}抱着一路带去的小期待站在那里，像是刚刚发现了什么新鲜的小秘密。`,
+    `${petName}在${destination}停下来望向远处，脚边是细碎的光影，这一刻看起来特别像被认真保存下来的旅途瞬间。`,
+    `${destination}的景色被收进这一张文字照片里：柔和的风、安静的天空，还有${petName}旅行时放松下来的神情。`,
   ];
 
   return {
     id: `travel-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: 'photo',
     title: titles[Math.floor(Math.random() * titles.length)],
-    content: `${petName}从${destination}寄回了一张照片，看起来玩得很开心。`,
+    content: descriptions[Math.floor(Math.random() * descriptions.length)],
+    destination,
     createdAt: Date.now(),
     read: false,
   };
 }
+
 
 async function receiveTravelUpdate(btn) {
   showToast('正在接收旅行来信...', 'info');
@@ -2749,6 +3067,7 @@ function _buildSouvenirs(destination, count = 2) {
     id: `souvenir-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
     name,
     desc: `从${destination}带回来的纪念品。`,
+    destination,
     createdAt: Date.now(),
   }));
 }
@@ -2854,6 +3173,26 @@ function bindTravelSystem() {
   document.getElementById('btn-travel-return')?.addEventListener('click', (e) => {
     returnPetFromTravel(e.currentTarget);
   });
+    document.getElementById('btn-travel-open-letters')?.addEventListener('click', (e) => {
+    openTravelCollectionModal('letters', e.currentTarget);
+  });
+
+  document.getElementById('btn-travel-open-photos')?.addEventListener('click', (e) => {
+    openTravelCollectionModal('photos', e.currentTarget);
+  });
+
+  document.getElementById('btn-travel-open-souvenirs')?.addEventListener('click', (e) => {
+    openTravelCollectionModal('souvenirs', e.currentTarget);
+  });
+
+  document.getElementById('btn-travel-collection-close')?.addEventListener('click', () => {
+    _closeTravelCollectionModal();
+  });
+
+  document.getElementById('travel-collection-modal-backdrop')?.addEventListener('click', () => {
+    _closeTravelCollectionModal();
+  });
+
 }
 
 
