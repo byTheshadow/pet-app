@@ -3901,14 +3901,15 @@
     grid-template-columns: 1fr !important;
   }
 }
+
 /* ============================================================
-   Friend Invite Card - Safe Layout
-   位置：仅用于 #pet-travel-card 内部
+   Friend Invite Card - Stable Safe Patch
    ============================================================ */
 
 #page-pet #pet-travel-card .pet-travel-invite-card {
   display: block !important;
   width: 100% !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
@@ -3942,14 +3943,18 @@
 
 #page-pet #pet-travel-card .invite-card-body {
   display: block !important;
+  width: 100% !important;
   min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-info {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  width: 100% !important;
   min-width: 0 !important;
+  box-sizing: border-box !important;
   margin: 0 0 10px !important;
 }
 
@@ -3960,7 +3965,6 @@
   border-radius: 999px !important;
   background: var(--bg-card) !important;
   border: 1px solid var(--border-subtle) !important;
-
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -3987,6 +3991,8 @@
 #page-pet #pet-travel-card .invite-friend-meta {
   flex: 1 1 auto !important;
   min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 #page-pet #pet-travel-card .invite-friend-name {
@@ -4004,6 +4010,7 @@
   flex-wrap: wrap !important;
   gap: 6px !important;
   min-width: 0 !important;
+  max-width: 100% !important;
 }
 
 #page-pet #pet-travel-card .invite-tag {
@@ -4032,6 +4039,9 @@
 
 #page-pet #pet-travel-card .invite-text {
   display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
   margin: 0 0 12px !important;
   font-size: 13px !important;
   line-height: 1.75 !important;
@@ -4051,6 +4061,7 @@
   gap: 8px !important;
   width: 100% !important;
   min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 #page-pet #pet-travel-card .invite-card-actions .btn {

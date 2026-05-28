@@ -175,219 +175,182 @@
         </div>
 
         <!-- 旅行卡片 -->
-        <section class="pet-travel-card" id="pet-travel-card">
-          <div class="pet-travel-card-header">
-            <div class="pet-travel-main-title">
-              <div class="pet-travel-kicker">PET TRAVEL</div>
-              <div class="pet-travel-title">
-                <span id="pet-travel-owner-name">小幽</span>的旅行
-              </div>
-            </div>
-
-            <div class="pet-travel-status-badge" id="pet-travel-status-badge">
-              空闲中
-            </div>
-          </div>
-          <div class="pet-travel-invite-card" id="pet-travel-invite-card" hidden>
-  <div class="invite-card-kicker">好友邀请</div>
-
-  <div class="invite-card-body">
-    <div class="invite-friend-info">
-      <div class="invite-friend-avatar" aria-hidden="true">
-        <span class="invite-friend-avatar-fallback">🐾</span>
+<section class="pet-travel-card" id="pet-travel-card">
+  <div class="pet-travel-card-header">
+    <div class="pet-travel-main-title">
+      <div class="pet-travel-kicker">PET TRAVEL</div>
+      <div class="pet-travel-title">
+        <span id="pet-travel-owner-name">小幽</span>的旅行
       </div>
+    </div>
 
-      <div class="invite-friend-meta">
-        <div class="invite-friend-name" id="travel-invite-friend-name">好友名字</div>
+    <div class="pet-travel-status-badge" id="pet-travel-status-badge">
+      空闲中
+    </div>
+  </div>
 
-        <div class="invite-friend-tags">
-          <span class="invite-tag invite-destination" id="travel-invite-destination">
-            目的地
-          </span>
-          <span class="invite-tag invite-duration" id="travel-invite-duration">
-            时长
-          </span>
+  <!-- 好友邀请卡：必须放在 header 后、summary 前 -->
+  <div class="pet-travel-invite-card" id="pet-travel-invite-card" hidden>
+    <div class="invite-card-kicker">好友邀请</div>
+
+    <div class="invite-card-body">
+      <div class="invite-friend-info">
+        <div class="invite-friend-avatar" aria-hidden="true">
+          <span class="invite-friend-avatar-fallback">🐾</span>
+        </div>
+
+        <div class="invite-friend-meta">
+          <div class="invite-friend-name" id="travel-invite-friend-name">好友名字</div>
+
+          <div class="invite-friend-tags">
+            <span class="invite-tag invite-destination" id="travel-invite-destination">
+              目的地
+            </span>
+            <span class="invite-tag invite-duration" id="travel-invite-duration">
+              时长
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="invite-text" id="travel-invite-text" aria-live="polite">
-      正在写邀请消息...
-    </div>
-  </div>
-
-  <div class="invite-card-actions">
-    <button class="btn btn-primary btn-sm" id="btn-travel-invite-accept" type="button">
-      接受邀请
-    </button>
-
-    <button class="btn btn-ghost btn-sm" id="btn-travel-invite-dismiss" type="button">
-      婉拒
-    </button>
-  </div>
-</div>
-
-
-          <div class="pet-travel-summary" id="pet-travel-summary">
-            今天要不要给小幽准备一次旅行？
-          </div>
-
-        <div class="pet-travel-grid" id="pet-travel-grid">
-  <div class="pet-travel-item">
-    <span>旅行目的地</span>
-    <div class="pet-travel-select-wrap">
-      <select id="travel-destination-select" class="pet-travel-select">
-        <option value="random">随机目的地</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="pet-travel-item">
-    <span>旅行时长</span>
-    <select id="travel-duration-select" class="pet-travel-select">
-  <option value="300">5 小时（短途）</option>
-  <option value="1440" selected>一天（普通）</option>
-  <option value="4320">三天（深度）</option>
-  <option value="7200">五天（长途）</option>
-</select>
-    </div>
-  </div>
-
-  <div class="pet-travel-item">
-    <span>预计返程</span>
-    <strong id="travel-summary-return-time">-</strong>
-  </div>
-
-  <div class="pet-travel-item">
-    <span>信件 / 照片</span>
-    <strong id="travel-summary-letters-photos">0 / 0</strong>
-  </div>
-</div>
-
-
-
-<!-- 景点安排区 -->
-<div class="pet-travel-itinerary-card" id="pet-travel-itinerary-card">
-  <div class="pet-travel-itinerary-head">
-    <div>
-      <div class="pet-travel-itinerary-title">景点安排</div>
-      <div class="pet-travel-itinerary-desc">
-        最多选 3 个，会影响旅行途中寄回的内容
+      <div class="invite-text" id="travel-invite-text" aria-live="polite">
+        正在写邀请消息...
       </div>
     </div>
-    <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-itinerary" type="button">
-      安排景点
-    </button>
-  </div>
 
-  <div class="pet-travel-itinerary-summary" id="pet-travel-itinerary-summary">
-    暂未安排景点，旅行内容将随机生成
-  </div>
+    <div class="invite-card-actions">
+      <button class="btn btn-primary btn-sm" id="btn-travel-invite-accept" type="button">
+        接受邀请
+      </button>
 
-  <div class="pet-travel-itinerary-editor" id="pet-travel-itinerary-editor" hidden>
-    <div class="pet-travel-spot-list" id="pet-travel-spot-list">
-      <!-- 由JS动态填充 -->
-    </div>
-    <div class="pet-travel-itinerary-actions">
-      <button class="btn btn-primary btn-sm" id="btn-travel-save-itinerary" type="button">
-        保存景点安排
+      <button class="btn btn-ghost btn-sm" id="btn-travel-invite-dismiss" type="button">
+        婉拒
       </button>
     </div>
   </div>
-</div>
-           
 
-          <div class="pet-travel-bag-summary-card">
-            <div class="pet-travel-bag-summary-head">
-              <div>
-                <div class="pet-travel-bag-summary-title">旅行行李</div>
-                <div class="pet-travel-bag-summary-text" id="pet-travel-bag-summary-text">
-                  暂未选择行李
-                </div>
-              </div>
+  <div class="pet-travel-summary" id="pet-travel-summary">
+    今天要不要给小幽准备一次旅行？
+  </div>
 
-              <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-bag" type="button">
-                整理行李
-              </button>
-            </div>
+  <div class="pet-travel-grid" id="pet-travel-grid">
+    <div class="pet-travel-item">
+      <span>旅行目的地</span>
+      <div class="pet-travel-select-wrap">
+        <select id="travel-destination-select" class="pet-travel-select">
+          <option value="random">随机目的地</option>
+        </select>
+      </div>
+    </div>
 
-            <div class="pet-travel-bag-editor" id="pet-travel-bag-editor" hidden>
-              <div class="pet-travel-bag-list">
-                <label class="pet-travel-bag-item">
-                  <input type="checkbox" id="travel-bag-snack" />
-                  <span>🍪 零食</span>
-                </label>
+    <div class="pet-travel-item">
+      <span>预计返程</span>
+      <strong id="travel-summary-return-time">-</strong>
+    </div>
 
-                <label class="pet-travel-bag-item">
-                  <input type="checkbox" id="travel-bag-toy" />
-                  <span>🧸 玩具</span>
-                </label>
+    <div class="pet-travel-item">
+      <span>收到信件</span>
+      <strong id="travel-summary-letters">0</strong>
+    </div>
 
-                <label class="pet-travel-bag-item">
-                  <input type="checkbox" id="travel-bag-blanket" />
-                  <span>🧣 小毯子</span>
-                </label>
+    <div class="pet-travel-item">
+      <span>收到照片</span>
+      <strong id="travel-summary-photos">0</strong>
+    </div>
+  </div>
 
-                <label class="pet-travel-bag-item">
-                  <input type="checkbox" id="travel-bag-medicine" />
-                  <span>💊 营养剂</span>
-                </label>
+  <div class="pet-travel-bag-summary-card">
+    <div class="pet-travel-bag-summary-head">
+      <div>
+        <div class="pet-travel-bag-summary-title">旅行行李</div>
+        <div class="pet-travel-bag-summary-text" id="pet-travel-bag-summary-text">
+          暂未选择行李
+        </div>
+      </div>
 
-                <label class="pet-travel-bag-item">
-                  <input type="checkbox" id="travel-bag-photoBook" />
-                  <span>📷 小相册</span>
-                </label>
-              </div>
+      <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-bag" type="button">
+        整理行李
+      </button>
+    </div>
 
-              <div class="pet-travel-bag-editor-actions">
-                <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
-                  保存行李
-                </button>
-              </div>
-            </div>
-          </div>
+    <div class="pet-travel-bag-editor" id="pet-travel-bag-editor" hidden>
+      <div class="pet-travel-bag-list">
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-snack" />
+          <span>🍪 零食</span>
+        </label>
 
-          <div class="pet-travel-log" id="pet-travel-log">
-            暂时还没有旅行消息。
-          </div>
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-toy" />
+          <span>🧸 玩具</span>
+        </label>
 
-          <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-blanket" />
+          <span>🧣 小毯子</span>
+        </label>
 
-          <div class="pet-travel-collections" id="pet-travel-collections">
-            <div class="pet-travel-collections-head">
-              <div class="pet-travel-collections-title">旅行收藏</div>
-              <div class="pet-travel-collections-desc">查看旅行途中寄回来的内容</div>
-            </div>
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-medicine" />
+          <span>💊 营养剂</span>
+        </label>
 
-            <div class="pet-travel-collection-actions">
-              <button class="btn btn-ghost btn-sm" id="btn-travel-open-letters" type="button">
-                信件（0）
-              </button>
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-photoBook" />
+          <span>📷 小相册</span>
+        </label>
+      </div>
 
-              <button class="btn btn-ghost btn-sm" id="btn-travel-open-photos" type="button">
-                照片（0）
-              </button>
+      <div class="pet-travel-bag-editor-actions">
+        <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
+          保存行李
+        </button>
+      </div>
+    </div>
+  </div>
 
-              <button class="btn btn-ghost btn-sm" id="btn-travel-open-souvenirs" type="button">
-                纪念品（0）
-              </button>
-            </div>
-          </div>
+  <div class="pet-travel-log" id="pet-travel-log">
+    暂时还没有旅行消息。
+  </div>
 
-          <div class="pet-travel-actions">
-            <button class="btn btn-primary btn-sm" id="btn-travel-buy-ticket" type="button">
-              买票旅行
-            </button>
+  <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
 
-          <button class="btn btn-ghost btn-sm" id="btn-travel-receive" type="button" hidden>
-  接收来信
-</button>
+  <div class="pet-travel-collections" id="pet-travel-collections">
+    <div class="pet-travel-collections-head">
+      <div class="pet-travel-collections-title">旅行收藏</div>
+      <div class="pet-travel-collections-desc">查看旅行途中寄回来的内容</div>
+    </div>
 
-            <button class="btn btn-ghost btn-sm" id="btn-travel-return" type="button">
-              接它回家
-            </button>
-          </div>
-        </section>
+    <div class="pet-travel-collection-actions">
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-letters" type="button">
+        信件（0）
+      </button>
+
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-photos" type="button">
+        照片（0）
+      </button>
+
+      <button class="btn btn-ghost btn-sm" id="btn-travel-open-souvenirs" type="button">
+        纪念品（0）
+      </button>
+    </div>
+  </div>
+
+  <div class="pet-travel-actions">
+    <button class="btn btn-primary btn-sm" id="btn-travel-buy-ticket" type="button">
+      买票旅行
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-travel-receive" type="button">
+      接收来信
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-travel-return" type="button">
+      接它回家
+    </button>
+  </div>
+</section>
+
 
         <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
         <section class="pet-room-card" id="pet-room-card">
