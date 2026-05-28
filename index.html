@@ -174,6 +174,47 @@
 </div>
 </section>
 
+<!-- 旅行收藏弹窗：放在 #page-pet 末尾，且在 </section> 前 -->
+<div class="travel-collection-modal" id="travel-collection-modal" aria-hidden="true">
+  <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
+
+  <div
+    class="travel-collection-modal-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="travel-collection-title"
+  >
+    <div class="travel-collection-modal-header">
+      <div>
+        <div class="travel-collection-modal-kicker">PET TRAVEL</div>
+        <div class="travel-collection-modal-title" id="travel-collection-title">
+          旅行收藏
+        </div>
+      </div>
+
+      <button
+        class="travel-collection-modal-close"
+        id="btn-travel-collection-close"
+        type="button"
+        aria-label="关闭旅行收藏"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div
+      class="travel-collection-modal-status"
+      id="travel-collection-modal-status"
+      aria-live="polite"
+    ></div>
+
+    <div class="travel-collection-modal-body" id="travel-collection-modal-body">
+      <div class="travel-collection-empty">请选择要查看的旅行内容</div>
+    </div>
+  </div>
+</div>
+
+
 
 
 <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
@@ -296,45 +337,6 @@
   <span class="chat-open-arrow">›</span>
 </button>
 
-<!-- 旅行收藏弹窗：放在 #page-pet 末尾，且在 </section> 前 -->
-<div class="travel-collection-modal" id="travel-collection-modal" aria-hidden="true">
-  <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
-
-  <div
-    class="travel-collection-modal-dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="travel-collection-title"
-  >
-    <div class="travel-collection-modal-header">
-      <div>
-        <div class="travel-collection-modal-kicker">PET TRAVEL</div>
-        <div class="travel-collection-modal-title" id="travel-collection-title">
-          旅行收藏
-        </div>
-      </div>
-
-      <button
-        class="travel-collection-modal-close"
-        id="btn-travel-collection-close"
-        type="button"
-        aria-label="关闭旅行收藏"
-      >
-        ✕
-      </button>
-    </div>
-
-    <div
-      class="travel-collection-modal-status"
-      id="travel-collection-modal-status"
-      aria-live="polite"
-    ></div>
-
-    <div class="travel-collection-modal-body" id="travel-collection-modal-body">
-      <div class="travel-collection-empty">请选择要查看的旅行内容</div>
-    </div>
-  </div>
-</div>
 
       </section>
 
