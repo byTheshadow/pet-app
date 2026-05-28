@@ -2561,24 +2561,6 @@ function _openTravelCollectionModalShell(titleText, type) {
     throw new Error('旅行弹窗节点未找到');
   }
 
-  modal.classList.add('is-open');
-  modal.dataset.type = type || '';
-  modal.setAttribute('aria-hidden', 'false');
-
-  title.textContent = titleText;
-  body.innerHTML = '<div class="travel-collection-empty">正在加载...</div>';
-}
-
-
-function _openTravelCollectionModalShell(titleText, type) {
-  const modal = document.getElementById('travel-collection-modal');
-  const title = document.getElementById('travel-collection-title');
-  const body = document.getElementById('travel-collection-modal-body');
-
-  if (!modal || !title || !body) {
-    throw new Error('旅行弹窗节点未找到');
-  }
-
   modal.hidden = false;
   modal.dataset.type = type;
   title.textContent = titleText;
