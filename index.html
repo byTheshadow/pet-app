@@ -2640,22 +2640,28 @@ async function openTravelCollectionModal(type, btn) {
 
     _setTravelInlineStatus(`${titleMap[type] || '旅行收藏'}已打开`, 'success');
     _setTravelCollectionModalStatus(`${titleMap[type] || '旅行收藏'}已加载完成`, 'success');
-  } catch (err) {
-    _setTravelInlineStatus('打开失败：' + err.message, 'error');
-    _setTravelCollectionModalStatus('加载失败：' + err.message, 'error');
-    showToast('打开失败：' + err.message, 'error');
+} catch (err) {
+  console.error('[travel modal error]', err);
 
-    const body = document.getElementById('travel-collection-modal-body');
-    const modal = document.getElementById('travel-collection-modal');
-    if (modal) modal.hidden = false;
-    if (body) {
-      body.innerHTML = `<div class="travel-collection-empty">加载失败：${_escapeHtml(err.message)}</div>`;
-    }
+  _setTravelInlineStatus('打开失败：' + err.message, 'error');
+  _setTravelCollectionModalStatus('加载失败：' + err.message, 'error');
+  showToast('打开失败：' + err.message, 'error');
 
-    logError?.('app', 'openTravelCollectionModal failed', { stack: err.stack });
-  } finally {
-    if (btn) setButtonLoading(btn, false);
+  const body = document.getElementById('travel-collection-modal-body');
+  const modal = document.getElementById('travel-collection-modal');
+  if (modal) {
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
   }
+  if (body) {
+    body.innerHTML = `<div class="travel-collection-empty">加载失败：${_escapeHtml(err.message)}</div>`;
+  }
+
+  logError?.('app', 'openTravelCollectionModal failed', { stack: err.stack });
+} finally {
+  if (btn) setButtonLoading(btn, false);
+}
+
 }
 
 function renderTravelUI(pet = runtime.pet) {
