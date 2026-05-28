@@ -2640,22 +2640,6 @@ function _renderTravelLettersList(travel) {
   `;
 }
 
-  body.innerHTML = `
-    <div class="travel-collection-list">
-      ${items.map(item => `
-        <article class="travel-letter-card">
-          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
-          <div class="travel-letter-card-meta">
-            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
-          </div>
-          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
-        </article>
-      `).join('')}
-    </div>
-  `;
-}
-
-
 function _renderTravelPhotosList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
   if (!body) return;
