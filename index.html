@@ -2577,43 +2577,6 @@ function _setTravelCollectionModalStatus(message = '', type = '') {
 
 
 
-function _normalizeTravelPhotoItem(item = {}, fallbackDestination = '') {
-  return {
-    id: item.id || `travel-photo-fallback-${Math.random().toString(36).slice(2, 8)}`,
-    title: item.title || '旅行照片',
-    content: item.content || '这是一张来自旅途中的文字照片。',
-    destination: item.destination || fallbackDestination || '',
-    createdAt: item.createdAt || null,
-    read: !!item.read,
-  };
-}
-
-function _normalizeTravelSouvenirItem(item = {}, fallbackDestination = '') {
-  return {
-    id: item.id || `travel-souvenir-fallback-${Math.random().toString(36).slice(2, 8)}`,
-    name: item.name || '旅行纪念品',
-    desc: item.desc || '这是一份来自旅途的纪念品。',
-    destination: item.destination || fallbackDestination || '',
-    createdAt: item.createdAt || null,
-  };
-}
-
-function _closeTravelCollectionModal() {
-  const modal = document.getElementById('travel-collection-modal');
-  const body = document.getElementById('travel-collection-modal-body');
-  const title = document.getElementById('travel-collection-title');
-
-  if (!modal) return;
-
-  modal.classList.remove('is-open');
-  modal.setAttribute('aria-hidden', 'true');
-  modal.dataset.type = '';
-
-  if (title) title.textContent = '旅行收藏';
-  if (body) body.innerHTML = '';
-
-  _setTravelCollectionModalStatus('', '');
-}
 function _openTravelCollectionModalShell(titleText, type) {
   const modal = document.getElementById('travel-collection-modal');
   const title = document.getElementById('travel-collection-title');
@@ -2676,18 +2639,6 @@ function _renderTravelLettersList(travel) {
     </div>
   `;
 }
-function _renderTravelLettersList(travel) {
-  const body = document.getElementById('travel-collection-modal-body');
-  if (!body) return;
-
-  const items = (travel.letters || [])
-    .map(item => _normalizeTravelLetterItem(item, travel.destination || ''))
-    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-  if (!items.length) {
-    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行来信</div>';
-    return;
-  }
 
   body.innerHTML = `
     <div class="travel-collection-list">
