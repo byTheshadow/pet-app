@@ -2552,6 +2552,7 @@ function _buildTravelLogText(travel) {
   return '旅行中，可能很快会寄回新的信件或照片。';
 }
 
+
 function _openTravelCollectionModalShell(titleText, type) {
   const modal = document.getElementById('travel-collection-modal');
   const title = document.getElementById('travel-collection-title');
@@ -2568,33 +2569,6 @@ function _openTravelCollectionModalShell(titleText, type) {
   document.body.classList.add('modal-open');
 }
 
-function _renderTravelLettersList(travel) {
-  const body = document.getElementById('travel-collection-modal-body');
-  if (!body) return;
-
-  const items = (travel.letters || [])
-    .map(item => _normalizeTravelLetterItem(item, travel.destination || ''))
-    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-  if (!items.length) {
-    body.innerHTML = '<div class="travel-collection-empty">暂时还没有收到旅行来信</div>';
-    return;
-  }
-
-  body.innerHTML = `
-    <div class="travel-collection-list">
-      ${items.map(item => `
-        <article class="travel-letter-card">
-          <div class="travel-letter-card-title">${_escapeHtml(item.title)}</div>
-          <div class="travel-letter-card-meta">
-            ${_escapeHtml(item.destination || '旅行途中')} · ${_escapeHtml(_formatTravelCollectionTime(item.createdAt))}
-          </div>
-          <div class="travel-letter-card-content">${_escapeHtml(item.content)}</div>
-        </article>
-      `).join('')}
-    </div>
-  `;
-}
 
 function _renderTravelPhotosList(travel) {
   const body = document.getElementById('travel-collection-modal-body');
