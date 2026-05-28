@@ -2380,13 +2380,7 @@ function _setTravelInlineStatus(message = '', type = '') {
   if (type) el.dataset.type = type;
   else delete el.dataset.type;
 }
-function _setTravelCollectionModalStatus(message = '', type = '') {
-  const el = document.getElementById('travel-collection-modal-status');
-  if (!el) return;
-  el.textContent = message;
-  if (type) el.dataset.type = type;
-  else delete el.dataset.type;
-}
+
 
 function _formatTravelCollectionTime(ts) {
   if (!ts) return '时间未知';
