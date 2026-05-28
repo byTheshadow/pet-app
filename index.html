@@ -64,16 +64,17 @@
           <div class="scene-deco scene-deco-3"></div>
 
           <div id="emotion-bubble"></div>
+
           <!-- 宠物不在主页面时的提示层 -->
-<div id="pet-away-panel" class="pet-away-panel" hidden>
-  <div class="pet-away-icon">🚪</div>
-  <div class="pet-away-title">宠物当前不在</div>
-  <div class="pet-away-desc" id="pet-away-desc">它正在自己的房间里休息。</div>
-  <div class="pet-away-actions">
-    <button class="btn btn-primary btn-sm" id="btn-room-call-back" type="button">叫它回来</button>
-    <button class="btn btn-ghost btn-sm" id="btn-room-focus" type="button">看看房间</button>
-  </div>
-</div>
+          <div id="pet-away-panel" class="pet-away-panel" hidden>
+            <div class="pet-away-icon">🚪</div>
+            <div class="pet-away-title">宠物当前不在</div>
+            <div class="pet-away-desc" id="pet-away-desc">它正在自己的房间里休息。</div>
+            <div class="pet-away-actions">
+              <button class="btn btn-primary btn-sm" id="btn-room-call-back" type="button">叫它回来</button>
+              <button class="btn btn-ghost btn-sm" id="btn-room-focus" type="button">看看房间</button>
+            </div>
+          </div>
 
           <div id="pet-avatar-wrap">
             <!-- CSS 宠物（无头像时显示） -->
@@ -133,212 +134,345 @@
 
         <!-- 操作按钮 2×2 -->
         <div id="pet-actions">
-  <button class="action-btn feed" id="btn-feed">
-    <div class="btn-icon-wrap">🍖</div>
-    <span class="btn-label">Feed</span>
-  </button>
-  <button class="action-btn play" id="btn-play">
-    <div class="btn-icon-wrap">🎮</div>
-    <span class="btn-label">Play</span>
-  </button>
-  <button class="action-btn clean" id="btn-clean">
-    <div class="btn-icon-wrap">🚿</div>
-    <span class="btn-label">Clean</span>
-  </button>
-  <button class="action-btn heal" id="btn-heal" title="生病时才使用">
-    <div class="btn-icon-wrap">💊</div>
-    <span class="btn-label">Heal</span>
-  </button>
-</div>
-
-<!-- 食物选择面板（默认隐藏） -->
-<div id="food-panel" class="food-panel">
-  <div class="food-panel-header">
-    <span class="food-panel-title">选择食物</span>
-    <button class="food-panel-close" id="food-panel-close">✕</button>
-  </div>
-  <div class="food-panel-list" id="food-panel-list"></div>
-</div>
-<!-- 日记 & 来信快捷按钮行 -->
-<!-- 日记 & 来信快捷按钮行 -->
-<div class="pet-quick-actions" id="pet-quick-actions">
-  <button class="pet-quick-btn" id="btn-diary" title="宠物日记" type="button">
-    <span class="pet-quick-icon">📝</span>
-    <span class="pet-quick-label">日记</span>
-  </button>
-
-  <button class="pet-quick-btn" id="btn-write-letter" title="宠物来信" type="button">
-    <span class="pet-quick-icon">✉️</span>
-    <span class="pet-quick-label">来信</span>
-  </button>
-</div>
-</section>
-
-<!-- 旅行收藏弹窗：放在 #page-pet 末尾，且在 </section> 前 -->
-<div class="travel-collection-modal" id="travel-collection-modal" aria-hidden="true">
-  <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
-
-  <div
-    class="travel-collection-modal-dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="travel-collection-title"
-  >
-    <div class="travel-collection-modal-header">
-      <div>
-        <div class="travel-collection-modal-kicker">PET TRAVEL</div>
-        <div class="travel-collection-modal-title" id="travel-collection-title">
-          旅行收藏
+          <button class="action-btn feed" id="btn-feed">
+            <div class="btn-icon-wrap">🍖</div>
+            <span class="btn-label">Feed</span>
+          </button>
+          <button class="action-btn play" id="btn-play">
+            <div class="btn-icon-wrap">🎮</div>
+            <span class="btn-label">Play</span>
+          </button>
+          <button class="action-btn clean" id="btn-clean">
+            <div class="btn-icon-wrap">🚿</div>
+            <span class="btn-label">Clean</span>
+          </button>
+          <button class="action-btn heal" id="btn-heal" title="生病时才使用">
+            <div class="btn-icon-wrap">💊</div>
+            <span class="btn-label">Heal</span>
+          </button>
         </div>
-      </div>
 
-      <button
-        class="travel-collection-modal-close"
-        id="btn-travel-collection-close"
-        type="button"
-        aria-label="关闭旅行收藏"
-      >
-        ✕
-      </button>
-    </div>
-
-    <div
-      class="travel-collection-modal-status"
-      id="travel-collection-modal-status"
-      aria-live="polite"
-    ></div>
-
-    <div class="travel-collection-modal-body" id="travel-collection-modal-body">
-      <div class="travel-collection-empty">请选择要查看的旅行内容</div>
-    </div>
-  </div>
-</div>
-
-
-
-
-<!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
-<section class="pet-room-card" id="pet-room-card">
-  <div class="pet-room-card-header">
-    <div class="pet-room-main-title">
-      <div class="pet-room-kicker">PET ROOM</div>
-      <div class="pet-room-title">
-        <span id="pet-room-owner-name">小幽</span>的房间
-      </div>
-    </div>
-
-    <div class="pet-room-status-badge" id="pet-room-location-badge">
-      在你身边
-    </div>
-  </div>
-
-  <div class="pet-room-summary" id="pet-room-summary">
-    正在加载房间...
-  </div>
-
-  <div class="pet-room-grid" id="pet-room-grid">
-    <div class="pet-room-item">
-      <span>风格</span>
-      <strong id="room-summary-style">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>睡觉区</span>
-      <strong id="room-summary-bed">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>玩具</span>
-      <strong id="room-summary-toy">-</strong>
-    </div>
-
-    <div class="pet-room-item">
-      <span>装饰</span>
-      <strong id="room-summary-decor">-</strong>
-    </div>
-  </div>
-
-  <div class="pet-room-actions">
-    <button class="btn btn-primary btn-sm" id="btn-room-send" type="button">
-      回房间休息
-    </button>
-
-    <button class="btn btn-ghost btn-sm" id="btn-room-return" type="button">
-      叫它回来
-    </button>
-
-    <button class="btn btn-ghost btn-sm" id="btn-room-toggle-editor" type="button">
-      布置房间
-    </button>
-  </div>
-
-  <div class="pet-room-editor" id="pet-room-editor" hidden>
-    <div class="pet-room-editor-head">
-      <div>
-        <div class="pet-room-editor-title">布置房间</div>
-        <div class="pet-room-editor-desc">
-          选择文字物品，不包含贴图。保存后会写入宠物本地数据。
+        <!-- 食物选择面板（默认隐藏） -->
+        <div id="food-panel" class="food-panel">
+          <div class="food-panel-header">
+            <span class="food-panel-title">选择食物</span>
+            <button class="food-panel-close" id="food-panel-close">✕</button>
+          </div>
+          <div class="food-panel-list" id="food-panel-list"></div>
         </div>
-      </div>
 
-      <button class="btn btn-ghost btn-sm" id="btn-room-apply-preset" type="button">
-        使用动物预设
-      </button>
-    </div>
+        <!-- 日记 & 来信快捷按钮行 -->
+        <div class="pet-quick-actions" id="pet-quick-actions">
+          <button class="pet-quick-btn" id="btn-diary" title="宠物日记" type="button">
+            <span class="pet-quick-icon">📝</span>
+            <span class="pet-quick-label">日记</span>
+          </button>
 
-    <div class="pet-room-form">
-      <label class="pet-room-field">
-        <span>房间风格</span>
-        <select id="room-style-select"></select>
-      </label>
+          <button class="pet-quick-btn" id="btn-write-letter" title="宠物来信" type="button">
+            <span class="pet-quick-icon">✉️</span>
+            <span class="pet-quick-label">来信</span>
+          </button>
+        </div>
 
-      <label class="pet-room-field">
-        <span>睡觉区域</span>
-        <select id="room-bed-select"></select>
-      </label>
+        <!-- 旅行卡片 -->
+        <section class="pet-travel-card" id="pet-travel-card">
+          <div class="pet-travel-card-header">
+            <div class="pet-travel-main-title">
+              <div class="pet-travel-kicker">PET TRAVEL</div>
+              <div class="pet-travel-title">
+                <span id="pet-travel-owner-name">小幽</span>的旅行
+              </div>
+            </div>
 
-      <label class="pet-room-field">
-        <span>玩具</span>
-        <select id="room-toy-select"></select>
-      </label>
+            <div class="pet-travel-status-badge" id="pet-travel-status-badge">
+              空闲中
+            </div>
+          </div>
 
-      <label class="pet-room-field">
-        <span>装饰</span>
-        <select id="room-decor-select"></select>
-      </label>
+          <div class="pet-travel-summary" id="pet-travel-summary">
+            今天要不要给小幽准备一次旅行？
+          </div>
 
-      <label class="pet-room-field">
-        <span>环境</span>
-        <select id="room-environment-select"></select>
-      </label>
+          <div class="pet-travel-grid" id="pet-travel-grid">
+            <div class="pet-travel-item">
+              <span>旅行目的地</span>
+              <div class="pet-travel-select-wrap">
+                <select id="travel-destination-select" class="pet-travel-select">
+                  <option value="random">随机目的地</option>
+                </select>
+              </div>
+            </div>
 
-      <label class="pet-room-field">
-        <span>特别设施</span>
-        <select id="room-facility-select"></select>
-      </label>
-    </div>
+            <div class="pet-travel-item">
+              <span>预计返程</span>
+              <strong id="travel-summary-return-time">-</strong>
+            </div>
 
-    <div class="pet-room-editor-status" id="pet-room-editor-status" aria-live="polite"></div>
+            <div class="pet-travel-item">
+              <span>收到信件</span>
+              <strong id="travel-summary-letters">0</strong>
+            </div>
 
-    <div class="pet-room-editor-actions">
-      <button class="btn btn-primary" id="btn-room-save" type="button">
-        保存房间布置
-      </button>
-    </div>
-  </div>
-</section>
+            <div class="pet-travel-item">
+              <span>收到照片</span>
+              <strong id="travel-summary-photos">0</strong>
+            </div>
+          </div>
 
-<!-- 聊天入口：必须在宠物房间 section 外面，并且在它下面 -->
-<button class="chat-open-btn" id="btn-open-chat" type="button">
-  <span class="chat-open-icon">💬</span>
-  <span class="chat-open-label">
-    和 <span id="chat-open-petname">小幽</span> 聊天
-  </span>
-  <span class="chat-open-arrow">›</span>
-</button>
+          <div class="pet-travel-bag-summary-card">
+            <div class="pet-travel-bag-summary-head">
+              <div>
+                <div class="pet-travel-bag-summary-title">旅行行李</div>
+                <div class="pet-travel-bag-summary-text" id="pet-travel-bag-summary-text">
+                  暂未选择行李
+                </div>
+              </div>
 
+              <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-bag" type="button">
+                整理行李
+              </button>
+            </div>
+
+            <div class="pet-travel-bag-editor" id="pet-travel-bag-editor" hidden>
+              <div class="pet-travel-bag-list">
+                <label class="pet-travel-bag-item">
+                  <input type="checkbox" id="travel-bag-snack" />
+                  <span>🍪 零食</span>
+                </label>
+
+                <label class="pet-travel-bag-item">
+                  <input type="checkbox" id="travel-bag-toy" />
+                  <span>🧸 玩具</span>
+                </label>
+
+                <label class="pet-travel-bag-item">
+                  <input type="checkbox" id="travel-bag-blanket" />
+                  <span>🧣 小毯子</span>
+                </label>
+
+                <label class="pet-travel-bag-item">
+                  <input type="checkbox" id="travel-bag-medicine" />
+                  <span>💊 营养剂</span>
+                </label>
+
+                <label class="pet-travel-bag-item">
+                  <input type="checkbox" id="travel-bag-photoBook" />
+                  <span>📷 小相册</span>
+                </label>
+              </div>
+
+              <div class="pet-travel-bag-editor-actions">
+                <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
+                  保存行李
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pet-travel-log" id="pet-travel-log">
+            暂时还没有旅行消息。
+          </div>
+
+          <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
+
+          <div class="pet-travel-collections" id="pet-travel-collections">
+            <div class="pet-travel-collections-head">
+              <div class="pet-travel-collections-title">旅行收藏</div>
+              <div class="pet-travel-collections-desc">查看旅行途中寄回来的内容</div>
+            </div>
+
+            <div class="pet-travel-collection-actions">
+              <button class="btn btn-ghost btn-sm" id="btn-travel-open-letters" type="button">
+                信件（0）
+              </button>
+
+              <button class="btn btn-ghost btn-sm" id="btn-travel-open-photos" type="button">
+                照片（0）
+              </button>
+
+              <button class="btn btn-ghost btn-sm" id="btn-travel-open-souvenirs" type="button">
+                纪念品（0）
+              </button>
+            </div>
+          </div>
+
+          <div class="pet-travel-actions">
+            <button class="btn btn-primary btn-sm" id="btn-travel-buy-ticket" type="button">
+              买票旅行
+            </button>
+
+            <button class="btn btn-ghost btn-sm" id="btn-travel-receive" type="button">
+              接收来信
+            </button>
+
+            <button class="btn btn-ghost btn-sm" id="btn-travel-return" type="button">
+              接它回家
+            </button>
+          </div>
+        </section>
+
+        <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
+        <section class="pet-room-card" id="pet-room-card">
+          <div class="pet-room-card-header">
+            <div class="pet-room-main-title">
+              <div class="pet-room-kicker">PET ROOM</div>
+              <div class="pet-room-title">
+                <span id="pet-room-owner-name">小幽</span>的房间
+              </div>
+            </div>
+
+            <div class="pet-room-status-badge" id="pet-room-location-badge">
+              在你身边
+            </div>
+          </div>
+
+          <div class="pet-room-summary" id="pet-room-summary">
+            正在加载房间...
+          </div>
+
+          <div class="pet-room-grid" id="pet-room-grid">
+            <div class="pet-room-item">
+              <span>风格</span>
+              <strong id="room-summary-style">-</strong>
+            </div>
+
+            <div class="pet-room-item">
+              <span>睡觉区</span>
+              <strong id="room-summary-bed">-</strong>
+            </div>
+
+            <div class="pet-room-item">
+              <span>玩具</span>
+              <strong id="room-summary-toy">-</strong>
+            </div>
+
+            <div class="pet-room-item">
+              <span>装饰</span>
+              <strong id="room-summary-decor">-</strong>
+            </div>
+          </div>
+
+          <div class="pet-room-actions">
+            <button class="btn btn-primary btn-sm" id="btn-room-send" type="button">
+              回房间休息
+            </button>
+
+            <button class="btn btn-ghost btn-sm" id="btn-room-return" type="button">
+              叫它回来
+            </button>
+
+            <button class="btn btn-ghost btn-sm" id="btn-room-toggle-editor" type="button">
+              布置房间
+            </button>
+          </div>
+
+          <div class="pet-room-editor" id="pet-room-editor" hidden>
+            <div class="pet-room-editor-head">
+              <div>
+                <div class="pet-room-editor-title">布置房间</div>
+                <div class="pet-room-editor-desc">
+                  选择文字物品，不包含贴图。保存后会写入宠物本地数据。
+                </div>
+              </div>
+
+              <button class="btn btn-ghost btn-sm" id="btn-room-apply-preset" type="button">
+                使用动物预设
+              </button>
+            </div>
+
+            <div class="pet-room-form">
+              <label class="pet-room-field">
+                <span>房间风格</span>
+                <select id="room-style-select"></select>
+              </label>
+
+              <label class="pet-room-field">
+                <span>睡觉区域</span>
+                <select id="room-bed-select"></select>
+              </label>
+
+              <label class="pet-room-field">
+                <span>玩具</span>
+                <select id="room-toy-select"></select>
+              </label>
+
+              <label class="pet-room-field">
+                <span>装饰</span>
+                <select id="room-decor-select"></select>
+              </label>
+
+              <label class="pet-room-field">
+                <span>环境</span>
+                <select id="room-environment-select"></select>
+              </label>
+
+              <label class="pet-room-field">
+                <span>特别设施</span>
+                <select id="room-facility-select"></select>
+              </label>
+            </div>
+
+            <div class="pet-room-editor-status" id="pet-room-editor-status" aria-live="polite"></div>
+
+            <div class="pet-room-editor-actions">
+              <button class="btn btn-primary" id="btn-room-save" type="button">
+                保存房间布置
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 聊天入口：必须在宠物房间 section 外面，并且在它下面 -->
+        <button class="chat-open-btn" id="btn-open-chat" type="button">
+          <span class="chat-open-icon">💬</span>
+          <span class="chat-open-label">
+            和 <span id="chat-open-petname">小幽</span> 聊天
+          </span>
+          <span class="chat-open-arrow">›</span>
+        </button>
 
       </section>
+
+      <!-- 旅行收藏弹窗：必须放在 #page-pet 外面 -->
+      <div class="travel-collection-modal" id="travel-collection-modal" aria-hidden="true">
+        <div class="travel-collection-modal-backdrop" id="travel-collection-modal-backdrop"></div>
+
+        <div
+          class="travel-collection-modal-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="travel-collection-title"
+        >
+          <div class="travel-collection-modal-header">
+            <div>
+              <div class="travel-collection-modal-kicker">PET TRAVEL</div>
+              <div class="travel-collection-modal-title" id="travel-collection-title">
+                旅行收藏
+              </div>
+            </div>
+
+            <button
+              class="travel-collection-modal-close"
+              id="btn-travel-collection-close"
+              type="button"
+              aria-label="关闭旅行收藏"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            class="travel-collection-modal-status"
+            id="travel-collection-modal-status"
+            aria-live="polite"
+          ></div>
+
+          <div class="travel-collection-modal-body" id="travel-collection-modal-body">
+            <div class="travel-collection-empty">请选择要查看的旅行内容</div>
+          </div>
+        </div>
+      </div>
+
 
       <!-- ====================================================
            PAGE: 好友 #friends
