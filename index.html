@@ -2237,7 +2237,7 @@ function showLocalReaction(action) {
 // ══════════════════════════════════════════════════════════════
 // 宠物旅游
 // ══════════════════════════════════════════════════════════════
-
+let _travelCollectionLastTrigger = null;
 const TRAVEL_STATUS = {
   IDLE: 'idle',
   TRAVELING: 'traveling',
@@ -2578,6 +2578,7 @@ function _setTravelCollectionModalStatus(message = '', type = '') {
 
 
 function _openTravelCollectionModalShell(titleText, type) {
+   _travelModalOpener = btn || null;  // 新增
   const modal = document.getElementById('travel-collection-modal');
   const title = document.getElementById('travel-collection-title');
   const body = document.getElementById('travel-collection-modal-body');
@@ -2599,7 +2600,10 @@ function _closeTravelCollectionModal() {
   const title = document.getElementById('travel-collection-title');
 
   if (!modal) return;
-
+if (modal.contains(document.activeElement)) {
+  _travelModalOpener?.focus();
+  _travelModalOpener = null;
+}
   modal.classList.remove('is-open');
   modal.setAttribute('aria-hidden', 'true');
   modal.dataset.type = '';
