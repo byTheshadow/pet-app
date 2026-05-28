@@ -18,7 +18,7 @@ export const DEFAULT_PET = {
   exp:         0,
 
   // 宠物房间 MVP：不升级 IndexedDB，只作为 pet 对象的子字段保存
-  room: {
+    room: {
     location: 'petPage', // 'petPage' | 'room'
     preset: 'mammal_cozy',
     style: 'cozy_nest',
@@ -30,9 +30,33 @@ export const DEFAULT_PET = {
     updatedAt: Date.now(),
   },
 
+  travel: {
+    status: 'idle', // 'idle' | 'traveling'
+    source: null,   // 'user_ticket' | 'agency_invite' | 'friend_invite'
+    destination: null,
+    startedAt: null,
+    endsAt: null,
+
+    bag: {
+      snack: false,
+      toy: false,
+      blanket: false,
+      medicine: false,
+      photoBook: false,
+    },
+
+    letters: [],
+    photos: [],
+    souvenirs: [],
+    lastLetterAt: null,
+    lastPhotoAt: null,
+    updatedAt: Date.now(),
+  },
+
   lastOnlineAt: Date.now(),
   createdAt:   Date.now(),
 };
+
 
 
 // ── 默认设置 ─────────────────────────────────────────────────

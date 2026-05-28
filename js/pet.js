@@ -105,6 +105,45 @@ export async function feedWithFood(foodId) {
   return food;
 }
 
+// ── 宠物旅游 ─────────────────────────
+function _createDefaultTravel() {
+  return {
+    status: 'idle',
+    source: null,
+    destination: null,
+    startedAt: null,
+    endsAt: null,
+    bag: {
+      snack: false,
+      toy: false,
+      blanket: false,
+      medicine: false,
+      photoBook: false,
+    },
+    letters: [],
+    photos: [],
+    souvenirs: [],
+    lastLetterAt: null,
+    lastPhotoAt: null,
+    updatedAt: Date.now(),
+  };
+}
+
+export function normalizeTravel(travel = {}) {
+  const base = _createDefaultTravel();
+  return {
+    ...base,
+    ...travel,
+    bag: {
+      ...base.bag,
+      ...(travel?.bag || {}),
+    },
+    letters: Array.isArray(travel?.letters) ? travel.letters : [],
+    photos: Array.isArray(travel?.photos) ? travel.photos : [],
+    souvenirs: Array.isArray(travel?.souvenirs) ? travel.souvenirs : [],
+  };
+}
+
 // ── 加载宠物数据 ─────────────────────────────────────────────
 export async function loadPet() {
   let pet = await dbGet('pet', 'singleton');
@@ -113,18 +152,57 @@ export async function loadPet() {
     await dbSet('pet', pet);
     logInfo('pet', 'Created default pet');
   }
-  runtime.pet = pet;
-  return pet;
+
+  const normalizedPet = {
+    ...DEFAULT_PET,
+    ...pet,
+    room: {
+      ...DEFAULT_PET.room,
+      ...(pet.room || {}),
+    },
+    travel: normalizeTravel(pet.travel),
+  };
+
+  const needsWriteBack =
+    !pet.travel ||
+    !pet.room ||
+    JSON.stringify(pet.travel || {}) !== JSON.stringify(normalizedPet.travel) ||
+    JSON.stringify(pet.room || {}) !== JSON.stringify(normalizedPet.room);
+
+  if (needsWriteBack) {
+    await dbSet('pet', normalizedPet);
+  }
+
+  runtime.pet = normalizedPet;
+  return normalizedPet;
 }
+
 
 // ── 保存宠物数据 ─────────────────────────────────────────────
 export async function savePet(patch = {}) {
-  const pet = { ...runtime.pet, ...patch };
+  const pet = {
+    ...runtime.pet,
+    ...patch,
+    room: {
+      ...(runtime.pet?.room || DEFAULT_PET.room),
+      ...(patch.room || {}),
+    },
+    travel: normalizeTravel(
+      patch.travel
+        ? {
+            ...(runtime.pet?.travel || {}),
+            ...patch.travel,
+          }
+        : runtime.pet?.travel
+    ),
+  };
+
   runtime.pet = pet;
   await dbSet('pet', pet);
   bus.emit(EVENTS.PET_UPDATED, pet);
   return pet;
 }
+
 
 // ── 离线衰减结算 + 生病检查 ──────────────────────────────────
 export async function applyDecay() {

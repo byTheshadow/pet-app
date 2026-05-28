@@ -3081,3 +3081,240 @@
     width: 100% !important;
   }
 }
+/* ============================================================
+   Pet Travel MVP
+   ============================================================ */
+
+#page-pet #pet-travel-card.pet-travel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  margin: 0 16px 16px;
+  padding: 18px 20px;
+
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(167, 214, 255, 0.26), transparent 34%),
+    var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+[data-theme="mono"] #page-pet #pet-travel-card.pet-travel-card {
+  background:
+    radial-gradient(circle at 88% 0%, rgba(255,255,255,0.06), transparent 34%),
+    var(--bg-card);
+}
+
+#page-pet #pet-travel-card > * {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+#page-pet #pet-travel-card .pet-travel-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+#page-pet #pet-travel-card .pet-travel-main-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#page-pet #pet-travel-card .pet-travel-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+#page-pet #pet-travel-card .pet-travel-title {
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  word-break: break-word;
+}
+
+#page-pet #pet-travel-card .pet-travel-status-badge {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 128px;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+#page-pet #pet-travel-card .pet-travel-status-badge[data-status="traveling"] {
+  color: #0c5f8f;
+  background: rgba(117, 196, 255, 0.20);
+}
+
+#page-pet #pet-travel-card .pet-travel-status-badge[data-status="finished"] {
+  color: #8a5a00;
+  background: rgba(255, 213, 128, 0.32);
+}
+
+#page-pet #pet-travel-card .pet-travel-summary {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+#page-pet #pet-travel-card .pet-travel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+#page-pet #pet-travel-card .pet-travel-item {
+  min-height: 78px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+}
+
+#page-pet #pet-travel-card .pet-travel-item span {
+  display: block;
+  margin: 0 0 7px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-travel-card .pet-travel-item strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 900;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag {
+  margin: 0 0 16px;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-subtle);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-item input {
+  margin: 0;
+}
+
+#page-pet #pet-travel-card .pet-travel-log {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bg-card-alt);
+  border: 1px dashed var(--border-subtle);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-travel-card .pet-travel-inline-status {
+  min-height: 20px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+#page-pet #pet-travel-card .pet-travel-inline-status[data-type="loading"] {
+  color: #0c5f8f;
+}
+
+#page-pet #pet-travel-card .pet-travel-inline-status[data-type="success"] {
+  color: #168a4a;
+}
+
+#page-pet #pet-travel-card .pet-travel-inline-status[data-type="error"] {
+  color: #d14343;
+}
+
+#page-pet #pet-travel-card .pet-travel-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#page-pet #pet-travel-card .pet-travel-actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding-left: 8px;
+  padding-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 390px) {
+  #page-pet #pet-travel-card.pet-travel-card {
+    padding: 16px;
+  }
+
+  #page-pet #pet-travel-card .pet-travel-card-header {
+    flex-wrap: wrap;
+  }
+
+  #page-pet #pet-travel-card .pet-travel-status-badge {
+    max-width: 100%;
+  }
+
+  #page-pet #pet-travel-card .pet-travel-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  #page-pet #pet-travel-card .pet-travel-grid,
+  #page-pet #pet-travel-card .pet-travel-bag-list {
+    grid-template-columns: 1fr;
+  }
+}

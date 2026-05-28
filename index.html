@@ -172,6 +172,89 @@
     <span class="pet-quick-label">来信</span>
   </button>
 </div>
+<section class="pet-travel-card" id="pet-travel-card">
+  <div class="pet-travel-card-header">
+    <div class="pet-travel-main-title">
+      <div class="pet-travel-kicker">PET TRAVEL</div>
+      <div class="pet-travel-title">
+        <span id="pet-travel-owner-name">小幽</span>的旅行
+      </div>
+    </div>
+
+    <div class="pet-travel-status-badge" id="pet-travel-status-badge">
+      空闲中
+    </div>
+  </div>
+
+  <div class="pet-travel-summary" id="pet-travel-summary">
+    今天要不要给小幽准备一次旅行？
+  </div>
+
+  <div class="pet-travel-grid" id="pet-travel-grid">
+    <div class="pet-travel-item">
+      <span>目的地</span>
+      <strong id="travel-summary-destination">-</strong>
+    </div>
+    <div class="pet-travel-item">
+      <span>预计返程</span>
+      <strong id="travel-summary-return-time">-</strong>
+    </div>
+    <div class="pet-travel-item">
+      <span>收到信件</span>
+      <strong id="travel-summary-letters">0</strong>
+    </div>
+    <div class="pet-travel-item">
+      <span>收到照片</span>
+      <strong id="travel-summary-photos">0</strong>
+    </div>
+  </div>
+
+  <div class="pet-travel-bag">
+    <div class="pet-travel-bag-title">准备行李</div>
+    <div class="pet-travel-bag-list">
+      <label class="pet-travel-bag-item">
+        <input type="checkbox" id="travel-bag-snack" />
+        <span>🍪 零食</span>
+      </label>
+      <label class="pet-travel-bag-item">
+        <input type="checkbox" id="travel-bag-toy" />
+        <span>🧸 玩具</span>
+      </label>
+      <label class="pet-travel-bag-item">
+        <input type="checkbox" id="travel-bag-blanket" />
+        <span>🧣 小毯子</span>
+      </label>
+      <label class="pet-travel-bag-item">
+        <input type="checkbox" id="travel-bag-medicine" />
+        <span>💊 营养剂</span>
+      </label>
+      <label class="pet-travel-bag-item">
+        <input type="checkbox" id="travel-bag-photoBook" />
+        <span>📷 小相册</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="pet-travel-log" id="pet-travel-log">
+    暂时还没有旅行消息。
+  </div>
+
+  <div class="pet-travel-inline-status" id="pet-travel-inline-status" aria-live="polite"></div>
+
+  <div class="pet-travel-actions">
+    <button class="btn btn-primary btn-sm" id="btn-travel-buy-ticket" type="button">
+      买票旅行
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-travel-receive" type="button">
+      接收来信
+    </button>
+
+    <button class="btn btn-ghost btn-sm" id="btn-travel-return" type="button">
+      接它回家
+    </button>
+  </div>
+</section>
 
 <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
 <section class="pet-room-card" id="pet-room-card">
@@ -1358,6 +1441,7 @@ async function init() {
 
   bindPetActions();
   bindRoomSystem();
+  bindTravelSystem();
   bindDiarySystem();
   bindNavigation();
   bindSettingsTabs();
@@ -1375,11 +1459,13 @@ async function init() {
 
 
  // 监听宠物更新
-bus.on(EVENTS.PET_UPDATED, (pet) => {
+ bus.on(EVENTS.PET_UPDATED, (pet) => {
   updateAllStatusBars(pet);
   renderPetAvatar(pet);
   updateMoodCard(pet);
   renderRoomUI(pet);
+  renderTravelUI(pet);
+  renderPetPresenceUI(pet);
   const chatPetNameEl = document.getElementById('chat-open-petname');
   if (chatPetNameEl) chatPetNameEl.textContent = pet?.name || '宠物';
 });
@@ -1454,9 +1540,12 @@ function renderPetUI() {
   updateAllStatusBars(pet);
   updateMoodCard(pet);
   renderRoomUI(pet);
+  renderTravelUI(pet);
+  renderPetPresenceUI(pet);
   const nameTag = document.getElementById('pet-name-tag');
   if (nameTag) nameTag.textContent = pet.name || '小幽';
 }
+
 
 
 function updateMoodCard(pet) {
@@ -2049,6 +2138,556 @@ function showLocalReaction(action) {
     setTimeout(() => bubble.classList.remove('show'), 4000);
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// 宠物旅游
+// ══════════════════════════════════════════════════════════════
+
+const TRAVEL_STATUS = {
+  IDLE: 'idle',
+  TRAVELING: 'traveling',
+};
+
+const TRAVEL_DESTINATIONS = [
+  '海盐小镇',
+  '月光森林',
+  '云朵车站',
+  '薄荷山谷',
+  '星砂海岸',
+];
+
+const TRAVEL_SOUVENIRS = {
+  '海盐小镇': ['海盐贝壳', '小帆船吊饰', '浅蓝明信片'],
+  '月光森林': ['月光叶片', '萤火玻璃瓶', '银色小松果'],
+  '云朵车站': ['云朵票根', '小站徽章', '白软棉团'],
+  '薄荷山谷': ['薄荷香包', '山谷风铃', '青绿叶书签'],
+  '星砂海岸': ['星砂瓶', '海岸石片', '夜光贝饰'],
+};
+
+function _createDefaultTravelState() {
+  return {
+    status: TRAVEL_STATUS.IDLE,
+    source: null,
+    destination: null,
+    startedAt: null,
+    endsAt: null,
+    bag: {
+      snack: false,
+      toy: false,
+      blanket: false,
+      medicine: false,
+      photoBook: false,
+    },
+    letters: [],
+    photos: [],
+    souvenirs: [],
+    lastLetterAt: null,
+    lastPhotoAt: null,
+    updatedAt: Date.now(),
+  };
+}
+
+function _normalizeTravel(travel = {}) {
+  const base = _createDefaultTravelState();
+  return {
+    ...base,
+    ...travel,
+    bag: {
+      ...base.bag,
+      ...(travel?.bag || {}),
+    },
+    letters: Array.isArray(travel?.letters) ? travel.letters : [],
+    photos: Array.isArray(travel?.photos) ? travel.photos : [],
+    souvenirs: Array.isArray(travel?.souvenirs) ? travel.souvenirs : [],
+  };
+}
+
+function _formatTravelTime(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+function _setTravelInlineStatus(message = '', type = '') {
+  const el = document.getElementById('pet-travel-inline-status');
+  if (!el) return;
+  el.textContent = message;
+  if (type) el.dataset.type = type;
+  else delete el.dataset.type;
+}
+
+function _readTravelBagFromForm() {
+  return {
+    snack: !!document.getElementById('travel-bag-snack')?.checked,
+    toy: !!document.getElementById('travel-bag-toy')?.checked,
+    blanket: !!document.getElementById('travel-bag-blanket')?.checked,
+    medicine: !!document.getElementById('travel-bag-medicine')?.checked,
+    photoBook: !!document.getElementById('travel-bag-photoBook')?.checked,
+  };
+}
+
+function _writeTravelBagToForm(bag = {}) {
+  const normalizedBag = {
+    snack: false,
+    toy: false,
+    blanket: false,
+    medicine: false,
+    photoBook: false,
+    ...(bag || {}),
+  };
+
+  const mappings = [
+    ['travel-bag-snack', normalizedBag.snack],
+    ['travel-bag-toy', normalizedBag.toy],
+    ['travel-bag-blanket', normalizedBag.blanket],
+    ['travel-bag-medicine', normalizedBag.medicine],
+    ['travel-bag-photoBook', normalizedBag.photoBook],
+  ];
+
+  mappings.forEach(([id, checked]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!checked;
+  });
+}
+
+function getPetPresence(pet = runtime.pet) {
+  const travel = _normalizeTravel(pet?.travel);
+  const room = _normalizeRoom?.(pet?.room, pet) || pet?.room || {};
+  const petName = pet?.name || '宠物';
+
+  if (travel.status === TRAVEL_STATUS.TRAVELING) {
+    return {
+      status: 'traveling',
+      label: '宠物正在旅行',
+      desc: travel.destination
+        ? `${petName}正在「${travel.destination}」旅行。`
+        : `${petName}正在外面旅行。`,
+    };
+  }
+
+  if (room.location === ROOM_LOCATION.ROOM) {
+    return {
+      status: 'room',
+      label: '宠物当前不在',
+      desc: `${petName}正在自己的房间里休息。`,
+    };
+  }
+
+  return {
+    status: 'home',
+    label: '在你身边',
+    desc: `${petName}现在在主页面等你。`,
+  };
+}
+function renderPetPresenceUI(pet = runtime.pet) {
+  if (!pet) return;
+
+  const presence = getPetPresence(pet);
+  const awayPanel = document.getElementById('pet-away-panel');
+  const awayTitle = awayPanel?.querySelector('.pet-away-title');
+  const awayDesc = document.getElementById('pet-away-desc');
+  const avatarWrap = document.getElementById('pet-avatar-wrap');
+  const emotionBubble = document.getElementById('emotion-bubble');
+
+  const isAway = presence.status !== 'home';
+  const isTraveling = presence.status === 'traveling';
+  const isRoom = presence.status === 'room';
+
+  if (awayPanel) awayPanel.hidden = !isAway;
+  if (awayTitle) awayTitle.textContent = isTraveling ? '宠物正在旅行' : '宠物当前不在';
+  if (awayDesc) awayDesc.textContent = presence.desc;
+  if (avatarWrap) avatarWrap.classList.toggle('is-away', isAway);
+  if (emotionBubble && isAway) emotionBubble.classList.remove('show');
+
+  document.body.classList.toggle('pet-is-in-room', isRoom);
+  document.body.classList.toggle('pet-is-traveling', isTraveling);
+
+  const callBackBtn = document.getElementById('btn-room-call-back');
+  const focusBtn = document.getElementById('btn-room-focus');
+
+  if (callBackBtn) {
+    callBackBtn.hidden = !isRoom;
+    callBackBtn.disabled = !isRoom;
+  }
+
+  if (focusBtn) {
+    focusBtn.hidden = isTraveling;
+  }
+
+  ['btn-feed', 'btn-play', 'btn-clean', 'btn-heal', 'btn-open-chat'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('is-disabled-by-room', isAway);
+    btn.disabled = isAway;
+  });
+}
+
+function _buildTravelLogText(travel) {
+  const lastLetter = travel.letters[travel.letters.length - 1];
+  const lastPhoto = travel.photos[travel.photos.length - 1];
+  const lastSouvenir = travel.souvenirs[travel.souvenirs.length - 1];
+
+  if (travel.status === TRAVEL_STATUS.IDLE) {
+    if (lastSouvenir) {
+      return `上次旅行带回了「${lastSouvenir.name}」。这次也许会有新的故事。`;
+    }
+    return '暂时还没有旅行消息。';
+  }
+
+  if (lastPhoto) {
+    return `最新照片：${lastPhoto.title}`;
+  }
+
+  if (lastLetter) {
+    return `最新来信：${lastLetter.title}`;
+  }
+
+  return '旅行中，可能很快会寄回新的信件或照片。';
+}
+
+function renderTravelUI(pet = runtime.pet) {
+  if (!pet) return;
+
+  const travel = _normalizeTravel(pet.travel);
+  const petName = pet.name || '宠物';
+  const isTraveling = travel.status === TRAVEL_STATUS.TRAVELING;
+  const tripFinished = isTraveling && travel.endsAt && Date.now() >= travel.endsAt;
+
+  const ownerNameEl = document.getElementById('pet-travel-owner-name');
+  const badgeEl = document.getElementById('pet-travel-status-badge');
+  const summaryEl = document.getElementById('pet-travel-summary');
+  const destinationEl = document.getElementById('travel-summary-destination');
+  const returnTimeEl = document.getElementById('travel-summary-return-time');
+  const lettersEl = document.getElementById('travel-summary-letters');
+  const photosEl = document.getElementById('travel-summary-photos');
+  const logEl = document.getElementById('pet-travel-log');
+
+  const buyBtn = document.getElementById('btn-travel-buy-ticket');
+  const receiveBtn = document.getElementById('btn-travel-receive');
+  const returnBtn = document.getElementById('btn-travel-return');
+
+  if (ownerNameEl) ownerNameEl.textContent = petName;
+
+  if (badgeEl) {
+    badgeEl.textContent = isTraveling ? (tripFinished ? '可返程' : '旅行中') : '空闲中';
+    badgeEl.dataset.status = isTraveling ? (tripFinished ? 'finished' : 'traveling') : 'idle';
+  }
+
+  if (summaryEl) {
+    if (isTraveling) {
+      summaryEl.textContent = tripFinished
+        ? `${petName}已经完成「${travel.destination || '本次旅程'}」，现在可以接它回家了。`
+        : `${petName}正在「${travel.destination || '未知目的地'}」旅行，可能会寄回多封信件、照片和纪念品。`;
+    } else {
+      summaryEl.textContent = `今天要不要给${petName}准备一次旅行？你还可以提前帮它整理行李。`;
+    }
+  }
+
+  if (destinationEl) destinationEl.textContent = travel.destination || '-';
+  if (returnTimeEl) returnTimeEl.textContent = travel.endsAt ? _formatTravelTime(travel.endsAt) : '-';
+  if (lettersEl) lettersEl.textContent = String(travel.letters.length || 0);
+  if (photosEl) photosEl.textContent = String(travel.photos.length || 0);
+  if (logEl) logEl.textContent = _buildTravelLogText(travel);
+
+  _writeTravelBagToForm(travel.bag);
+
+  if (buyBtn) buyBtn.disabled = isTraveling;
+  if (receiveBtn) receiveBtn.disabled = !isTraveling;
+  if (returnBtn) returnBtn.disabled = !tripFinished;
+
+  document.querySelectorAll('.pet-travel-bag input[type="checkbox"]').forEach(input => {
+    input.disabled = isTraveling;
+  });
+}
+async function saveTravelPatch(travelPatch = {}, feedback = {}) {
+  const pet = runtime.pet;
+  if (!pet) throw new Error('宠物数据未加载');
+
+  const currentTravel = _normalizeTravel(pet.travel);
+  const nextTravel = {
+    ...currentTravel,
+    ...travelPatch,
+    bag: {
+      ...currentTravel.bag,
+      ...(travelPatch.bag || {}),
+    },
+    updatedAt: Date.now(),
+  };
+
+  await savePet({ travel: nextTravel });
+
+  if (feedback.success) {
+    showToast(feedback.success, 'success');
+  }
+
+  return nextTravel;
+}
+
+async function prepareTravelBag() {
+  showToast('正在整理旅行行李...', 'info');
+  _setTravelInlineStatus('正在整理旅行行李...', 'loading');
+
+  try {
+    const bag = _readTravelBagFromForm();
+    await saveTravelPatch({ bag });
+    _setTravelInlineStatus('旅行行李已准备好', 'success');
+    showToast('旅行行李已准备好', 'success');
+  } catch (err) {
+    _setTravelInlineStatus('准备行李失败：' + err.message, 'error');
+    showToast('准备行李失败：' + err.message, 'error');
+    logError('app', 'prepareTravelBag failed', { stack: err.stack });
+  } finally {
+    renderTravelUI(runtime.pet);
+  }
+}
+
+async function startPetTravel(btn) {
+  showToast('正在购买旅行票...', 'info');
+  _setTravelInlineStatus('正在购买旅行票...', 'loading');
+  if (btn) setButtonLoading(btn, true, '购票中...');
+
+  try {
+    const pet = runtime.pet;
+    if (!pet) throw new Error('宠物数据未加载');
+
+    const travel = _normalizeTravel(pet.travel);
+    if (travel.status === TRAVEL_STATUS.TRAVELING) {
+      throw new Error('宠物已经在旅行中了');
+    }
+
+    const destination = TRAVEL_DESTINATIONS[Math.floor(Math.random() * TRAVEL_DESTINATIONS.length)];
+    const now = Date.now();
+    const duration = 1000 * 60 * 20; // 20分钟，MVP 好测试
+    const bag = _readTravelBagFromForm();
+
+    if (_normalizeRoom(pet.room, pet).location === ROOM_LOCATION.ROOM) {
+      await savePet({
+        room: {
+          ..._normalizeRoom(pet.room, pet),
+          location: ROOM_LOCATION.PET_PAGE,
+          updatedAt: Date.now(),
+        },
+      });
+    }
+
+    await saveTravelPatch(
+      {
+        status: TRAVEL_STATUS.TRAVELING,
+        source: 'user_ticket',
+        destination,
+        startedAt: now,
+        endsAt: now + duration,
+        bag,
+      },
+      { success: `${pet.name || '宠物'}已经出发去「${destination}」旅行啦` }
+    );
+
+    _setTravelInlineStatus(`已出发前往「${destination}」`, 'success');
+    _appendChatMsg?.('system', `${pet.name || '宠物'}带着行李出发去「${destination}」旅行了 🎒`);
+  } catch (err) {
+    _setTravelInlineStatus('出发失败：' + err.message, 'error');
+    showToast('出发失败：' + err.message, 'error');
+    logError('app', 'startPetTravel failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI(runtime.pet);
+    renderRoomUI(runtime.pet);
+    renderPetPresenceUI(runtime.pet);
+  }
+}
+
+function _buildTravelLetter(travel, petName) {
+  const destination = travel.destination || '远方';
+  const bag = travel.bag || {};
+  const lines = [
+    `来自${destination}的来信`,
+    `${petName}说：我今天在${destination}看到了很特别的风景。`,
+  ];
+
+  if (bag.snack) lines.push('路上带的零食很好吃，我有乖乖补充体力。');
+  if (bag.toy) lines.push('我还带了玩具，休息的时候玩了一会儿。');
+  if (bag.blanket) lines.push('小毯子暖暖的，晚上睡得很安心。');
+  if (bag.medicine) lines.push('把营养剂也带上了，觉得很有安全感。');
+
+  return {
+    id: `travel-letter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type: 'letter',
+    title: `来自${destination}的来信`,
+    content: lines.join(' '),
+    createdAt: Date.now(),
+    read: false,
+  };
+}
+
+function _buildTravelPhoto(travel, petName) {
+  const destination = travel.destination || '远方';
+  const titles = [
+    `${destination}的风景角落`,
+    `${petName}寄回来的旅行照片`,
+    `${destination}的小发现`,
+  ];
+
+  return {
+    id: `travel-photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type: 'photo',
+    title: titles[Math.floor(Math.random() * titles.length)],
+    content: `${petName}从${destination}寄回了一张照片，看起来玩得很开心。`,
+    createdAt: Date.now(),
+    read: false,
+  };
+}
+
+async function receiveTravelUpdate(btn) {
+  showToast('正在接收旅行来信...', 'info');
+  _setTravelInlineStatus('正在接收旅行来信...', 'loading');
+  if (btn) setButtonLoading(btn, true, '接收中...');
+
+  try {
+    const pet = runtime.pet;
+    if (!pet) throw new Error('宠物数据未加载');
+
+    const travel = _normalizeTravel(pet.travel);
+    if (travel.status !== TRAVEL_STATUS.TRAVELING) {
+      throw new Error('宠物当前没有在旅行');
+    }
+
+    const petName = pet.name || '宠物';
+    const photoBonus = travel.bag?.photoBook ? 0.25 : 0;
+    const roll = Math.random();
+
+    let nextTravel = travel;
+
+    if (roll < 0.45) {
+      const letter = _buildTravelLetter(travel, petName);
+      nextTravel = {
+        ...travel,
+        letters: [...travel.letters, letter],
+        lastLetterAt: Date.now(),
+      };
+      await saveTravelPatch(nextTravel);
+      _setTravelInlineStatus('收到一封旅行来信', 'success');
+      showToast('收到一封旅行来信', 'success');
+      _appendChatMsg?.('system', `✉️ 收到${petName}从「${travel.destination}」寄来的来信`);
+    } else if (roll < 0.75 + photoBonus) {
+      const photo = _buildTravelPhoto(travel, petName);
+      nextTravel = {
+        ...travel,
+        photos: [...travel.photos, photo],
+        lastPhotoAt: Date.now(),
+      };
+      await saveTravelPatch(nextTravel);
+      _setTravelInlineStatus('收到一张旅行照片', 'success');
+      showToast('收到一张旅行照片', 'success');
+      _appendChatMsg?.('system', `📷 收到${petName}从「${travel.destination}」寄回的旅行照片`);
+    } else {
+      _setTravelInlineStatus('暂时还没有新的旅行消息', 'success');
+      showToast('暂时还没有新的旅行消息', 'info');
+    }
+  } catch (err) {
+    _setTravelInlineStatus('接收失败：' + err.message, 'error');
+    showToast('接收失败：' + err.message, 'error');
+    logError('app', 'receiveTravelUpdate failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI(runtime.pet);
+  }
+}
+
+function _buildSouvenirs(destination, count = 2) {
+  const pool = TRAVEL_SOUVENIRS[destination] || ['旅行纪念贴纸', '小小石头', '手写票根'];
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count).map((name, idx) => ({
+    id: `souvenir-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+    name,
+    desc: `从${destination}带回来的纪念品。`,
+    createdAt: Date.now(),
+  }));
+}
+
+async function returnPetFromTravel(btn) {
+  showToast('正在等待宠物回家...', 'info');
+  _setTravelInlineStatus('正在等待宠物回家...', 'loading');
+  if (btn) setButtonLoading(btn, true, '返程中...');
+
+  try {
+    const pet = runtime.pet;
+    if (!pet) throw new Error('宠物数据未加载');
+
+    const travel = _normalizeTravel(pet.travel);
+    if (travel.status !== TRAVEL_STATUS.TRAVELING) {
+      throw new Error('宠物当前不在旅行中');
+    }
+
+    if (!travel.endsAt || Date.now() < travel.endsAt) {
+      throw new Error('旅行还没有结束，暂时不能接它回家');
+    }
+
+    const petName = pet.name || '宠物';
+    const destination = travel.destination || '远方';
+    const souvenirCount = 1 + Math.floor(Math.random() * 3);
+    const newSouvenirs = _buildSouvenirs(destination, souvenirCount);
+
+    const moodBonus = travel.bag?.snack ? 6 : 3;
+    const healthBonus = travel.bag?.blanket ? 4 : 0;
+    const bondBonus = travel.bag?.toy ? 4 : 2;
+
+    const clamp = v => Math.max(0, Math.min(100, v));
+
+    await savePet({
+      mood: clamp((pet.mood || 0) + moodBonus),
+      health: clamp((pet.health || 0) + healthBonus),
+      bond: clamp((pet.bond || 0) + bondBonus),
+      travel: {
+        ...travel,
+        status: TRAVEL_STATUS.IDLE,
+        source: null,
+        destination: null,
+        startedAt: null,
+        endsAt: null,
+        souvenirs: [...travel.souvenirs, ...newSouvenirs],
+        updatedAt: Date.now(),
+      },
+    });
+
+    _setTravelInlineStatus(`旅行结束，带回了 ${newSouvenirs.map(s => s.name).join('、')}`, 'success');
+    showToast(`${petName}旅行回来啦，还带回了纪念品`, 'success');
+    _appendChatMsg?.('system', `${petName}从「${destination}」旅行回来了，还带回了${newSouvenirs.map(s => s.name).join('、')} 🎁`);
+  } catch (err) {
+    _setTravelInlineStatus('旅行结算失败：' + err.message, 'error');
+    showToast('旅行结算失败：' + err.message, 'error');
+    logError('app', 'returnPetFromTravel failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI(runtime.pet);
+    renderRoomUI(runtime.pet);
+    renderPetPresenceUI(runtime.pet);
+  }
+}
+function bindTravelSystem() {
+  renderTravelUI(runtime.pet);
+  renderPetPresenceUI(runtime.pet);
+
+  document.querySelectorAll('.pet-travel-bag input[type="checkbox"]').forEach(input => {
+    input.addEventListener('change', () => {
+      prepareTravelBag();
+    });
+  });
+
+  document.getElementById('btn-travel-buy-ticket')?.addEventListener('click', (e) => {
+    startPetTravel(e.currentTarget);
+  });
+
+  document.getElementById('btn-travel-receive')?.addEventListener('click', (e) => {
+    receiveTravelUpdate(e.currentTarget);
+  });
+
+  document.getElementById('btn-travel-return')?.addEventListener('click', (e) => {
+    returnPetFromTravel(e.currentTarget);
+  });
+}
+
 // ══════════════════════════════════════════════════════════════
 // 宠物房间 MVP —— 文字布置 + 动物预设 + 位置状态
 // 不升级 IndexedDB，只保存到 runtime.pet.room
@@ -2285,33 +2924,17 @@ function renderRoomUI(pet = runtime.pet) {
 
   _setRoomFormValues(room);
 
-  const awayPanel = document.getElementById('pet-away-panel');
-  const awayDesc = document.getElementById('pet-away-desc');
-  const avatarWrap = document.getElementById('pet-avatar-wrap');
-  const emotionBubble = document.getElementById('emotion-bubble');
-
-  if (awayPanel) awayPanel.hidden = !inRoom;
-  if (awayDesc) awayDesc.textContent = `${petName}正在自己的房间里休息。`;
-  if (avatarWrap) avatarWrap.classList.toggle('is-away', inRoom);
-  if (emotionBubble && inRoom) emotionBubble.classList.remove('show');
-
-  document.body.classList.toggle('pet-is-in-room', inRoom);
-
-  const sendBtn = document.getElementById('btn-room-send');
+   const sendBtn = document.getElementById('btn-room-send');
   const returnBtn = document.getElementById('btn-room-return');
-  const callBackBtn = document.getElementById('btn-room-call-back');
 
-  if (sendBtn) sendBtn.disabled = inRoom;
+  const presence = getPetPresence(pet);
+  const roomOccupiedByTravel = presence.status === 'traveling';
+
+  if (sendBtn) sendBtn.disabled = inRoom || roomOccupiedByTravel;
   if (returnBtn) returnBtn.disabled = !inRoom;
-  if (callBackBtn) callBackBtn.disabled = !inRoom;
 
-  // 宠物在房间时，主互动按钮禁用，避免用户以为能在主页面互动
-  ['btn-feed', 'btn-play', 'btn-clean', 'btn-heal', 'btn-open-chat'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.classList.toggle('is-disabled-by-room', inRoom);
-    btn.disabled = inRoom;
-  });
+  renderPetPresenceUI(pet);
+
 }
 
 async function _saveRoomPatch(roomPatch, feedback = {}) {
@@ -2472,8 +3095,22 @@ function bindRoomSystem() {
   document.getElementById('btn-room-call-back')?.addEventListener('click', (e) => {
     callPetBackFromRoom(e.currentTarget);
   });
-
+  
   document.getElementById('btn-room-focus')?.addEventListener('click', () => {
+    const presence = getPetPresence(runtime.pet);
+
+    if (presence.status === 'traveling') {
+      const card = document.getElementById('pet-travel-card');
+      if (card) {
+        showToast('正在定位宠物旅行卡片...', 'info');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('room-card-pulse');
+        setTimeout(() => card.classList.remove('room-card-pulse'), 900);
+        showToast('已定位到宠物旅行卡片', 'success');
+      }
+      return;
+    }
+
     const card = document.getElementById('pet-room-card');
     if (card) {
       showToast('正在定位宠物房间...', 'info');
@@ -2483,6 +3120,7 @@ function bindRoomSystem() {
       showToast('已定位到宠物房间', 'success');
     }
   });
+
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2981,9 +3619,15 @@ function bindPetActions() {
   document.getElementById('pet-avatar-img')?.addEventListener('click', onPetClick);
 
   //── 喂食按钮 → 打开食物面板 ──
-  document.getElementById('btn-feed')?.addEventListener('click', () => {
+   document.getElementById('btn-feed')?.addEventListener('click', () => {
+    const presence = getPetPresence(runtime.pet);
+    if (presence.status !== 'home') {
+      showToast('宠物现在不在身边，暂时不能互动', 'info');
+      return;
+    }
     _openFoodPanel();
   });
+
 
   // ── 食物面板关闭 ──
   document.getElementById('food-panel-close')?.addEventListener('click', () => {
