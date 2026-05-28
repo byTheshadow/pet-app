@@ -192,46 +192,77 @@
 
   <div class="pet-travel-grid" id="pet-travel-grid">
     <div class="pet-travel-item">
-      <span>目的地</span>
-      <strong id="travel-summary-destination">-</strong>
+      <span>旅行目的地</span>
+      <div class="pet-travel-select-wrap">
+        <select id="travel-destination-select" class="pet-travel-select">
+          <option value="random">随机目的地</option>
+        </select>
+      </div>
     </div>
+
     <div class="pet-travel-item">
       <span>预计返程</span>
       <strong id="travel-summary-return-time">-</strong>
     </div>
+
     <div class="pet-travel-item">
       <span>收到信件</span>
       <strong id="travel-summary-letters">0</strong>
     </div>
+
     <div class="pet-travel-item">
       <span>收到照片</span>
       <strong id="travel-summary-photos">0</strong>
     </div>
   </div>
 
-  <div class="pet-travel-bag">
-    <div class="pet-travel-bag-title">准备行李</div>
-    <div class="pet-travel-bag-list">
-      <label class="pet-travel-bag-item">
-        <input type="checkbox" id="travel-bag-snack" />
-        <span>🍪 零食</span>
-      </label>
-      <label class="pet-travel-bag-item">
-        <input type="checkbox" id="travel-bag-toy" />
-        <span>🧸 玩具</span>
-      </label>
-      <label class="pet-travel-bag-item">
-        <input type="checkbox" id="travel-bag-blanket" />
-        <span>🧣 小毯子</span>
-      </label>
-      <label class="pet-travel-bag-item">
-        <input type="checkbox" id="travel-bag-medicine" />
-        <span>💊 营养剂</span>
-      </label>
-      <label class="pet-travel-bag-item">
-        <input type="checkbox" id="travel-bag-photoBook" />
-        <span>📷 小相册</span>
-      </label>
+  <div class="pet-travel-bag-summary-card">
+    <div class="pet-travel-bag-summary-head">
+      <div>
+        <div class="pet-travel-bag-summary-title">旅行行李</div>
+        <div class="pet-travel-bag-summary-text" id="pet-travel-bag-summary-text">
+          暂未选择行李
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-sm" id="btn-travel-toggle-bag" type="button">
+        整理行李
+      </button>
+    </div>
+
+    <div class="pet-travel-bag-editor" id="pet-travel-bag-editor" hidden>
+      <div class="pet-travel-bag-list">
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-snack" />
+          <span>🍪 零食</span>
+        </label>
+
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-toy" />
+          <span>🧸 玩具</span>
+        </label>
+
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-blanket" />
+          <span>🧣 小毯子</span>
+        </label>
+
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-medicine" />
+          <span>💊 营养剂</span>
+        </label>
+
+        <label class="pet-travel-bag-item">
+          <input type="checkbox" id="travel-bag-photoBook" />
+          <span>📷 小相册</span>
+        </label>
+      </div>
+
+      <div class="pet-travel-bag-editor-actions">
+        <button class="btn btn-primary btn-sm" id="btn-travel-save-bag" type="button">
+          保存行李
+        </button>
+      </div>
     </div>
   </div>
 
@@ -255,6 +286,7 @@
     </button>
   </div>
 </section>
+
 
 <!-- 宠物房间 MVP：必须在聊天按钮上方，且必须完整包住自己的内容 -->
 <section class="pet-room-card" id="pet-room-card">
@@ -2149,12 +2181,13 @@ const TRAVEL_STATUS = {
 };
 
 const TRAVEL_DESTINATIONS = [
-  '海盐小镇',
-  '月光森林',
-  '云朵车站',
-  '薄荷山谷',
-  '星砂海岸',
+  { id: 'sea_salt_town', label: '海盐小镇' },
+  { id: 'moon_forest', label: '月光森林' },
+  { id: 'cloud_station', label: '云朵车站' },
+  { id: 'mint_valley', label: '薄荷山谷' },
+  { id: 'star_sand_coast', label: '星砂海岸' },
 ];
+
 
 const TRAVEL_SOUVENIRS = {
   '海盐小镇': ['海盐贝壳', '小帆船吊饰', '浅蓝明信片'],
@@ -2167,10 +2200,12 @@ const TRAVEL_SOUVENIRS = {
 function _createDefaultTravelState() {
   return {
     status: TRAVEL_STATUS.IDLE,
-    source: null,
+   source: null,
     destination: null,
+    selectedDestination: 'random',
     startedAt: null,
     endsAt: null,
+
     bag: {
       snack: false,
       toy: false,
@@ -2201,6 +2236,71 @@ function _normalizeTravel(travel = {}) {
     souvenirs: Array.isArray(travel?.souvenirs) ? travel.souvenirs : [],
   };
 }
+function _getDestinationOptions() {
+  return [
+    { id: 'random', label: '随机目的地' },
+    ...TRAVEL_DESTINATIONS,
+  ];
+}
+
+function _getDestinationLabelById(id) {
+  const found = TRAVEL_DESTINATIONS.find(item => item.id === id);
+  return found?.label || '';
+}
+
+function _fillTravelDestinationSelectOnce() {
+  const select = document.getElementById('travel-destination-select');
+  if (!select) return;
+  if (select.dataset.filled === 'true') return;
+
+  const options = _getDestinationOptions();
+  select.innerHTML = options.map(item => (
+    `<option value="${item.id}">${item.label}</option>`
+  )).join('');
+
+  select.dataset.filled = 'true';
+}
+
+function _getSelectedTravelDestinationLabel(travel) {
+  const selectedId = travel?.selectedDestination || 'random';
+  if (selectedId === 'random') return '随机目的地';
+  return _getDestinationLabelById(selectedId) || '随机目的地';
+}
+
+function _resolveTravelDestination(travel) {
+  const selectedId = travel?.selectedDestination || 'random';
+
+  if (selectedId !== 'random') {
+    return _getDestinationLabelById(selectedId) || '海盐小镇';
+  }
+
+  const randomItem = TRAVEL_DESTINATIONS[
+    Math.floor(Math.random() * TRAVEL_DESTINATIONS.length)
+  ];
+
+  return randomItem?.label || '海盐小镇';
+}
+
+function _getBagOptionMeta() {
+  return [
+    { id: 'snack', label: '零食', icon: '🍪' },
+    { id: 'toy', label: '玩具', icon: '🧸' },
+    { id: 'blanket', label: '小毯子', icon: '🧣' },
+    { id: 'medicine', label: '营养剂', icon: '💊' },
+    { id: 'photoBook', label: '小相册', icon: '📷' },
+  ];
+}
+
+function _getSelectedBagSummary(bag = {}) {
+  const selected = _getBagOptionMeta()
+    .filter(item => !!bag[item.id])
+    .map(item => item.label);
+
+  if (!selected.length) return '暂未选择行李';
+  if (selected.length <= 3) return selected.join('、');
+  return `${selected.slice(0, 3).join('、')} 等 ${selected.length} 项`;
+}
+
 
 function _formatTravelTime(ts) {
   if (!ts) return '-';
@@ -2350,6 +2450,8 @@ function _buildTravelLogText(travel) {
 function renderTravelUI(pet = runtime.pet) {
   if (!pet) return;
 
+  _fillTravelDestinationSelectOnce();
+
   const travel = _normalizeTravel(pet.travel);
   const petName = pet.name || '宠物';
   const isTraveling = travel.status === TRAVEL_STATUS.TRAVELING;
@@ -2358,15 +2460,19 @@ function renderTravelUI(pet = runtime.pet) {
   const ownerNameEl = document.getElementById('pet-travel-owner-name');
   const badgeEl = document.getElementById('pet-travel-status-badge');
   const summaryEl = document.getElementById('pet-travel-summary');
-  const destinationEl = document.getElementById('travel-summary-destination');
   const returnTimeEl = document.getElementById('travel-summary-return-time');
   const lettersEl = document.getElementById('travel-summary-letters');
   const photosEl = document.getElementById('travel-summary-photos');
   const logEl = document.getElementById('pet-travel-log');
+  const destinationSelect = document.getElementById('travel-destination-select');
+  const bagSummaryText = document.getElementById('pet-travel-bag-summary-text');
+  const bagEditor = document.getElementById('pet-travel-bag-editor');
+  const toggleBagBtn = document.getElementById('btn-travel-toggle-bag');
 
   const buyBtn = document.getElementById('btn-travel-buy-ticket');
   const receiveBtn = document.getElementById('btn-travel-receive');
   const returnBtn = document.getElementById('btn-travel-return');
+  const saveBagBtn = document.getElementById('btn-travel-save-bag');
 
   if (ownerNameEl) ownerNameEl.textContent = petName;
 
@@ -2381,26 +2487,38 @@ function renderTravelUI(pet = runtime.pet) {
         ? `${petName}已经完成「${travel.destination || '本次旅程'}」，现在可以接它回家了。`
         : `${petName}正在「${travel.destination || '未知目的地'}」旅行，可能会寄回多封信件、照片和纪念品。`;
     } else {
-      summaryEl.textContent = `今天要不要给${petName}准备一次旅行？你还可以提前帮它整理行李。`;
+      summaryEl.textContent = `今天要不要给${petName}准备一次旅行？你可以先选好目的地，再帮它整理行李。`;
     }
   }
 
-  if (destinationEl) destinationEl.textContent = travel.destination || '-';
   if (returnTimeEl) returnTimeEl.textContent = travel.endsAt ? _formatTravelTime(travel.endsAt) : '-';
   if (lettersEl) lettersEl.textContent = String(travel.letters.length || 0);
   if (photosEl) photosEl.textContent = String(travel.photos.length || 0);
   if (logEl) logEl.textContent = _buildTravelLogText(travel);
+  if (bagSummaryText) bagSummaryText.textContent = _getSelectedBagSummary(travel.bag);
 
   _writeTravelBagToForm(travel.bag);
+
+  if (destinationSelect) {
+    destinationSelect.value = travel.selectedDestination || 'random';
+    destinationSelect.disabled = isTraveling;
+  }
 
   if (buyBtn) buyBtn.disabled = isTraveling;
   if (receiveBtn) receiveBtn.disabled = !isTraveling;
   if (returnBtn) returnBtn.disabled = !tripFinished;
+  if (saveBagBtn) saveBagBtn.disabled = isTraveling;
 
-  document.querySelectorAll('.pet-travel-bag input[type="checkbox"]').forEach(input => {
+  if (toggleBagBtn) {
+    toggleBagBtn.disabled = isTraveling;
+    toggleBagBtn.textContent = bagEditor?.hidden ? '整理行李' : '收起行李';
+  }
+
+  document.querySelectorAll('.pet-travel-bag input[type="checkbox"], .pet-travel-bag-editor input[type="checkbox"]').forEach(input => {
     input.disabled = isTraveling;
   });
 }
+
 async function saveTravelPatch(travelPatch = {}, feedback = {}) {
   const pet = runtime.pet;
   if (!pet) throw new Error('宠物数据未加载');
@@ -2425,23 +2543,47 @@ async function saveTravelPatch(travelPatch = {}, feedback = {}) {
   return nextTravel;
 }
 
-async function prepareTravelBag() {
-  showToast('正在整理旅行行李...', 'info');
-  _setTravelInlineStatus('正在整理旅行行李...', 'loading');
+async function prepareTravelBag(btn) {
+  showToast('正在保存旅行行李...', 'info');
+  _setTravelInlineStatus('正在保存旅行行李...', 'loading');
+  if (btn) setButtonLoading(btn, true, '保存中...');
 
   try {
     const bag = _readTravelBagFromForm();
     await saveTravelPatch({ bag });
-    _setTravelInlineStatus('旅行行李已准备好', 'success');
-    showToast('旅行行李已准备好', 'success');
+    _setTravelInlineStatus('旅行行李已保存', 'success');
+    showToast('旅行行李已保存', 'success');
   } catch (err) {
-    _setTravelInlineStatus('准备行李失败：' + err.message, 'error');
-    showToast('准备行李失败：' + err.message, 'error');
+    _setTravelInlineStatus('保存行李失败：' + err.message, 'error');
+    showToast('保存行李失败：' + err.message, 'error');
     logError('app', 'prepareTravelBag failed', { stack: err.stack });
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI(runtime.pet);
+  }
+}
+async function saveTravelDestination(value) {
+  showToast('正在保存旅行目的地...', 'info');
+  _setTravelInlineStatus('正在保存旅行目的地...', 'loading');
+
+  try {
+    await saveTravelPatch({ selectedDestination: value || 'random' });
+    const label = value === 'random'
+      ? '随机目的地'
+      : (_getDestinationLabelById(value) || '随机目的地');
+
+    _setTravelInlineStatus(`旅行目的地已设置为「${label}」`, 'success');
+    showToast(`旅行目的地已设置为「${label}」`, 'success');
+  } catch (err) {
+    _setTravelInlineStatus('保存目的地失败：' + err.message, 'error');
+    showToast('保存目的地失败：' + err.message, 'error');
+    logError('app', 'saveTravelDestination failed', { stack: err.stack });
   } finally {
     renderTravelUI(runtime.pet);
   }
 }
+
+
 
 async function startPetTravel(btn) {
   showToast('正在购买旅行票...', 'info');
@@ -2457,10 +2599,13 @@ async function startPetTravel(btn) {
       throw new Error('宠物已经在旅行中了');
     }
 
-    const destination = TRAVEL_DESTINATIONS[Math.floor(Math.random() * TRAVEL_DESTINATIONS.length)];
+    const currentTravel = _normalizeTravel(pet.travel);
+    const destination = _resolveTravelDestination(currentTravel);
+    const selectedDestination = currentTravel.selectedDestination || 'random';
     const now = Date.now();
     const duration = 1000 * 60 * 20; // 20分钟，MVP 好测试
     const bag = _readTravelBagFromForm();
+
 
     if (_normalizeRoom(pet.room, pet).location === ROOM_LOCATION.ROOM) {
       await savePet({
@@ -2474,12 +2619,14 @@ async function startPetTravel(btn) {
 
     await saveTravelPatch(
       {
-        status: TRAVEL_STATUS.TRAVELING,
+         status: TRAVEL_STATUS.TRAVELING,
         source: 'user_ticket',
         destination,
+        selectedDestination,
         startedAt: now,
         endsAt: now + duration,
         bag,
+
       },
       { success: `${pet.name || '宠物'}已经出发去「${destination}」旅行啦` }
     );
@@ -2669,10 +2816,31 @@ function bindTravelSystem() {
   renderTravelUI(runtime.pet);
   renderPetPresenceUI(runtime.pet);
 
-  document.querySelectorAll('.pet-travel-bag input[type="checkbox"]').forEach(input => {
-    input.addEventListener('change', () => {
-      prepareTravelBag();
-    });
+  document.getElementById('travel-destination-select')?.addEventListener('change', (e) => {
+    saveTravelDestination(e.currentTarget.value);
+  });
+
+  document.getElementById('btn-travel-toggle-bag')?.addEventListener('click', () => {
+    const editor = document.getElementById('pet-travel-bag-editor');
+    if (!editor) return;
+
+    const willOpen = editor.hidden;
+    editor.hidden = !willOpen;
+
+    if (willOpen) {
+      showToast('正在打开行李面板...', 'info');
+      _setTravelInlineStatus('可以开始整理行李啦', 'success');
+      showToast('可以开始整理行李啦', 'success');
+    } else {
+      showToast('已收起行李面板', 'info');
+      _setTravelInlineStatus('已收起行李面板', 'success');
+    }
+
+    renderTravelUI(runtime.pet);
+  });
+
+  document.getElementById('btn-travel-save-bag')?.addEventListener('click', (e) => {
+    prepareTravelBag(e.currentTarget);
   });
 
   document.getElementById('btn-travel-buy-ticket')?.addEventListener('click', (e) => {
@@ -2687,6 +2855,7 @@ function bindTravelSystem() {
     returnPetFromTravel(e.currentTarget);
   });
 }
+
 
 // ══════════════════════════════════════════════════════════════
 // 宠物房间 MVP —— 文字布置 + 动物预设 + 位置状态
@@ -3095,7 +3264,7 @@ function bindRoomSystem() {
   document.getElementById('btn-room-call-back')?.addEventListener('click', (e) => {
     callPetBackFromRoom(e.currentTarget);
   });
-  
+
   document.getElementById('btn-room-focus')?.addEventListener('click', () => {
     const presence = getPetPresence(runtime.pet);
 

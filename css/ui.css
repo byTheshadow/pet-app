@@ -3391,3 +3391,89 @@
     grid-template-columns: 1fr !important;
   }
 }
+/* ============================================================
+   Pet Travel Selector Refactor
+   ============================================================ */
+
+#page-pet #pet-travel-card .pet-travel-select-wrap {
+  display: block !important;
+  width: 100% !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-select {
+  display: block !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+
+  border-radius: 14px !important;
+  border: 1px solid var(--border-subtle) !important;
+  background: var(--bg-card-alt) !important;
+  color: var(--text-primary) !important;
+
+  padding: 0 12px !important;
+  font-size: 14px !important;
+  outline: none !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-summary-card {
+  display: block !important;
+  margin: 0 0 16px !important;
+  padding: 14px 16px !important;
+
+  border-radius: 20px !important;
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-summary-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-summary-title {
+  margin: 0 0 6px !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  font-weight: 900 !important;
+  color: var(--text-primary) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-summary-text {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: var(--text-secondary) !important;
+  word-break: break-word !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-editor {
+  display: block !important;
+  margin: 14px 0 0 !important;
+  padding: 14px 0 0 !important;
+  border-top: 1px dashed var(--border-subtle) !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-editor[hidden] {
+  display: none !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-editor-actions {
+  margin: 12px 0 0 !important;
+}
+
+#page-pet #pet-travel-card .pet-travel-bag-editor-actions .btn {
+  width: 100% !important;
+  min-height: 44px !important;
+}
+
+@media (max-width: 390px) {
+  #page-pet #pet-travel-card .pet-travel-bag-summary-head {
+    flex-direction: column !important;
+  }
+
+  #page-pet #pet-travel-card .pet-travel-bag-summary-head .btn {
+    width: 100% !important;
+  }
+}
