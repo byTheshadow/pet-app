@@ -2336,6 +2336,25 @@ const TRAVEL_DURATION_LIMITS = {
   4320: { maxLetters: 8, maxPhotos: 6, maxSouvenirs: 3 },
   7200: { maxLetters: 12, maxPhotos: 8, maxSouvenirs: 4 },
 };
+const TRAVEL_DURATION_OPTIONS = [300, 1440, 4320, 7200];
+
+const TRAVEL_DURATION_LABELS = {
+  300: '5小时（短途）',
+  1440: '一天（普通）',
+  4320: '三天（深度）',
+  7200: '五天（长途）',
+};
+
+function _normalizeTravelDuration(minutes) {
+  const value = Number(minutes);
+  return TRAVEL_DURATION_OPTIONS.includes(value) ? value : 1440;
+}
+
+function _getTravelDurationLabel(minutes) {
+  const value = _normalizeTravelDuration(minutes);
+  return TRAVEL_DURATION_LABELS[value] || TRAVEL_DURATION_LABELS[1440];
+}
+
 // 好友邀请：邀请触发概率（每次进入旅行卡片时判断）
 const FRIEND_INVITE_CHANCE = 0.6;
 
@@ -2486,9 +2505,10 @@ function _getItinerarySummary(itinerary = []) {
 
 // 根据时长获取内容上限
 function _getDurationLimits(durationMinutes) {
-  const key = Number(durationMinutes);
-  return TRAVEL_DURATION_LIMITS[key] || TRAVEL_DURATION_LIMITS[60];
+  const key = _normalizeTravelDuration(durationMinutes);
+  return TRAVEL_DURATION_LIMITS[key] || TRAVEL_DURATION_LIMITS[1440];
 }
+
 
 // 填充景点选择器
 function _fillSpotListForDestination(destinationLabel, selectedItinerary = []) {
@@ -3133,7 +3153,7 @@ if (isTraveling && typeof checkAndUnlockTravelContent === 'function') {
       `;
       durationSelect.dataset.filled = 'true';
     }
-    durationSelect.value = String(travel.selectedDuration || 1440);
+    durationSelect.value = String(_normalizeTravelDuration(travel.selectedDuration));
     durationSelect.disabled = isTraveling;
   }
 
@@ -3253,18 +3273,24 @@ async function saveTravelDestination(value) {
 function isTravelingNow(pet = runtime.pet) {
   return _normalizeTravel(pet?.travel).status === TRAVEL_STATUS.TRAVELING;
 }
-
 async function saveTravelDuration(minutes) {
-  const validMinutes = [20, 60, 120, 240].includes(minutes) ? minutes : 60;
-  const labelMap = { 20: '20分钟短途', 60: '1小时普通', 120: '2小时深度', 240: '4小时长途' };
+  const validMinutes = _normalizeTravelDuration(minutes);
+  const label = _getTravelDurationLabel(validMinutes);
 
   showToast('正在保存旅行时长...', 'info');
   _setTravelInlineStatus('正在保存旅行时长...', 'loading');
 
   try {
+    const travel = _normalizeTravel(runtime.pet?.travel);
+
+    if (travel.status === TRAVEL_STATUS.TRAVELING) {
+      throw new Error('旅行中不能修改时长');
+    }
+
     await saveTravelPatch({ selectedDuration: validMinutes });
-    _setTravelInlineStatus(`旅行时长已设置为「${labelMap[validMinutes]}」`, 'success');
-    showToast(`旅行时长已设置为「${labelMap[validMinutes]}」`, 'success');
+
+    _setTravelInlineStatus(`旅行时长已设置为「${label}」`, 'success');
+    showToast(`旅行时长已设置为「${label}」`, 'success');
   } catch (err) {
     _setTravelInlineStatus('保存时长失败：' + err.message, 'error');
     showToast('保存时长失败：' + err.message, 'error');
@@ -3319,7 +3345,12 @@ async function startPetTravel(btn) {
     const destination = _resolveTravelDestination(currentTravel);
     const selectedDestination = currentTravel.selectedDestination || 'random';
     const now = Date.now();
-    const selectedDuration = Number(document.getElementById('travel-duration-select')?.value) || 60;
+   const selectedDuration = _normalizeTravelDuration(
+  document.getElementById('travel-duration-select')?.value ||
+  currentTravel.selectedDuration ||
+  1440
+);
+
 const duration = 1000 * 60 * selectedDuration;
 const itinerary = _readItineraryFromForm();
    const bag = _readTravelBagFromForm();
@@ -3704,7 +3735,7 @@ async function acceptFriendInvite(btn) {
     };
 
     const now = Date.now();
-    const selectedDuration = Number(invite.durationMinutes) || 1440;
+    const selectedDuration = _normalizeTravelDuration(invite.durationMinutes);
     const duration = 1000 * 60 * selectedDuration;
 
     const destination =
