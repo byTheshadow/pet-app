@@ -3045,9 +3045,15 @@ function renderTravelUI(pet = runtime.pet) {
   _renderFriendInviteCard(travel, pet);
 
   // 检查并自动解锁内容（旅行中时）
-  if (isTraveling) {
-    checkAndUnlockTravelContent(pet).catch(() => {});
-  }
+  // 检查并自动解锁内容（旅行中时）
+// 注意：checkAndUnlockTravelContent 可能在部分版本中尚未实现。
+// 这里必须做存在性判断，避免宠物页初始化 fatal。
+if (isTraveling && typeof checkAndUnlockTravelContent === 'function') {
+  checkAndUnlockTravelContent(pet).catch((err) => {
+    console.warn('[travel] auto unlock failed:', err);
+  });
+}
+
 
   const ownerNameEl = document.getElementById('pet-travel-owner-name');
   const badgeEl = document.getElementById('pet-travel-status-badge');
