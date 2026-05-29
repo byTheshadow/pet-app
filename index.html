@@ -3682,36 +3682,69 @@ async function acceptFriendInvite(btn) {
     if (!pet) throw new Error('宠物数据未加载');
 
     const travel = _normalizeTravel(pet.travel);
+    if (travel.status === TRAVEL_STATUS.TRAVELING) {
+      throw new Error('宠物已经在旅行中了');
+    }
+
     const invite = travel.pendingInvite;
     if (!invite) throw new Error('邀请已失效');
 
     const companion = {
-      id:          invite.friendId,
-      name:        invite.friendName,
+      id: invite.friendId,
+      name: invite.friendName,
       personality: invite.friendPersonality,
       speciesGroup: invite.friendSpecies,
-      avatarUrl:   invite.friendAvatarUrl,
+      avatarUrl: invite.friendAvatarUrl,
     };
 
+    const now = Date.now();
+    const selectedDuration = Number(invite.durationMinutes) || 1440;
+    const duration = 1000 * 60 * selectedDuration;
+
+    const destination =
+      invite.destination ||
+      TRAVEL_DESTINATIONS.find(item => item.id === invite.destinationId)?.label ||
+      '远方';
+
+    // 与正常出发逻辑保持一致：若当前在房间，先切回宠物页位置
+    if (_normalizeRoom(pet.room, pet).location === ROOM_LOCATION.ROOM) {
+      await savePet({
+        room: {
+          ..._normalizeRoom(pet.room, pet),
+          location: ROOM_LOCATION.PET_PAGE,
+          updatedAt: Date.now(),
+        },
+      });
+    }
+
     await saveTravelPatch({
-      pendingInvite:       null,
-      inviteDismissed:     true,
-      selectedDestination: invite.destinationId,
-      selectedDuration:    invite.durationMinutes,
-      companionFriend:     companion,
+      status: TRAVEL_STATUS.TRAVELING,
+      source: 'friend_invite',
+      destination,
+      selectedDestination: invite.destinationId || 'random',
+      selectedDuration,
+      startedAt: now,
+      endsAt: now + duration,
+
+      // 保留已有行李与景点安排，不强制覆盖
+      companionFriend: companion,
+
+      pendingInvite: null,
+      inviteDismissed: true,
     });
 
-    // 同步更新目的地选择器 UI
+    // 同步更新目的地 / 时长选择器 UI
     const destSelect = document.getElementById('travel-destination-select');
-    if (destSelect) destSelect.value = invite.destinationId;
+    if (destSelect) destSelect.value = invite.destinationId || 'random';
 
     const durSelect = document.getElementById('travel-duration-select');
-    if (durSelect) durSelect.value = String(invite.durationMinutes);
+    if (durSelect) durSelect.value = String(selectedDuration);
 
     _setTravelInlineStatus(
-      `已接受 ${invite.friendName} 的邀请，目的地和时长已同步`, 'success'
+      `已接受 ${invite.friendName} 的邀请，${pet.name || '宠物'}正在前往「${destination}」`,
+      'success'
     );
-    showToast(`已接受 ${invite.friendName} 的邀请！`, 'success');
+    showToast(`已接受 ${invite.friendName} 的邀请，旅行已开始！`, 'success');
 
     // 同步好友亲密度 +5
     try {
@@ -3724,8 +3757,9 @@ async function acceptFriendInvite(btn) {
           updatedAt: Date.now(),
         });
       }
-    } catch (_) { /* 亲密度更新失败不阻断主流程 */ }
-
+    } catch (_) {
+      // 亲密度更新失败不阻断主流程
+    }
   } catch (err) {
     _setTravelInlineStatus('接受失败：' + err.message, 'error');
     showToast('接受失败：' + err.message, 'error');
@@ -3733,8 +3767,11 @@ async function acceptFriendInvite(btn) {
   } finally {
     if (btn) setButtonLoading(btn, false);
     renderTravelUI(runtime.pet);
+    renderRoomUI(runtime.pet);
+    renderPetPresenceUI(runtime.pet);
   }
 }
+
 
 // 婉拒邀请
 async function dismissFriendInvite(btn) {
