@@ -3822,89 +3822,231 @@ async function acceptFriendInvite(btn) {
 // 婉拒邀请
 async function dismissFriendInvite(btn) {
   if (btn) setButtonLoading(btn, true, '处理中...');
+  _setTravelInlineStatus?.('正在婉拒邀请...', 'loading');
+  showToast?.('正在婉拒邀请...', 'info');
 
   try {
-   const petName = pet.name || '宠物';
-const destination = travel.destination || '远方';
-const companion = travel.companionFriend;
-const limits = _getDurationLimits(travel.selectedDuration || 1440);
-const souvenirCount = Math.min(
-  limits.maxSouvenirs,
-  1 + Math.floor(Math.random() * limits.maxSouvenirs)
-);
-const newSouvenirs = _buildSouvenirs(destination, souvenirCount);
-
-// 好友同行时纪念品多一件，且有共同纪念品
-let finalSouvenirs = newSouvenirs;
-if (companion) {
-  const sharedSouvenir = {
-    id: `souvenir-shared-${Date.now()}`,
-    name: `和${companion.name}的旅行纪念`,
-    desc: `${petName}和${companion.name}一起在${destination}旅行的共同纪念。`,
-    destination,
-    companion: companion.name,
-    createdAt: Date.now(),
-  };
-  finalSouvenirs = [...newSouvenirs, sharedSouvenir];
-}
-
-const moodBonus  = (travel.bag?.snack   ? 6 : 3) + (companion ? 4 : 0);
-const healthBonus = travel.bag?.blanket ? 4 : 0;
-const bondBonus  = (travel.bag?.toy     ? 4 : 2) + (companion ? 3 : 0);
-
-const clamp = v => Math.max(0, Math.min(100, v));
-
-// 好友亲密度 +10（回家后结算）
-if (companion) {
-  try {
-    const friends = await dbList('petFriends', { limit: 100 });
-    const target = friends.find(f => String(f.id) === String(companion.id));
-    if (target) {
-      await dbSet('petFriends', {
-        ...target,
-        intimacy: Math.min(100, (target.intimacy || 0) + 10),
-        lastVisitAt: Date.now(),
-        updatedAt: Date.now(),
-      });
+    const pet = runtime.pet;
+    if (!pet) {
+      throw new Error('没有找到宠物数据');
     }
-  } catch (_) { /* 亲密度更新失败不阻断 */ }
-}
 
-   await savePet({
-  mood:   clamp((pet.mood   || 0) + moodBonus),
-  health: clamp((pet.health || 0) + healthBonus),
-  bond:   clamp((pet.bond   || 0) + bondBonus),
-  travel: {
-    ...travel,
-    status:          TRAVEL_STATUS.IDLE,
-    source:          null,
-    destination:     null,
-    startedAt:       null,
-    endsAt:          null,
-    companionFriend: null,   // 回家后清除同行好友
-    inviteDismissed: false,  // 重置，下次可以再收到邀请
-    souvenirs:       [...travel.souvenirs, ...finalSouvenirs],
-    updatedAt:       Date.now(),
-  },
-});
+    const travel = _normalizeTravel(pet.travel);
 
-    _setTravelInlineStatus(`旅行结束，带回了 ${newSouvenirs.map(s => s.name).join('、')}`, 'success');
-    showToast(`${petName}旅行回来啦，还带回了纪念品`, 'success');
-    const companionNote = companion ? `，${companion.name}也一起回来了` : '';
-_appendChatMsg?.('system',
-  `${petName}从「${destination}」旅行回来了${companionNote}，还带回了${finalSouvenirs.map(s => s.name).join('、')} 🎁`
-);
+    if (!travel.pendingInvite) {
+      _setTravelInlineStatus?.('当前没有需要处理的好友邀请。', 'error');
+      showToast?.('当前没有好友邀请', 'error');
+      return;
+    }
+
+    await savePet({
+      travel: {
+        ...travel,
+        pendingInvite: null,
+        inviteDismissed: true,
+        updatedAt: Date.now(),
+      },
+    });
+
+    _setTravelInlineStatus?.('已经婉拒这次好友邀请。', 'success');
+    showToast?.('已经婉拒这次好友邀请', 'success');
   } catch (err) {
-    _setTravelInlineStatus('旅行结算失败：' + err.message, 'error');
-    showToast('旅行结算失败：' + err.message, 'error');
-    logError('app', 'returnPetFromTravel failed', { stack: err.stack });
+    const message = err?.message || String(err);
+
+    _setTravelInlineStatus?.('婉拒失败：' + message, 'error');
+    showToast?.('婉拒失败：' + message, 'error');
+
+    if (typeof logError === 'function') {
+      logError('app', 'dismissFriendInvite failed', {
+        stack: err?.stack || message,
+      });
+    } else {
+      console.error('[dismissFriendInvite failed]', err);
+    }
   } finally {
     if (btn) setButtonLoading(btn, false);
-    renderTravelUI(runtime.pet);
-    renderRoomUI(runtime.pet);
-    renderPetPresenceUI(runtime.pet);
+    renderTravelUI?.(runtime.pet);
+    renderRoomUI?.(runtime.pet);
+    renderPetPresenceUI?.(runtime.pet);
   }
 }
+// 接宠物回家：支持普通旅行、好友旅行、提前返程、到期返程
+async function returnPetFromTravel(btn) {
+  if (btn) setButtonLoading(btn, true, '正在接它回家...');
+  _setTravelInlineStatus?.('正在接它回家...', 'loading');
+  showToast?.('正在接它回家...', 'info');
+
+  try {
+    const pet = runtime.pet;
+    if (!pet) {
+      throw new Error('没有找到宠物数据');
+    }
+
+    const travel = _normalizeTravel(pet.travel);
+    const isTraveling = travel.status === TRAVEL_STATUS.TRAVELING;
+
+    if (!isTraveling) {
+      _setTravelInlineStatus?.('它现在没有在旅行，不需要接回家。', 'error');
+      showToast?.('它现在没有在旅行', 'error');
+      return;
+    }
+
+    const now = Date.now();
+    const petName = pet.name || '宠物';
+    const destination =
+      travel.destination ||
+      (typeof _getSelectedTravelDestinationLabel === 'function'
+        ? _getSelectedTravelDestinationLabel(travel)
+        : '远方');
+
+    const companion = travel.companionFriend || null;
+    const isEarlyReturn = travel.endsAt && now < Number(travel.endsAt);
+
+    const duration = typeof _normalizeTravelDuration === 'function'
+      ? _normalizeTravelDuration(travel.selectedDuration || 1440)
+      : Number(travel.selectedDuration || 1440);
+
+    const limits = typeof _getDurationLimits === 'function'
+      ? _getDurationLimits(duration)
+      : { maxSouvenirs: 1 };
+
+    const maxSouvenirs = Math.max(1, Number(limits?.maxSouvenirs || 1));
+
+    // 提前回家：少带一些；到期回家：正常结算
+    const souvenirCount = isEarlyReturn
+      ? 1
+      : Math.min(maxSouvenirs, 1 + Math.floor(Math.random() * maxSouvenirs));
+
+    const newSouvenirs = typeof _buildSouvenirs === 'function'
+      ? _buildSouvenirs(destination, souvenirCount)
+      : [];
+
+    let finalSouvenirs = Array.isArray(newSouvenirs) ? newSouvenirs : [];
+
+    // 好友同行：额外增加共同纪念品
+    if (companion) {
+      const friendName = companion.name || '好友';
+
+      const sharedSouvenir = {
+        id: `souvenir-shared-${now}`,
+        name: `和${friendName}的旅行纪念`,
+        desc: `${petName}和${friendName}一起在${destination}旅行的共同纪念。`,
+        destination,
+        companion: friendName,
+        createdAt: now,
+      };
+
+      finalSouvenirs = [...finalSouvenirs, sharedSouvenir];
+    }
+
+    const clamp = (value) => Math.max(0, Math.min(100, value));
+
+    const moodBonus = (travel.bag?.snack ? 6 : 3) + (companion ? 4 : 0);
+    const healthBonus = travel.bag?.blanket ? 4 : 0;
+    const bondBonus = (travel.bag?.toy ? 4 : 2) + (companion ? 3 : 0);
+
+    // 好友同行：返程后增加亲密度
+    if (companion) {
+      try {
+        const friends = await dbList('petFriends', { limit: 100 });
+        const target = friends.find((f) => String(f.id) === String(companion.id));
+
+        if (target) {
+          await dbSet('petFriends', {
+            ...target,
+            intimacy: Math.min(100, (target.intimacy || 0) + 10),
+            lastVisitAt: now,
+            updatedAt: now,
+          });
+        }
+      } catch (friendErr) {
+        console.warn('[travel] update companion intimacy failed:', friendErr);
+      }
+    }
+
+    const oldLetters = Array.isArray(travel.letters) ? travel.letters : [];
+    const oldPhotos = Array.isArray(travel.photos) ? travel.photos : [];
+    const oldSouvenirs = Array.isArray(travel.souvenirs) ? travel.souvenirs : [];
+
+    const defaultTravel = typeof _createDefaultTravelState === 'function'
+      ? _createDefaultTravelState()
+      : { bag: {} };
+
+    await savePet({
+      mood: clamp((pet.mood || 0) + moodBonus),
+      health: clamp((pet.health || 0) + healthBonus),
+      bond: clamp((pet.bond || 0) + bondBonus),
+
+      travel: {
+        ...travel,
+
+        status: TRAVEL_STATUS.IDLE,
+        source: null,
+        destination: null,
+        startedAt: null,
+        endsAt: null,
+        companionFriend: null,
+
+        selectedDestination: travel.selectedDestination || 'random',
+        selectedDuration: duration,
+        itinerary: Array.isArray(travel.itinerary) ? travel.itinerary : [],
+
+        bag: travel.bag || defaultTravel.bag,
+
+        pendingInvite: null,
+        inviteDismissed: false,
+
+        // 重点：收藏不能清空，只能追加
+        letters: oldLetters,
+        photos: oldPhotos,
+        souvenirs: [...oldSouvenirs, ...finalSouvenirs],
+
+        updatedAt: now,
+      },
+    });
+
+    const souvenirText = finalSouvenirs.length
+      ? `，还带回了${finalSouvenirs.map((s) => s.name).join('、')}`
+      : '';
+
+    const companionNote = companion
+      ? `，${companion.name || '好友'}也一起回来了`
+      : '';
+
+    const successMessage = isEarlyReturn
+      ? `${petName}已经提前回到你身边${companionNote}${souvenirText}`
+      : `${petName}旅行结束，回到你身边啦${companionNote}${souvenirText}`;
+
+    _setTravelInlineStatus?.(successMessage, 'success');
+    showToast?.(successMessage, 'success');
+
+    if (typeof _appendChatMsg === 'function') {
+      _appendChatMsg(
+        'system',
+        `${petName}从「${destination}」旅行回来了${companionNote}${souvenirText} 🎁`
+      );
+    }
+  } catch (err) {
+    const message = err?.message || String(err);
+
+    _setTravelInlineStatus?.('接回家失败：' + message, 'error');
+    showToast?.('接回家失败：' + message, 'error');
+
+    if (typeof logError === 'function') {
+      logError('app', 'returnPetFromTravel failed', {
+        stack: err?.stack || message,
+      });
+    } else {
+      console.error('[returnPetFromTravel failed]', err);
+    }
+  } finally {
+    if (btn) setButtonLoading(btn, false);
+    renderTravelUI?.(runtime.pet);
+    renderRoomUI?.(runtime.pet);
+    renderPetPresenceUI?.(runtime.pet);
+  }
+}
+
 
 async function returnPetFromTravel(btn) {
   if (btn) setButtonLoading(btn, true, '正在接它回家...');
