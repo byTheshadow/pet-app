@@ -3543,61 +3543,227 @@ function _buildTravelPhoto(travel, petName) {
   };
 }
 
+async function checkAndUnlockTravelContent(pet = runtime.pet) {
+  if (!pet) return null;
+
+  const travel = _normalizeTravel(pet.travel);
+
+  if (travel.status !== TRAVEL_STATUS.TRAVELING) {
+    return null;
+  }
+
+  const now = Date.now();
+  const petName = pet.name || '宠物';
+
+  const startedAt = Number(travel.startedAt || 0);
+  const endsAt = Number(travel.endsAt || 0);
+
+  if (!startedAt || !endsAt || endsAt <= startedAt) {
+    console.warn('[travel] invalid travel time, skip unlock', {
+      startedAt: travel.startedAt,
+      endsAt: travel.endsAt,
+    });
+    return null;
+  }
+
+  const duration = typeof _normalizeTravelDuration === 'function'
+    ? _normalizeTravelDuration(travel.selectedDuration || 1440)
+    : Number(travel.selectedDuration || 1440);
+
+  const limits = typeof _getDurationLimits === 'function'
+    ? _getDurationLimits(duration)
+    : { maxLetters: 1, maxPhotos: 1 };
+
+  const letters = Array.isArray(travel.letters) ? travel.letters : [];
+  const photos = Array.isArray(travel.photos) ? travel.photos : [];
+
+  const maxLetters = Math.max(0, Number(limits.maxLetters || 0));
+  const maxPhotos = Math.max(0, Number(limits.maxPhotos || 0));
+
+  const canSendLetter = letters.length < maxLetters;
+  const canSendPhoto = photos.length < maxPhotos;
+
+  if (!canSendLetter && !canSendPhoto) {
+    return null;
+  }
+
+  /**
+   * 自动推送节奏：
+   * - 旅行开始后不要立刻寄
+   * - 每隔一段时间才有一次机会
+   * - 短途也能收到至少一封
+   */
+  const elapsed = Math.max(0, now - startedAt);
+  const total = Math.max(1, endsAt - startedAt);
+  const progress = Math.min(1, elapsed / total);
+
+  // 旅行进度太早时先不发，避免刚出门马上来信
+  if (progress < 0.08) {
+    return null;
+  }
+
+  const oneMinute = 60 * 1000;
+
+  /**
+   * 根据旅行时长设置冷却：
+   * 300 分钟：约 45 分钟一条
+   * 1440 分钟：约 3 小时一条
+   * 4320 分钟：约 8 小时一条
+   * 7200 分钟：约 12 小时一条
+   */
+  const cooldownByDuration = {
+    300: 45 * oneMinute,
+    1440: 3 * 60 * oneMinute,
+    4320: 8 * 60 * oneMinute,
+    7200: 12 * 60 * oneMinute,
+  };
+
+  const cooldown = cooldownByDuration[duration] || 3 * 60 * oneMinute;
+
+  const lastAnyAt = Math.max(
+    Number(travel.lastLetterAt || 0),
+    Number(travel.lastPhotoAt || 0)
+  );
+
+  if (lastAnyAt && now - lastAnyAt < cooldown) {
+    return null;
+  }
+
+  /**
+   * 如果很久没打开页面，允许根据进度补一条，但每次渲染最多补一条。
+   * 避免 renderTravelUI 调用时一次性刷屏。
+   */
+  let type = null;
+
+  const photoBonus = travel.bag?.photoBook ? 0.2 : 0;
+  const roll = Math.random();
+
+  if (canSendLetter && canSendPhoto) {
+    type = roll < 0.65 - photoBonus ? 'letter' : 'photo';
+  } else if (canSendLetter) {
+    type = 'letter';
+  } else if (canSendPhoto) {
+    type = 'photo';
+  }
+
+  if (!type) return null;
+
+  let nextTravel = null;
+  let createdItem = null;
+
+  if (type === 'letter') {
+    createdItem = _buildTravelLetter(travel, petName);
+
+    nextTravel = {
+      ...travel,
+      letters: [...letters, createdItem],
+      lastLetterAt: now,
+      updatedAt: now,
+    };
+  } else {
+    createdItem = _buildTravelPhoto(travel, petName);
+
+    nextTravel = {
+      ...travel,
+      photos: [...photos, createdItem],
+      lastPhotoAt: now,
+      updatedAt: now,
+    };
+  }
+
+  await savePet({
+    travel: nextTravel,
+  });
+
+  if (type === 'letter') {
+    _setTravelInlineStatus?.('收到一封旅行来信', 'success');
+    showToast?.('收到一封旅行来信', 'success');
+    _appendChatMsg?.(
+      'system',
+      `✉️ 收到${petName}从「${travel.destination || '远方'}」寄来的来信`
+    );
+  } else {
+    _setTravelInlineStatus?.('收到一张旅行照片', 'success');
+    showToast?.('收到一张旅行照片', 'success');
+    _appendChatMsg?.(
+      'system',
+      `📷 收到${petName}从「${travel.destination || '远方'}」寄回的旅行照片`
+    );
+  }
+
+  renderTravelUI?.(runtime.pet);
+
+  return {
+    type,
+    item: createdItem,
+    travel: nextTravel,
+  };
+}
+
+
 
 async function receiveTravelUpdate(btn) {
-  showToast('正在接收旅行来信...', 'info');
-  _setTravelInlineStatus('正在接收旅行来信...', 'loading');
-  if (btn) setButtonLoading(btn, true, '接收中...');
+  showToast?.('正在检查旅行消息...', 'info');
+  _setTravelInlineStatus?.('正在检查旅行消息...', 'loading');
+  if (btn) setButtonLoading(btn, true, '检查中...');
 
   try {
-   const limits = _getDurationLimits(travel.selectedDuration || 60);
-const currentLetterCount = travel.letters.length;
-const currentPhotoCount = travel.photos.length;
-const photoBonus = travel.bag?.photoBook ? 0.25 : 0;
-const roll = Math.random();
+    const pet = runtime.pet;
+    if (!pet) {
+      throw new Error('没有找到宠物数据');
+    }
 
-const canSendLetter = currentLetterCount < limits.maxLetters;
-const canSendPhoto = currentPhotoCount < limits.maxPhotos;
+    const travel = _normalizeTravel(pet.travel);
 
-let nextTravel = travel;
+    if (travel.status !== TRAVEL_STATUS.TRAVELING) {
+      _setTravelInlineStatus?.('它现在没有在旅行，暂时没有新的旅行消息。', 'error');
+      showToast?.('它现在没有在旅行', 'error');
+      return;
+    }
 
-if (!canSendLetter && !canSendPhoto) {
-  _setTravelInlineStatus('旅行消息已经都寄出来了，等它回家吧', 'success');
-  showToast('旅行消息已经都寄出来了，等它回家吧', 'info');
-} else if (canSendLetter && (!canSendPhoto || roll < 0.45)) {
-  const letter = _buildTravelLetter(travel, petName);
-  nextTravel = {
-    ...travel,
-    letters: [...travel.letters, letter],
-    lastLetterAt: Date.now(),
-  };
-  await saveTravelPatch(nextTravel);
-  _setTravelInlineStatus('收到一封旅行来信', 'success');
-  showToast('收到一封旅行来信', 'success');
-  _appendChatMsg?.('system', `✉️ 收到${petName}从「${travel.destination}」寄来的来信`);
-} else if (canSendPhoto) {
-  const photo = _buildTravelPhoto(travel, petName);
-  nextTravel = {
-    ...travel,
-    photos: [...travel.photos, photo],
-    lastPhotoAt: Date.now(),
-  };
-  await saveTravelPatch(nextTravel);
-  _setTravelInlineStatus('收到一张旅行照片', 'success');
-  showToast('收到一张旅行照片', 'success');
-  _appendChatMsg?.('system', `📷 收到${petName}从「${travel.destination}」寄回的旅行照片`);
-} else {
-  _setTravelInlineStatus('暂时还没有新的旅行消息', 'success');
-  showToast('暂时还没有新的旅行消息', 'info');
-}
-    _setTravelInlineStatus('接收失败：' + err.message, 'error');
-    showToast('接收失败：' + err.message, 'error');
-    logError('app', 'receiveTravelUpdate failed', { stack: err.stack });
+    if (typeof checkAndUnlockTravelContent !== 'function') {
+      throw new Error('自动旅行消息函数未加载');
+    }
+
+    const beforeLetters = Array.isArray(travel.letters) ? travel.letters.length : 0;
+    const beforePhotos = Array.isArray(travel.photos) ? travel.photos.length : 0;
+
+    /**
+     * 手动调用只作为兼容入口。
+     * 产品上仍然是“检查有没有新消息”，不是“用户刷资源”。
+     */
+    const result = await checkAndUnlockTravelContent(pet);
+
+    const nextTravel = _normalizeTravel(runtime.pet.travel);
+    const afterLetters = Array.isArray(nextTravel.letters) ? nextTravel.letters.length : 0;
+    const afterPhotos = Array.isArray(nextTravel.photos) ? nextTravel.photos.length : 0;
+
+    if (result || afterLetters > beforeLetters || afterPhotos > beforePhotos) {
+      _setTravelInlineStatus?.('收到了新的旅行消息。', 'success');
+      showToast?.('收到了新的旅行消息', 'success');
+    } else {
+      _setTravelInlineStatus?.('暂时还没有新的旅行消息，它会在旅途中主动寄回来。', 'success');
+      showToast?.('暂时还没有新的旅行消息', 'info');
+    }
+  } catch (err) {
+    const message = err?.message || String(err);
+
+    _setTravelInlineStatus?.('检查失败：' + message, 'error');
+    showToast?.('检查失败：' + message, 'error');
+
+    if (typeof logError === 'function') {
+      logError('app', 'receiveTravelUpdate failed', {
+        stack: err?.stack || message,
+      });
+    } else {
+      console.error('[receiveTravelUpdate failed]', err);
+    }
   } finally {
     if (btn) setButtonLoading(btn, false);
-    renderTravelUI(runtime.pet);
+    renderTravelUI?.(runtime.pet);
   }
 }
+
 
 
 function _buildSouvenirs(destination, count = 2) {
